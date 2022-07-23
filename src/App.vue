@@ -90,7 +90,7 @@ export default {
     return {
       zipcodeData,
       addressList: {},
-      addressInput: null,
+      addressInput: "",
     }
   },
   computed: {
