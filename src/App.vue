@@ -30,6 +30,9 @@
         </div>
       </div>
     </div>
+    <div class="footer">
+      台灣 3+3 郵遞區號查詢 | Made with 🥞 by <a href="https://gnehs.net">gnehs</a> | <a href="https://github.com/gnehs/TaiwanZipcode">GitHub</a>
+    </div>
   </div>
 </template>
 <style lang="sass">
@@ -67,6 +70,16 @@
       border-top: 1px solid #ccc
     .result-item-zipcode
       font-weight: 700
+.footer
+  text-align: center
+  font-size: 12px
+  margin-top: 64px
+  opacity: .75
+  a
+    color: #000
+    &:hover
+      color: #000
+      text-decoration: underline
 
 </style>
 <script>
