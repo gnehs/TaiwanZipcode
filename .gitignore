@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 utils/database-conventer/result/rall1.json
 utils/database-conventer/src/rall1.dbf
+utils/database-conventer/result/zipcode.json

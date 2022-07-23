@@ -24,9 +24,9 @@ parsedData.forEach(item => {
     result[item.city][item.area][item.road] = []
 
   result[item.city][item.area][item.road].push({
-    scope: item.scope.trim(),
+    scope: item.scope,
     zipcode: parseInt(item.zipcode)
   })
 })
-fs.writeFileSync(path.join(__dirname, './result/rall1.json'), JSON.stringify(result));
-console.log(`${parsedData.length} items saved to ./result/rall1.json`);
+fs.writeFileSync(path.join(__dirname, './result/zipcode.json'), JSON.stringify(result));
+console.log(`${parsedData.length} items saved to ./result/zipcode.json`);
