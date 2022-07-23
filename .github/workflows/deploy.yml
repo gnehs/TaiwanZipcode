@@ -1,0 +1,33 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup Node
+      uses: actions/setup-node@v2-beta
+      with:
+        node-version: '16.x'
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: Install npm packages
+      run: npm install
+    - name: Generate Pages
+      run: npm run build
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: dist
+        force_orphan: true
+        cname: zipcode.gnehs.net
