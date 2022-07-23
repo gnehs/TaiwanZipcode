@@ -1,0 +1,14 @@
+{
+  "name": "database-conventer",
+  "version": "1.0.0",
+  "description": "將郵局資料庫轉換為 json 格式",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  }
+}
