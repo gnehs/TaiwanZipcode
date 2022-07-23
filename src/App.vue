@@ -12,7 +12,7 @@
       placeholder="輸入地址、路名或是鄉鎮市區來查詢"
       @selectItem="selectItem"
       v-model="addressInput" />
-    <div class="result-items" v-if="resultList.length">
+    <div class="result-items">
       <div class="result-item-header">
         <div class="result-item-zipcode">
           郵遞區號
@@ -21,6 +21,7 @@
           範圍
         </div>
       </div>
+      <div class="result-item" v-if="!resultList.length">查無結果</div>
       <div class="result-item" v-for="item of resultList">
         <div class="result-item-zipcode">
           {{ item.zipcode }}
@@ -73,7 +74,7 @@
 .footer
   text-align: center
   font-size: 12px
-  margin-top: 64px
+  margin: 32px 0
   opacity: .75
   a
     color: #000
