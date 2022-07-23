@@ -94,7 +94,9 @@ export default {
   },
   computed: {
     resultList() {
-      return this.addressList[this.addressInput] || [];
+      let key = Object.keys(this.addressList).filter(x => this.addressInput.includes(x))
+      if (!key.length) return []
+      return this.addressList[key] || [];
     }
   },
   mounted() {
