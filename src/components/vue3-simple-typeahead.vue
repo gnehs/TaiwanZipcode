@@ -147,8 +147,12 @@ export default /*#__PURE__*/ defineComponent({
 			return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 		},
 		boldMatchText(text) {
-			const regexp = new RegExp(`(${this.escapeRegExp(this.input)})`, 'ig');
-			return text.replace(regexp, '<strong>$1</strong>');
+			let result = text
+			for (let input of this.input.trim().split(' ')) {
+				const regexp = new RegExp(`(${this.escapeRegExp(input)})`, 'ig');
+				result = result.replace(regexp, '<strong>$1</strong>');
+			}
+			return result
 		},
 		clearInput() {
 			this.input = '';
