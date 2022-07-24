@@ -8,7 +8,7 @@
       @selectItem="selectItem"
       v-model="addressInput" />
     <div class="search-tips">
-      ℹ️ 你可以透過關鍵字來查詢郵遞區號，像是：「中山北路」、「信義區松山路」、「新竹 大學」，或是透過完整地址查詢。
+      ℹ️ 你可以透過關鍵字來查詢郵遞區號，像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」，或是透過完整地址查詢。
     </div>
     <div class="result-items">
       <div class="result-item-header">

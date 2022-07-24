@@ -148,7 +148,8 @@ export default /*#__PURE__*/ defineComponent({
 		},
 		boldMatchText(text) {
 			let result = text
-			for (let input of this.input.trim().split(' ')) {
+			let keyword = this.input.trim().replaceAll('台', '臺')
+			for (let input of keyword.split(' ')) {
 				const regexp = new RegExp(`(${this.escapeRegExp(input)})`, 'ig');
 				result = result.replace(regexp, '<strong>$1</strong>');
 			}
@@ -174,7 +175,8 @@ export default /*#__PURE__*/ defineComponent({
 			return `${this.inputId}_wrapper`;
 		},
 		filteredItems() {
-			const regexp = new RegExp(this.escapeRegExp(this.input).replaceAll(" ", ".+"), 'i');
+			let keyword = this.input.trim().replaceAll('台', '臺')
+			const regexp = new RegExp(this.escapeRegExp(keyword).replaceAll(" ", ".+"), 'i');
 			return this.items.filter((item) => this.itemProjection(item).match(regexp));
 		},
 		isListVisible() {
