@@ -36,6 +36,7 @@
     </div>
     <div class="footer">
       台灣 3+3 郵遞區號查詢 | Made with 🥞 by <a href="https://gnehs.net">gnehs</a> | <a href="https://github.com/gnehs/TaiwanZipcode">GitHub</a>
+      <br /> 資料擷取自郵局資料庫，資料僅供參考，可能會有所遺漏、錯誤或未即時更新，正確資料請以郵局公佈為主。
     </div>
   </div>
 </template>
@@ -59,6 +60,7 @@ body
   background-color: var(--secondary-background-color)
   color: var(--text-color)
   font-family: 'Noto Sans TC', sans-serif
+  line-height: 1.5
 .container
   width: 95%
   max-width: 768px
@@ -85,7 +87,6 @@ body
 .search-tips
   margin: .25em 0 1em 0
   font-size: 14px
-  line-height: 1.5
   opacity: .75
 .result-items
   margin-top: 16px
@@ -105,11 +106,11 @@ body
       border-top: 1px solid var(--border-color)
     .result-item-zipcode
       font-weight: 700
-.footer
+.footer,.statement
   text-align: center
   font-size: 12px
-  margin: 32px 0
   opacity: .5
+  margin: 32px 0
   a
     color: var(--text-color)
 .simple-typeahead
