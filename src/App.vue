@@ -4,11 +4,11 @@
     <simple-typeahead
       class="search-input"
       :items="Object.keys(addressList)"
-      placeholder="輸入路名、鄉鎮市區或完整地址來查詢…"
+      placeholder="輸入關鍵字來查詢…"
       @selectItem="selectItem"
       v-model="addressInput" />
     <div class="search-tips">
-      ℹ️ 你可以透過關鍵字來查詢郵遞區號，像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」，或是透過完整地址查詢。
+      ℹ️ 你可以透過像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」等關鍵字來查詢郵遞區號。
     </div>
     <div class="result-items">
       <div class="result-item-header">
