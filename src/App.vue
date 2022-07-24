@@ -9,9 +9,12 @@
     <vue3-simple-typeahead
       class="search-input"
       :items="Object.keys(addressList)"
-      placeholder="輸入地址、路名或是鄉鎮市區來查詢"
+      placeholder="輸入路名、鄉鎮市區或完整地址來查詢…"
       @selectItem="selectItem"
       v-model="addressInput" />
+    <div class="search-tips">
+      ℹ️ 你可以透過關鍵字來查詢郵遞區號，像是：中山北路、信義區松山路，或是透過完整地址查詢。
+    </div>
     <div class="result-items">
       <div class="result-item-header">
         <div class="result-item-zipcode">
@@ -45,7 +48,6 @@
 .page-title
   text-align: center
   font-size: 36px
-  margin: 1em 0
 .search-input
   border: none
   background-color: #fff
@@ -60,6 +62,10 @@
   @media (max-width: 768px)
     font-size: 18px
     padding: .5em
+.search-tips
+  margin: .25em 0 1em 0
+  font-size: 14px
+  opacity: .75
 .result-items
   margin-top: 16px
   background-color: #fff
@@ -82,7 +88,7 @@
   text-align: center
   font-size: 12px
   margin: 32px 0
-  opacity: .75
+  opacity: .5
   a
     color: #000
     &:hover
