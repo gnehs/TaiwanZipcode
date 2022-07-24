@@ -13,6 +13,7 @@ parsedData = parsedData.map(item => ({
   area: item.AREA,
   road: item.ROAD,
   scope: item.SCOOP,
+  department: item.DEPARTMENT,
 }))
 let result = {}
 parsedData.forEach(item => {
@@ -25,7 +26,8 @@ parsedData.forEach(item => {
 
   result[item.city][item.area][item.road].push({
     scope: item.scope,
-    zipcode: parseInt(item.zipcode)
+    zipcode: parseInt(item.zipcode),
+    department: item.department,
   })
 })
 fs.writeFileSync(path.join(__dirname, './result/zipcode.json'), JSON.stringify(result));

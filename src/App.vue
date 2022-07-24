@@ -25,7 +25,7 @@
           {{ item.zipcode }}
         </div>
         <div class="result-item-scope">
-          {{ item.scope }}
+          <span v-if="item.department">{{ item.department }} <br /> </span> {{ item.scope }}
         </div>
       </div>
     </div>
