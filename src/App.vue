@@ -52,8 +52,8 @@
     --text-color: #fff
     --border-color: rgba(255,255,255,.2)
     --border-focus-color: rgba(255,255,255,.4)
-    --background-color: #000
-    --secondary-background-color: #222
+    --background-color: #222
+    --secondary-background-color: #333
 body
   background-color: var(--secondary-background-color)
   color: var(--text-color)
