@@ -125,6 +125,8 @@ body
     overflow-y: auto
     border-bottom: 1px solid var(--border-color)
     z-index: 9
+    @media (max-width: 768px)
+      max-height: 300px
     .simple-typeahead-list-header
       background-color: var(--background-color)
       padding: 0.6rem 1rem
