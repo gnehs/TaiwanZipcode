@@ -39,6 +39,9 @@
 *
   box-sizing: border-box
 \:root
+  // basic
+  --border-radius: 2px
+  // color
   --text-color: #333
   --border-color: rgba(0,0,0,.2)
   --border-focus-color: rgba(0,0,0,.4)
@@ -68,23 +71,6 @@ body
   font-size: 36px
   @media (max-width: 768px)
     font-size: 24px
-.search-input
-  border: none
-  background-color: var(--background-color)
-  border: 1px solid var(--border-color)
-  color: var(--text-color)
-  border-radius: 0
-  width: 100%
-  font-size: 24px
-  padding: .75em
-  transition: border .2s ease
-  &:focus
-    outline: none
-    border: 1px solid var(--border-focus-color)
-    box-shadow: 0 8px 8px rgba(0,0,0,.1)
-  @media (max-width: 768px)
-    font-size: 18px
-    padding: .5em
 .search-tips
   margin: .25em 0 1em 0
   font-size: 14px
@@ -94,6 +80,7 @@ body
   background-color: var(--background-color)
   border: 1px solid var(--border-color)
   font-size: 16px
+  border-radius: var(--border-radius)
   @media (max-width: 768px)
     font-size: 14px
   .result-item-header
@@ -104,6 +91,10 @@ body
     display: grid
     grid-template-columns: 6rem 1fr
     align-items: center
+    &:first-child
+      border-radius: var(--border-radius) var(--border-radius) 0 0
+    &:last-child
+      border-radius: 0 0 var(--border-radius) var(--border-radius)
     &:not(:first-child)
       border-top: 1px solid var(--border-color)
     .result-item-zipcode
@@ -121,8 +112,27 @@ body
 .simple-typeahead
   position: relative
   width: 100%
-  &>input
+  &>.search-input
     margin-bottom: 0
+
+    box-shadow: 0 8px 8px transparent
+    background-color: var(--background-color)
+    border: 1px solid var(--border-color)
+    color: var(--text-color)
+    border-radius: var(--border-radius)
+    width: 100%
+    font-size: 24px
+    padding: .75em
+    transition: all .2s ease
+    &:focus
+      outline: none
+      border: 1px solid var(--border-focus-color)
+      box-shadow: 0 8px 8px rgba(0,0,0,.1)
+    @media (max-width: 768px)
+      font-size: 18px
+      padding: .5em
+  &:has(.simple-typeahead-list)>.search-input
+    border-radius: var(--border-radius) var(--border-radius) 0 0
   .simple-typeahead-list
     position: absolute
     width: 100%
@@ -132,6 +142,7 @@ body
     border-bottom: 1px solid var(--border-color)
     z-index: 9
     box-shadow: 0 8px 8px rgba(0,0,0,.1)
+    border-radius: 0 0 var(--border-radius) var(--border-radius)
     @media (max-width: 768px)
       max-height: 300px
     .simple-typeahead-list-header
