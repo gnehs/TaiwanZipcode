@@ -177,6 +177,15 @@ export default {
   mounted() {
     this.generateAddressList();
   },
+  created() {
+    this.addressInput = decodeURIComponent(window.location.hash.replace("#", ""))
+  },
+  watch: {
+    addressInput(val) {
+      // update val to url hash
+      window.location.hash = val;
+    }
+  },
   methods: {
     generateAddressList() {
       let result = {};

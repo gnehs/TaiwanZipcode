@@ -50,6 +50,9 @@ export default /*#__PURE__*/ defineComponent({
 		id: {
 			type: String,
 		},
+		modelValue: {
+			type: String,
+		},
 		placeholder: {
 			type: String,
 			default: '',
@@ -79,6 +82,7 @@ export default /*#__PURE__*/ defineComponent({
 		if (this.defaultItem !== undefined && this.defaultItem !== null) {
 			this.selectItem(this.defaultItem);
 		}
+		this.input = this.modelValue;
 	},
 	data() {
 		return {
