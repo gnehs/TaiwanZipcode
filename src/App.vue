@@ -101,10 +101,14 @@ body
     padding: .5em
     display: grid
     grid-template-columns: 6rem 1fr
+    align-items: center
     &:not(:first-child)
       border-top: 1px solid var(--border-color)
     .result-item-zipcode
       font-weight: 700
+  .result-item
+    &:hover
+      background-color: var(--secondary-background-color)
 .footer,.statement
   text-align: center
   font-size: 12px
