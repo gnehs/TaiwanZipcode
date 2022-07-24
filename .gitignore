@@ -22,6 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-utils/database-conventer/result/rall1.json
+
+# database-conventer
 utils/database-conventer/src/rall1.dbf
 utils/database-conventer/result/zipcode.json
