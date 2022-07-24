@@ -77,9 +77,11 @@ body
   width: 100%
   font-size: 24px
   padding: .75em
+  transition: border .2s ease
   &:focus
     outline: none
     border: 1px solid var(--border-focus-color)
+    box-shadow: 0 8px 8px rgba(0,0,0,.1)
   @media (max-width: 768px)
     font-size: 18px
     padding: .5em
@@ -129,6 +131,7 @@ body
     overflow-y: auto
     border-bottom: 1px solid var(--border-color)
     z-index: 9
+    box-shadow: 0 8px 8px rgba(0,0,0,.1)
     @media (max-width: 768px)
       max-height: 300px
     .simple-typeahead-list-header
@@ -147,7 +150,7 @@ body
     .simple-typeahead-list-item
       cursor: pointer
       background-color: var(--background-color)
-      padding: 0.6rem 1rem
+      padding: 0.25rem 1rem
       border-bottom: 1px solid var(--border-color)
       border-left: 1px solid var(--border-color)
       border-right: 1px solid var(--border-color)
