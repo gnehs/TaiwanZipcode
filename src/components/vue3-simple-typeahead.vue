@@ -180,8 +180,14 @@ export default /*#__PURE__*/ defineComponent({
 		},
 		filteredItems() {
 			let keyword = this.input.trim().replaceAll('台', '臺')
-			const regexp = new RegExp(this.escapeRegExp(keyword).replaceAll(" ", ".+"), 'i');
-			return this.items.filter((item) => this.itemProjection(item).match(regexp)).slice(0, 100);
+			let filteredItems = this.items
+				.filter(item =>
+					keyword
+						.split(' ')
+						.every(x => this.itemProjection(item).includes(x))
+				)
+				.slice(0, 100);
+			return filteredItems
 		},
 		isListVisible() {
 			return this.isInputFocused && this.input.length >= this.minInputLength && this.filteredItems.length;
