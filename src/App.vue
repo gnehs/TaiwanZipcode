@@ -61,9 +61,13 @@ body
   max-width: 768px
   margin: auto
   margin-top: 128px
+  @media (max-width: 768px)
+    margin-top: 16px
 .page-title
   text-align: center
   font-size: 36px
+  @media (max-width: 768px)
+    font-size: 24px
 .search-input
   border: none
   background-color: var(--background-color)
