@@ -40,6 +40,25 @@
   </div>
 </template>
 <style lang="sass">
+*
+  box-sizing: border-box
+\:root
+  --text-color: #333
+  --border-color: rgba(0,0,0,.2)
+  --border-focus-color: rgba(0,0,0,.4)
+  --background-color: #fff
+  --secondary-background-color: #f2f2f2
+@media (prefers-color-scheme: dark)
+  \:root
+    --text-color: #fff
+    --border-color: rgba(255,255,255,.2)
+    --border-focus-color: rgba(255,255,255,.4)
+    --background-color: #000
+    --secondary-background-color: #222
+body
+  background-color: var(--secondary-background-color)
+  color: var(--text-color)
+  font-family: 'Noto Sans TC', sans-serif
 .container
   width: 95%
   max-width: 768px
@@ -50,15 +69,16 @@
   font-size: 36px
 .search-input
   border: none
-  background-color: #fff
-  border: 1px solid #ccc
+  background-color: var(--background-color)
+  border: 1px solid var(--border-color)
+  color: var(--text-color)
   border-radius: 0
   width: 100%
   font-size: 24px
   padding: .75em
   &:focus
     outline: none
-    border: 1px solid #000
+    border: 1px solid var(--border-focus-color)
   @media (max-width: 768px)
     font-size: 18px
     padding: .5em
@@ -69,20 +89,20 @@
   opacity: .75
 .result-items
   margin-top: 16px
-  background-color: #fff
-  border: 1px solid #ccc
+  background-color: var(--background-color)
+  border: 1px solid var(--border-color)
   font-size: 16px
   @media (max-width: 768px)
     font-size: 14px
   .result-item-header
     font-weight: bold
-    background-color: rgba(0,0,0,.05)
+    background-color: var(--secondary-background-color)
   .result-item,.result-item-header
     padding: .5em
     display: grid
     grid-template-columns: 6rem 1fr
     &:not(:first-child)
-      border-top: 1px solid #ccc
+      border-top: 1px solid var(--border-color)
     .result-item-zipcode
       font-weight: 700
 .footer
@@ -91,10 +111,44 @@
   margin: 32px 0
   opacity: .5
   a
-    color: #000
-    &:hover
-      color: #000
-      text-decoration: underline
+    color: var(--text-color)
+.simple-typeahead
+  position: relative
+  width: 100%
+  &>input
+    margin-bottom: 0
+  .simple-typeahead-list
+    position: absolute
+    width: 100%
+    border: none
+    max-height: 400px
+    overflow-y: auto
+    border-bottom: 1px solid var(--border-color)
+    z-index: 9
+    .simple-typeahead-list-header
+      background-color: var(--background-color)
+      padding: 0.6rem 1rem
+      border-bottom: 1px solid var(--border-color)
+      border-left: 1px solid var(--border-color)
+      border-right: 1px solid var(--border-color)
+
+    .simple-typeahead-list-footer
+      background-color: var(--background-color)
+      padding: 0.6rem 1rem
+      border-left: 1px solid var(--border-color)
+      border-right: 1px solid var(--border-color)
+
+    .simple-typeahead-list-item
+      cursor: pointer
+      background-color: var(--background-color)
+      padding: 0.6rem 1rem
+      border-bottom: 1px solid var(--border-color)
+      border-left: 1px solid var(--border-color)
+      border-right: 1px solid var(--border-color)
+      &:last-child
+        border-bottom: none
+      &.simple-typeahead-list-item-active
+        background-color: var(--secondary-background-color)
 
 </style>
 <script>
