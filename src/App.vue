@@ -65,6 +65,7 @@
 .search-tips
   margin: .25em 0 1em 0
   font-size: 14px
+  line-height: 1.5
   opacity: .75
 .result-items
   margin-top: 16px
