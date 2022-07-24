@@ -1,12 +1,7 @@
-<script setup>
-// This starter template is using Vue 3 <script setup> SFCs
-// Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
-</script>
-
-<template>
+ <template>
   <div class="container">
     <h1 class="page-title">台灣 3+3 郵遞區號查詢</h1>
-    <vue3-simple-typeahead
+    <simple-typeahead
       class="search-input"
       :items="Object.keys(addressList)"
       placeholder="輸入路名、鄉鎮市區或完整地址來查詢…"
@@ -154,7 +149,11 @@ body
 </style>
 <script>
 import zipcodeData from "./assets/zipcode.json";
+import simpleTypeahead from "./components/vue3-simple-typeahead.vue";
 export default {
+  components: {
+    simpleTypeahead
+  },
   data() {
     return {
       zipcodeData,
