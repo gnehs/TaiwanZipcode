@@ -50,21 +50,28 @@
   border: none
   background-color: #fff
   border: 1px solid #ccc
-  padding: 16px
+  border-radius: 0
   width: 100%
   font-size: 24px
+  padding: .75em
   &:focus
     outline: none
     border: 1px solid #000
+  @media (max-width: 768px)
+    font-size: 18px
+    padding: .5em
 .result-items
   margin-top: 16px
   background-color: #fff
   border: 1px solid #ccc
+  font-size: 16px
+  @media (max-width: 768px)
+    font-size: 14px
   .result-item-header
     font-weight: bold
     background-color: rgba(0,0,0,.05)
   .result-item,.result-item-header
-    padding: 8px
+    padding: .5em
     display: grid
     grid-template-columns: 6rem 1fr
     &:not(:first-child)
