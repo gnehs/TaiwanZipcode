@@ -29,7 +29,6 @@ parsedData.forEach(item => {
     zipcode: parseInt(item.zipcode),
     department: item.department,
   })
-  result[item.city][item.area][item.road].sort((a, b) => a.zipcode - b.zipcode)
 })
 fs.writeFileSync(path.join(__dirname, './result/zipcode.json'), JSON.stringify(result));
 console.log(`${parsedData.length} items saved to ./result/zipcode.json`);
