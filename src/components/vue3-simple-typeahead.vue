@@ -153,9 +153,8 @@ export default /*#__PURE__*/ defineComponent({
 		boldMatchText(text) {
 			let result = text
 			let keyword = this.input.trim().replaceAll('台', '臺')
-			for (let input of keyword.split(' ')) {
-				const regexp = new RegExp(`(${this.escapeRegExp(input)})`, 'ig');
-				result = result.replace(regexp, '<strong>$1</strong>');
+			for (let input of keyword.split(' ').filter(x => x.length)) {
+				result = result.split(input).join(`<strong>${input}</strong>`)
 			}
 			return result
 		},
