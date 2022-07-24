@@ -40,7 +40,7 @@
   box-sizing: border-box
 \:root
   // basic
-  --border-radius: 2px
+  --border-radius: 3px
   // color
   --text-color: #333
   --border-color: rgba(0,0,0,.2)
@@ -114,7 +114,7 @@ body
   width: 100%
   &>.search-input
     margin-bottom: 0
-
+    line-height: 1
     box-shadow: 0 8px 8px transparent
     background-color: var(--background-color)
     border: 1px solid var(--border-color)
@@ -147,21 +147,21 @@ body
       max-height: 300px
     .simple-typeahead-list-header
       background-color: var(--background-color)
-      padding: 0.6rem 1rem
+      padding: .5em
       border-bottom: 1px solid var(--border-color)
       border-left: 1px solid var(--border-color)
       border-right: 1px solid var(--border-color)
 
     .simple-typeahead-list-footer
       background-color: var(--background-color)
-      padding: 0.6rem 1rem
+      padding: .5em
       border-left: 1px solid var(--border-color)
       border-right: 1px solid var(--border-color)
 
     .simple-typeahead-list-item
       cursor: pointer
       background-color: var(--background-color)
-      padding: 0.25rem 1rem
+      padding: .5em
       border-bottom: 1px solid var(--border-color)
       border-left: 1px solid var(--border-color)
       border-right: 1px solid var(--border-color)
