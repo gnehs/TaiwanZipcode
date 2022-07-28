@@ -30,7 +30,8 @@
       </div>
     </div>
     <div class="footer">
-      台灣 3+3 郵遞區號查詢 | Made with 🥞 by <a href="https://gnehs.net">gnehs</a> | <a href="https://github.com/gnehs/TaiwanZipcode">GitHub</a>
+      Developed by <a href="https://gnehs.net" target="_blank">gnehs</a> | Made with 🥞 in Taiwan | <a
+        href="https://github.com/gnehs/TaiwanZipcode">GitHub</a>
       <br /> 資料擷取自郵局資料庫，資料僅供參考，可能會有所遺漏、錯誤或未即時更新，正確資料請以郵局公佈為主。
     </div>
   </div>
