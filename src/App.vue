@@ -41,13 +41,14 @@
   box-sizing: border-box
 \:root
   // basic
-  --border-radius: 3px
+  --border-radius: 8px
   // color
   --text-color: #333
   --border-color: rgba(0,0,0,.2)
   --border-focus-color: rgba(0,0,0,.4)
   --background-color: #fff
   --secondary-background-color: #f2f2f2
+  --tertiary-background-color: #e6e6e6
 @media (prefers-color-scheme: dark)
   \:root
     --text-color: #fff
@@ -86,7 +87,7 @@ body
     font-size: 14px
   .result-item-header
     font-weight: bold
-    background-color: var(--secondary-background-color)
+    background-color: var(--tertiary-background-color)
   .result-item,.result-item-header
     padding: .5em
     display: grid
@@ -96,13 +97,15 @@ body
       border-radius: var(--border-radius) var(--border-radius) 0 0
     &:last-child
       border-radius: 0 0 var(--border-radius) var(--border-radius)
+    &:nth-child(odd)
+      background-color: var(--secondary-background-color)
     &:not(:first-child)
       border-top: 1px solid var(--border-color)
     .result-item-zipcode
       font-weight: 700
   .result-item
     &:hover
-      background-color: var(--secondary-background-color)
+      background-color: var(--tertiary-background-color)
 .footer,.statement
   text-align: center
   font-size: 12px
@@ -168,8 +171,9 @@ body
       border-right: 1px solid var(--border-color)
       &:last-child
         border-bottom: none
+        border-radius: 0 0 var(--border-radius) var(--border-radius)
       &.simple-typeahead-list-item-active
-        background-color: var(--secondary-background-color)
+        background-color: var(--tertiary-background-color)
 
 </style>
 <script>

@@ -120,20 +120,13 @@ export default /*#__PURE__*/ defineComponent({
 			this.scrollSelectionIntoView();
 		},
 		scrollSelectionIntoView() {
-			setTimeout(() => {
-				const list_node = document.querySelector(`#${this.wrapperId} .simple-typeahead-list`);
+			this.$nextTick(() => {
 				const active_node = document.querySelector(`#${this.wrapperId} .simple-typeahead-list-item.simple-typeahead-list-item-active`);
-
-				if (!(active_node.offsetTop >= list_node.scrollTop && active_node.offsetTop + active_node.offsetHeight < list_node.scrollTop + list_node.offsetHeight)) {
-					let scroll_to = 0;
-					if (active_node.offsetTop > list_node.scrollTop) {
-						scroll_to = active_node.offsetTop + active_node.offsetHeight - list_node.offsetHeight;
-					} else if (active_node.offsetTop < list_node.scrollTop) {
-						scroll_to = active_node.offsetTop;
-					}
-
-					list_node.scrollTo(0, scroll_to);
-				}
+				active_node.scrollIntoView({
+					behavior: "auto",
+					block: 'nearest',
+					inline: 'nearest',
+				});
 			});
 		},
 		selectCurrentSelection() {
