@@ -30,7 +30,8 @@
       </div>
     </div>
     <div class="footer">
-      Developed by <a href="https://gnehs.net" target="_blank">gnehs</a> | Made with 🥞 in Taiwan | <a
+      Developed by <a href="https://gnehs.net" target="_blank">gnehs</a> | Made with <a href="https://pancake.gnehs.net" target="_blank">🥞</a> in
+      Taiwan | <a
         href="https://github.com/gnehs/TaiwanZipcode">GitHub</a>
       <br /> 資料擷取自郵局資料庫，資料僅供參考，可能會有所遺漏、錯誤或未即時更新，正確資料請以郵局公佈為主。
     </div>
