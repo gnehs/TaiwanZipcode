@@ -50,6 +50,15 @@
   --background-color: #fff
   --secondary-background-color: #f2f2f2
   --tertiary-background-color: #e6e6e6
+
+  ::-webkit-scrollbar-track
+    background-color: var(--secondary-background-color)
+  ::-webkit-scrollbar
+      width: 7px
+      height: 7px
+      background-color: var(--secondary-background-color)
+  ::-webkit-scrollbar-thumb
+      background-color: var(--text-color)
 @media (prefers-color-scheme: dark)
   \:root
     --text-color: #fff

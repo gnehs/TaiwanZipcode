@@ -123,7 +123,7 @@ export default /*#__PURE__*/ defineComponent({
 			this.$nextTick(() => {
 				const active_node = document.querySelector(`#${this.wrapperId} .simple-typeahead-list-item.simple-typeahead-list-item-active`);
 				active_node.scrollIntoView({
-					behavior: "auto",
+					behavior: 'smooth',
 					block: 'nearest',
 					inline: 'nearest',
 				});
