@@ -26,3 +26,4 @@ dist-ssr
 # database-conventer
 utils/database-conventer/src/rall1.dbf
 utils/database-conventer/result/zipcode.json
+utils/database-conventer/temp

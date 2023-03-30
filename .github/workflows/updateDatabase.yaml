@@ -1,0 +1,41 @@
+name: Update database
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *'
+jobs:
+  deploy:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+    - name: Install npm packages
+      run: npm install
+      working-directory: ./utils/database-conventer
+    - name: Download Installer
+      run: node downloadDatabase.js
+      working-directory: ./utils/database-conventer
+    - name: Extract Installer
+      run: ../innoextract.exe installer.exe
+      working-directory: ./utils/database-conventer/temp
+    - name: Copy database
+      run: cp ./utils/database-conventer/temp/app/DBF/rall1.dbf ./utils/database-conventer/src/rall1.dbf
+    - name: Convert database
+      run: node index.js
+      working-directory: ./utils/database-conventer
+    - name: Copy result
+      run: cp ./utils/database-conventer/result/zipcode.json ./src/assets/database.json
+    - name: Get time
+      id: time
+      run: echo "time=$(Get-Date -Format 'yyyy-MM-dd')" >> $GITHUB_STATE
+    - name: Commit changes
+      uses: EndBug/add-and-commit@v9
+      with:
+        author_name: 'GitHub Actions'
+        author_email: 'github-actions[bot]@users.noreply.github.com'
+        message: 'Update database ${{ steps.time.outputs.time }}'
+        add: 'src/assets/database.json'
