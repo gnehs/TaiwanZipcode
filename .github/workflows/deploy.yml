@@ -3,6 +3,13 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: main
+    paths:
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "package-lock.json"
+      - "index.html"
+      - "vite.config.js"
 
 jobs:
   deploy:
