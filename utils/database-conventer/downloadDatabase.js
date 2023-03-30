@@ -1,5 +1,4 @@
-const jsdom = require('jsdom');
-const { JSDOM } = jsdom;
+const { JSDOM } = require('jsdom');
 const fs = require('fs');
 (async () => {
   let url = 'https://www.post.gov.tw/post/internet/Download/all_list.jsp?ID=2201';
