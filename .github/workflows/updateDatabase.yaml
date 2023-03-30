@@ -29,13 +29,10 @@ jobs:
       working-directory: ./utils/database-conventer
     - name: Copy result
       run: cp ./utils/database-conventer/result/zipcode.json ./src/assets/database.json
-    - name: Get time
-      id: time
-      run: echo "time=$(Get-Date -Format 'yyyy-MM-dd')" >> $GITHUB_STATE
     - name: Commit changes
       uses: EndBug/add-and-commit@v9
       with:
-        author_name: 'GitHub Actions'
-        author_email: 'github-actions[bot]@users.noreply.github.com'
-        message: 'Update database ${{ steps.time.outputs.time }}'
+        committer_name: GitHub Actions
+        committer_email: github-actions[bot]@users.noreply.github.com
+        message: 'Update database'
         add: 'src/assets/database.json'
