@@ -9,7 +9,11 @@
         @selectItem="selectItem"
         v-model="addressInput"
       />
-      <div class="search-tips">ℹ️ 你可以透過像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」等關鍵字來查詢郵遞區號。</div>
+      <div class="search-tips">
+        <i class="bx bxs-info-circle"></i>
+        <span v-if="addressInput==''">你可以透過像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」等關鍵字來查詢郵遞區號。</span>
+        <span v-else>點選下列郵遞區號即可查詢詳細資訊或將地址轉換為英文。</span>
+      </div>
       <div class="result-items">
         <div class="result-item-header">
           <div class="result-item-zipcode">郵遞區號</div>
@@ -34,8 +38,11 @@
       </div>
     </div>
     <div v-else>
-      <h1 class="page-title">{{selectedZipcode.zipcode}} {{addressInput}}</h1>
-      <button class="back-btn" @click="selectedZipcode=null">◀️ 返回</button>
+      <h1 class="page-title">台灣 3+3 郵遞區號查詢</h1>
+      <h2 class="page-subtitle">{{selectedZipcode.zipcode}} {{addressInput}}</h2>
+      <button class="back-btn" @click="selectedZipcode=null">
+        <i class="bx bx-arrow-back"></i> 返回
+      </button>
       <p>
         <span class="bold">
           郵遞區號
@@ -50,16 +57,40 @@
         </span>
         {{ address.zh }}
       </p>
-      <p>
+      <div style="margin: 1em 0;">
         <span class="bold">
           英文地址
           <br />
         </span>
         {{ address.en }}
-      </p>
-      <div class="bold">填寫後續地址，取得完整英文地址</div>
-      <input type="text" id="addressForm" v-model="addressForm" autocomplete="off" />
-      <div class="search-tips">ℹ️ 該功能可能會有錯誤，使用前請務必確認中文地址是否正確。</div>
+        <div class="search-tips">
+          <i class="bx bxs-info-circle"></i> 可填寫下方後續地址欄位，取得完整英文地址。
+        </div>
+      </div>
+      <div class="bold">後續地址</div>
+      <input
+        type="text"
+        id="addressForm"
+        v-model="addressForm"
+        autocomplete="off"
+        placeholder="如：31巷12號之5 5樓、31號404室⋯等"
+      />
+      <div class="search-tips" v-if="!Object.values(address.form).some(x=>x)">
+        <i class="bx bxs-info-circle"></i> 該功能可能會有錯誤，使用前請務必確認中文地址是否正確。
+      </div>
+      <div class="matched-address">
+        <div class="matched-address-item" v-if="address.form.ln">{{address.form.ln}}巷</div>
+        <div class="matched-address-item" v-if="address.form.aly">{{address.form.aly}}弄</div>
+        <div class="matched-address-item" v-if="address.form.no">
+          {{address.form.no}}號
+          <span v-if="address.form.noDash">之{{ address.form.noDash }}</span>
+        </div>
+        <div class="matched-address-item" v-if="address.form.floor">
+          {{address.form.floor}}樓
+          <span v-if="address.form.floorDash">之{{ address.form.floorDash }}</span>
+        </div>
+        <div class="matched-address-item" v-if="address.form.room">{{address.form.room}}室</div>
+      </div>
       <ul v-if="addressFormAlert.length">
         <li v-for="alert of addressFormAlert" :key="alert">{{ alert }}</li>
       </ul>
@@ -121,10 +152,35 @@ body
   font-size: 36px
   @media (max-width: 768px)
     font-size: 24px
+.page-subtitle
+  text-align: center
+  font-size: 24px
+  .page-title + &
+    margin-top: -16px
+  @media (max-width: 768px)
+    font-size: 18px
 .search-tips
-  margin: .25em 0 1em 0
+  margin: .5em 0
+  display: flex
+  align-items: center
+  align-content: center
+  gap: .25em
   font-size: 14px
   opacity: .75
+.matched-address
+  display: flex
+  align-items: center
+  margin-top: .5em
+  .matched-address-item
+    margin-right: .5em
+    font-size: 12px
+    background-color: var(--tertiary-background-color)
+    padding: .25em .5em
+    border-radius: var(--border-radius)
+    @media (max-width: 768px)
+      font-size: 14px
+    &:last-child
+      margin-right: 0
 .result-items
   margin-top: 16px
   background-color: var(--background-color)
@@ -304,13 +360,7 @@ export default {
       }
       for (let key in formMatch) {
         let match = addressForm.match(formMatch[key])
-        if (key == "room") console.log(match)
-        if (match) {
-          if (key == "room")
-            form[key] = match.slice(1).filter(x => x).join("")
-          else
-            form[key] = match[1]
-        }
+        if (match) form[key] = match.slice(1).filter(x => x).join("")
       }
       let zh = this.addressInput
       let en = this.zhEnAddressList[this.addressInput].split(", ").reverse()
