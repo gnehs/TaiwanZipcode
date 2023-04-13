@@ -1,30 +1,69 @@
  <template>
   <div class="container">
-    <h1 class="page-title">台灣 3+3 郵遞區號查詢</h1>
-    <simple-typeahead
-      class="search-input"
-      :items="Object.keys(addressList)"
-      placeholder="輸入關鍵字來查詢…"
-      @selectItem="selectItem"
-      v-model="addressInput"
-    />
-    <div class="search-tips">ℹ️ 你可以透過像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」等關鍵字來查詢郵遞區號。</div>
-    <div class="result-items">
-      <div class="result-item-header">
-        <div class="result-item-zipcode">郵遞區號</div>
-        <div class="result-item-scope">範圍</div>
-      </div>
-      <div class="result-item" v-if="!resultList.length">查無結果</div>
-      <div class="result-item" v-for="item of resultList">
-        <div class="result-item-zipcode">{{ item.zipcode }}</div>
-        <div class="result-item-scope">
-          <span v-if="item.department">
-            {{ item.department }}
-            <br />
-          </span>
-          {{ item.scope }}
+    <div v-if="selectedZipcode===null">
+      <h1 class="page-title">台灣 3+3 郵遞區號查詢</h1>
+      <simple-typeahead
+        class="search-input"
+        :items="Object.keys(addressList)"
+        placeholder="輸入關鍵字來查詢…"
+        @selectItem="selectItem"
+        v-model="addressInput"
+      />
+      <div class="search-tips">ℹ️ 你可以透過像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」等關鍵字來查詢郵遞區號。</div>
+      <div class="result-items">
+        <div class="result-item-header">
+          <div class="result-item-zipcode">郵遞區號</div>
+          <div class="result-item-scope">範圍</div>
+        </div>
+        <div class="result-item" v-if="!resultList.length">查無結果</div>
+        <div
+          class="result-item"
+          v-for="(item,i) of resultList"
+          :key="i"
+          @click="selectedZipcode = item"
+        >
+          <div class="result-item-zipcode">{{ item.zipcode }}</div>
+          <div class="result-item-scope">
+            <span v-if="item.department">
+              {{ item.department }}
+              <br />
+            </span>
+            {{ item.scope }}
+          </div>
         </div>
       </div>
+    </div>
+    <div v-else>
+      <h1 class="page-title">{{selectedZipcode.zipcode}} {{addressInput}}</h1>
+      <button class="back-btn" @click="selectedZipcode=null">◀️ 返回</button>
+      <p>
+        <span class="bold">
+          郵遞區號
+          <br />
+        </span>
+        {{ selectedZipcode.zipcode }}
+      </p>
+      <p>
+        <span class="bold">
+          中文地址
+          <br />
+        </span>
+        {{ address.zh }}
+      </p>
+      <p>
+        <span class="bold">
+          英文地址
+          <br />
+        </span>
+        {{ address.en }}
+      </p>
+      <div class="bold">填寫後續地址，取得完整英文地址</div>
+      <input type="text" id="addressForm" v-model="addressForm" autocomplete="off" />
+      <div class="search-tips">ℹ️ 該功能可能會有錯誤，使用前請務必確認中文地址是否正確。</div>
+      <ul v-if="addressFormAlert.length">
+        <li v-for="alert of addressFormAlert" :key="alert">{{ alert }}</li>
+      </ul>
+      <!-- <pre>{{ address.form }}</pre> -->
     </div>
     <div class="footer">
       Developed by
@@ -113,8 +152,31 @@ body
     .result-item-zipcode
       font-weight: 700
   .result-item
+    cursor: pointer
     &:hover
       background-color: var(--tertiary-background-color)
+.back-btn
+  all: unset
+  cursor: pointer
+  display: inline-block
+  padding: .25em .75em
+  border-radius: var(--border-radius)
+  border: 1px solid transparent
+  background-color: var(--tertiary-background-color)
+  &:hover
+    background-color: color-mix(in srgb, var(--tertiary-background-color), var(--text-color) 10%)
+  &:active
+    background-color: color-mix(in srgb, var(--tertiary-background-color), var(--text-color) 20%)
+.bold
+  font-weight: bold
+#addressForm
+  width: 100%
+  padding: .5em
+  border: 1px solid var(--border-color)
+  border-radius: var(--border-radius)
+  font-size: 16px
+  @media (max-width: 768px)
+    font-size: 14px
 .footer,.statement
   text-align: center
   font-size: 12px
@@ -193,9 +255,11 @@ export default {
   },
   data() {
     return {
-      zipcodeData,
       addressList: {},
+      zhEnAddressList: {},
       addressInput: "",
+      selectedZipcode: null,
+      addressForm: ""
     }
   },
   computed: {
@@ -205,31 +269,136 @@ export default {
         .sort((a, b) => b.length - a.length)
       if (!key.length) return []
       return this.addressList[key[0]] || [];
-    }
-  },
-  mounted() {
-    this.generateAddressList();
+    },
+    addressFormAlert() {
+      let addressForm = this.addressForm;
+      let warn = []
+      if (addressForm.match(/一|二|三|四|五|六|七|八|九|十/)) {
+        warn.push("請不要輸入中文數字")
+      }
+      return warn
+    },
+    address() {
+      if (!this.selectedZipcode) return {
+        en: "",
+        zh: ""
+      };
+      let addressForm = this.addressForm;
+      let form = {
+        ln: null,
+        aly: null,
+        no: null,
+        noDash: null,
+        floor: null,
+        floorDash: null,
+        room: null,
+      }
+      let formMatch = {
+        ln: /(\d+)巷/,
+        aly: /(\d+)弄/,
+        no: /(\d+)號/,
+        noDash: /號之(\d+)/,
+        floor: /(\d+)樓/,
+        floorDash: /樓之(\d+)/,
+        room: /(\w+)室|(\d+)室| (.+?)室/,
+      }
+      for (let key in formMatch) {
+        let match = addressForm.match(formMatch[key])
+        if (key == "room") console.log(match)
+        if (match) {
+          if (key == "room")
+            form[key] = match.slice(1).filter(x => x).join("")
+          else
+            form[key] = match[1]
+        }
+      }
+      let zh = this.addressInput
+      let en = this.zhEnAddressList[this.addressInput].split(", ").reverse()
+      if (form.ln) {
+        zh += form.ln + "巷"
+        en.push(form.ln + " Ln")
+      }
+      if (form.aly) {
+        zh += form.aly + "弄"
+        en.push(form.aly + " Aly")
+      }
+      if (form.no) {
+        zh += form.no + "號"
+        if (form.noDash) {
+          zh += "之" + form.noDash + " "
+          en.push(" No. " + form.no + "-" + form.noDash)
+        } else {
+          en.push(" No." + form.no)
+        }
+      }
+      if (form.floor) {
+        zh += form.floor + "樓"
+        if (form.floorDash) {
+          zh += "之" + form.floorDash + " "
+          en.push(form.floor + "F-" + form.floorDash)
+        } else {
+          en.push(form.floor + "F")
+        }
+      }
+      if (form.room) {
+        zh += form.room + "室"
+        en.push(form.room + " Room")
+      }
+      en = en.reverse().join(", ")
+      return {
+        zh,
+        en,
+        form
+      }
+    },
   },
   created() {
-    this.addressInput = decodeURIComponent(window.location.hash.replace("#", ""))
+    this.generateAddressList();
+    let hashString = decodeURIComponent(window.location.hash.replace("#", ""));
+    if (hashString) {
+      let [zipcode, address] = hashString.split("_");
+      zipcode = parseInt(zipcode);
+      this.addressInput = address;
+
+      for (let [_, items] of Object.entries(this.addressList)) {
+        for (let item of items) {
+          if (item.zipcode === zipcode) {
+            this.selectedZipcode = item;
+            break;
+          }
+        }
+      }
+    }
   },
   watch: {
-    addressInput(val) {
+    selectedZipcode(val) {
+      if (!val) {
+        window.location.hash = "";
+        return;
+      }
       // update val to url hash
-      window.location.hash = val;
+      window.location.hash = val.zipcode + "_" + this.addressInput;
     }
   },
   methods: {
     generateAddressList() {
       let result = {};
-      for (let city of Object.keys(this.zipcodeData)) {
-        for (let area of Object.keys(this.zipcodeData[city].areas)) {
-          for (let road of Object.keys(this.zipcodeData[city].areas[area].roads)) {
-            result[`${city}${area}${road}`] = this.zipcodeData[city].areas[area].roads[road].scopes;
+      let zhEnResult = {};
+      for (let city of Object.keys(zipcodeData)) {
+        for (let area of Object.keys(zipcodeData[city].areas)) {
+          for (let road of Object.keys(zipcodeData[city].areas[area].roads)) {
+            result[`${city}${area}${road}`] = zipcodeData[city].areas[area].roads[road].scopes
+            zhEnResult[`${city}${area}${road}`] = [
+              "Taiwan (R.O.C.)",
+              zipcodeData[city].en,
+              zipcodeData[city].areas[area].en,
+              zipcodeData[city].areas[area].roads[road].en
+            ].reverse().join(", ")
           }
         }
       }
       this.addressList = result;
+      this.zhEnAddressList = zhEnResult;
     },
     selectItem(item) {
       this.addressInput = item;
