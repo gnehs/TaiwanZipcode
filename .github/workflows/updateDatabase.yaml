@@ -28,11 +28,11 @@ jobs:
       run: node index.js
       working-directory: ./utils/database-conventer
     - name: Copy result
-      run: cp ./utils/database-conventer/result/zipcode.json ./src/assets/database.json
+      run: cp ./utils/database-conventer/result/zipcode.json ./src/assets/zipcode.json
     - name: Commit changes
       uses: EndBug/add-and-commit@v9
       with:
         committer_name: GitHub Actions
         committer_email: github-actions[bot]@users.noreply.github.com
         message: 'Update database'
-        add: 'src/assets/database.json'
+        add: 'src/assets/zipcode.json'
