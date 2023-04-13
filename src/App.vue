@@ -81,14 +81,14 @@
       <div class="matched-address">
         <div class="matched-address-item" v-if="address.form.ln">{{address.form.ln}}巷</div>
         <div class="matched-address-item" v-if="address.form.aly">{{address.form.aly}}弄</div>
-        <div class="matched-address-item" v-if="address.form.no">
-          {{address.form.no}}號
-          <span v-if="address.form.noDash">之{{ address.form.noDash }}</span>
-        </div>
-        <div class="matched-address-item" v-if="address.form.floor">
-          {{address.form.floor}}樓
-          <span v-if="address.form.floorDash">之{{ address.form.floorDash }}</span>
-        </div>
+        <div
+          class="matched-address-item"
+          v-if="address.form.no"
+        >{{address.form.no}}號{{ address.form.noDash && `之${ address.form.noDash}` }}</div>
+        <div
+          class="matched-address-item"
+          v-if="address.form.floor"
+        >{{address.form.floor}}樓{{ address.form.floorDash && `之${ address.form.floorDash}` }}</div>
         <div class="matched-address-item" v-if="address.form.room">{{address.form.room}}室</div>
       </div>
       <ul v-if="addressFormAlert.length">
