@@ -6,34 +6,33 @@
       :items="Object.keys(addressList)"
       placeholder="輸入關鍵字來查詢…"
       @selectItem="selectItem"
-      v-model="addressInput" />
-    <div class="search-tips">
-      ℹ️ 你可以透過像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」等關鍵字來查詢郵遞區號。
-    </div>
+      v-model="addressInput"
+    />
+    <div class="search-tips">ℹ️ 你可以透過像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」等關鍵字來查詢郵遞區號。</div>
     <div class="result-items">
       <div class="result-item-header">
-        <div class="result-item-zipcode">
-          郵遞區號
-        </div>
-        <div class="result-item-scope">
-          範圍
-        </div>
+        <div class="result-item-zipcode">郵遞區號</div>
+        <div class="result-item-scope">範圍</div>
       </div>
       <div class="result-item" v-if="!resultList.length">查無結果</div>
       <div class="result-item" v-for="item of resultList">
-        <div class="result-item-zipcode">
-          {{ item.zipcode }}
-        </div>
+        <div class="result-item-zipcode">{{ item.zipcode }}</div>
         <div class="result-item-scope">
-          <span v-if="item.department">{{ item.department }} <br /> </span> {{ item.scope }}
+          <span v-if="item.department">
+            {{ item.department }}
+            <br />
+          </span>
+          {{ item.scope }}
         </div>
       </div>
     </div>
     <div class="footer">
-      Developed by <a href="https://gnehs.net" target="_blank">gnehs</a> | Made with <a href="https://pancake.gnehs.net" target="_blank">🥞</a> in
-      Taiwan | <a
-        href="https://github.com/gnehs/TaiwanZipcode">GitHub</a>
-      <br /> 資料擷取自郵局資料庫，資料僅供參考，可能會有所遺漏、錯誤或未即時更新，正確資料請以郵局公佈為主。
+      Developed by
+      <a href="https://gnehs.net" target="_blank">gnehs</a> | Made with
+      <a href="https://pancake.gnehs.net" target="_blank">🥞</a> in
+      Taiwan |
+      <a href="https://github.com/gnehs/TaiwanZipcode">GitHub</a>
+      <br />資料擷取自郵局資料庫，資料僅供參考，可能會有所遺漏、錯誤或未即時更新，正確資料請以郵局公佈為主。
     </div>
   </div>
 </template>
@@ -54,11 +53,11 @@
   ::-webkit-scrollbar-track
     background-color: var(--secondary-background-color)
   ::-webkit-scrollbar
-      width: 7px
-      height: 7px
-      background-color: var(--secondary-background-color)
+    width: 7px
+    height: 7px
+    background-color: var(--secondary-background-color)
   ::-webkit-scrollbar-thumb
-      background-color: var(--text-color)
+    background-color: var(--text-color)
 @media (prefers-color-scheme: dark)
   \:root
     --text-color: #fff
@@ -184,7 +183,6 @@ body
         border-radius: 0 0 var(--border-radius) var(--border-radius)
       &.simple-typeahead-list-item-active
         background-color: var(--tertiary-background-color)
-
 </style>
 <script>
 import zipcodeData from "./assets/zipcode.json";
@@ -225,9 +223,9 @@ export default {
     generateAddressList() {
       let result = {};
       for (let city of Object.keys(this.zipcodeData)) {
-        for (let area of Object.keys(this.zipcodeData[city])) {
-          for (let road of Object.keys(this.zipcodeData[city][area])) {
-            result[`${city}${area}${road}`] = this.zipcodeData[city][area][road];
+        for (let area of Object.keys(this.zipcodeData[city].areas)) {
+          for (let road of Object.keys(this.zipcodeData[city].areas[area].roads)) {
+            result[`${city}${area}${road}`] = this.zipcodeData[city].areas[area].roads[road].scopes;
           }
         }
       }
