@@ -354,7 +354,7 @@ export default {
   computed: {
     resultList() {
       let key = Object.keys(this.addressList)
-        .filter(x => this.addressInput.includes(x))
+        .filter(x => this.addressInput == x)
         .sort((a, b) => b.length - a.length)
       if (!key.length) return []
       return this.addressList[key[0]] || [];
