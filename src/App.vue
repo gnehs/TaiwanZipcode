@@ -18,6 +18,7 @@
         <div class="result-item-header">
           <div class="result-item-zipcode">郵遞區號</div>
           <div class="result-item-scope">範圍</div>
+          <div class="result-item-icon"></div>
         </div>
         <div class="result-item" v-if="!resultList.length">查無結果</div>
         <div
@@ -33,6 +34,9 @@
               <br />
             </span>
             {{ item.scope }}
+          </div>
+          <div class="result-item-icon">
+            <i class="bx bx-right-arrow-alt"></i>
           </div>
         </div>
       </div>
@@ -77,24 +81,23 @@
         </div>
       </section>
       <section class="detail-section">
-        <span class="bold">
-          郵遞區號
-          <br />
-        </span>
+        <div class="bold">郵遞區號</div>
         {{ selectedZipcode.zipcode }}
       </section>
       <section class="detail-section">
-        <span class="bold">
-          中文地址
-          <br />
-        </span>
+        <div class="bold">範圍</div>
+        {{ selectedZipcode.scope }}
+      </section>
+      <section class="detail-section" v-if="selectedZipcode.department">
+        <div class="bold">大宗戶</div>
+        {{ selectedZipcode.department }}
+      </section>
+      <section class="detail-section">
+        <div class="bold">中文地址</div>
         {{ address.zh }}
       </section>
       <section class="detail-section">
-        <span class="bold">
-          英文地址
-          <br />
-        </span>
+        <div class="bold">英文地址</div>
         {{ address.en }}
         <div class="tips">
           <i class="bx bxs-info-circle"></i> 可填寫上方後續地址欄位，取得完整英文地址。
@@ -204,7 +207,7 @@ body
   .result-item,.result-item-header
     padding: .5em
     display: grid
-    grid-template-columns: 6rem 1fr
+    grid-template-columns: 6rem 1fr 1em
     align-items: center
     &:first-child
       border-radius: var(--border-radius) var(--border-radius) 0 0
@@ -216,10 +219,20 @@ body
       border-top: 1px solid var(--border-color)
     .result-item-zipcode
       font-weight: 700
+    .result-item-icon
+      font-size: 24px
+      display: flex
+      justify-content: center
+      opacity: .25
+      transform: translateX(-2px)
+      transition: all .2s ease
   .result-item
     cursor: pointer
     &:hover
       background-color: var(--tertiary-background-color)
+      .result-item-icon
+        transform: translateY(0)
+        opacity: 1
 .back-btn
   all: unset
   cursor: pointer
