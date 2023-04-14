@@ -428,9 +428,10 @@ export default {
     this.generateAddressList();
     let hashString = decodeURIComponent(window.location.hash.replace("#", ""));
     if (hashString) {
-      let [zipcode, address] = hashString.split("_");
+      let [zipcode, address, addressForm] = hashString.split("_");
       zipcode = parseInt(zipcode);
       this.addressInput = address;
+      this.addressForm = addressForm;
 
       for (let [_, items] of Object.entries(this.addressList)) {
         for (let item of items) {
@@ -443,13 +444,11 @@ export default {
     }
   },
   watch: {
-    selectedZipcode(val) {
-      if (!val) {
-        window.location.hash = "";
-        return;
-      }
-      // update val to url hash
-      window.location.hash = val.zipcode + "_" + this.addressInput;
+    selectedZipcode() {
+      this.updateHash()
+    },
+    addressForm() {
+      this.updateHash()
     }
   },
   methods: {
@@ -475,6 +474,16 @@ export default {
     selectItem(item) {
       this.addressInput = item;
     },
+    updateHash() {
+      let selectedZipcode = this.selectedZipcode?.zipcode
+      let addressInput = this.addressInput
+      let addressForm = this.addressForm
+      if (!selectedZipcode) {
+        window.location.hash = "";
+        return;
+      }
+      window.location.hash = selectedZipcode + "_" + addressInput + '_' + addressForm;
+    }
   }
 
 }
