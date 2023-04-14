@@ -55,10 +55,14 @@
           <i class="bx bxs-error"></i>
           {{ warn }}
         </div>
-        <div class="tips" v-if="!Object.values(address.form).some(x=>x)">
+        <div
+          class="tips"
+          v-if="!Object.values(address.form).some(x=>x)"
+          style="margin-bottom: calc(.5em + 13px)"
+        >
           <i class="bx bxs-info-circle"></i> 該功能可能會有錯誤，使用前請務必確認中文地址是否正確。
         </div>
-        <div class="matched-address">
+        <div class="matched-address" v-if="Object.values(address.form).some(x=>x)">
           <div class="matched-address-item" v-if="address.form.ln">{{address.form.ln}}巷</div>
           <div class="matched-address-item" v-if="address.form.aly">{{address.form.aly}}弄</div>
           <div
@@ -175,7 +179,7 @@ body
 .matched-address
   display: flex
   align-items: center
-  margin-top: .5em
+  margin: .5em 0
   .matched-address-item
     margin-right: .5em
     font-size: 12px
