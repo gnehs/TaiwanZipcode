@@ -38,11 +38,10 @@
       </div>
     </div>
     <div v-else>
-      <h1 class="page-title">台灣 3+3 郵遞區號查詢</h1>
-      <h2 class="page-subtitle">{{selectedZipcode.zipcode}} {{addressInput}}</h2>
       <button class="back-btn" @click="selectedZipcode=null">
         <i class="bx bx-arrow-back"></i> 返回
       </button>
+      <h2 class="page-subtitle">{{selectedZipcode.zipcode}} {{addressInput}}</h2>
       <section class="detail-section">
         <div class="bold">後續地址</div>
         <input
@@ -52,6 +51,10 @@
           autocomplete="off"
           placeholder="如：31巷12號之5 5樓、31號404室⋯等"
         />
+        <div class="tips error" v-for="warn of address.warns" :key="warn">
+          <i class="bx bxs-error"></i>
+          {{ warn }}
+        </div>
         <div class="tips" v-if="!Object.values(address.form).some(x=>x)">
           <i class="bx bxs-info-circle"></i> 該功能可能會有錯誤，使用前請務必確認中文地址是否正確。
         </div>
@@ -68,9 +71,6 @@
           >{{address.form.floor}}樓{{ address.form.floorDash && `之${ address.form.floorDash}` }}</div>
           <div class="matched-address-item" v-if="address.form.room">{{address.form.room}}室</div>
         </div>
-        <ul v-if="addressFormAlert.length">
-          <li v-for="alert of addressFormAlert" :key="alert">{{ alert }}</li>
-        </ul>
       </section>
       <section class="detail-section">
         <span class="bold">
@@ -155,7 +155,6 @@ body
   @media (max-width: 768px)
     font-size: 24px
 .page-subtitle
-  text-align: center
   font-size: 24px
   .page-title + &
     margin-top: -16px
@@ -169,6 +168,8 @@ body
   gap: .25em
   font-size: 14px
   opacity: .75
+  &.error
+    color: red
 .detail-section
   margin: 1em 0
 .matched-address
@@ -340,20 +341,8 @@ export default {
       if (!key.length) return []
       return this.addressList[key[0]] || [];
     },
-    addressFormAlert() {
-      let addressForm = this.addressForm;
-      let warn = []
-      if (addressForm.match(/一|二|三|四|五|六|七|八|九|十/)) {
-        warn.push("請不要輸入中文數字")
-      }
-      return warn
-    },
     address() {
-      if (!this.selectedZipcode) return {
-        en: "",
-        zh: ""
-      };
-      let addressForm = this.addressForm;
+      let warns = []
       let form = {
         ln: null,
         aly: null,
@@ -363,11 +352,29 @@ export default {
         floorDash: null,
         room: null,
       }
+      if (!this.selectedZipcode) return {
+        en: "",
+        zh: "",
+        form,
+        warns
+      };
+      let addressForm = this.addressForm;
+      // error detect
+      if (addressForm.match(/一|二|三|四|五|六|七|八|九|十/)) {
+        warns.push("請不要輸入中文數字")
+      }
+      if (addressForm.match(/衖/)) {
+        warns.push("不支援「衖」三分支編址")
+      }
+      if (addressForm.match(/(.+?)巷/) && !addressForm.match(/(\d+)巷/)) {
+        warns.push("不支援在此介面輸入中文巷弄名稱")
+      }
+
       let formMatch = {
         ln: /(\d+)巷/,
         aly: /(\d+)弄/,
-        no: /(\d+)號/,
-        noDash: /號之(\d+)/,
+        no: /(\d+)號|(\d+)-\d+號/,
+        noDash: /號之(\d+)|\d+-(\d+)號/,
         floor: /(\d+)樓/,
         floorDash: /樓之(\d+)/,
         room: /(\w+)室|(\d+)室| (.+?)室/,
@@ -412,7 +419,8 @@ export default {
       return {
         zh,
         en,
-        form
+        form,
+        warns
       }
     },
   },
