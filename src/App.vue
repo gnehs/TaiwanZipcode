@@ -144,6 +144,7 @@
     --border-focus-color: rgba(255,255,255,.4)
     --background-color: #222
     --secondary-background-color: #333
+    --tertiary-background-color: #444
 body
   background-color: var(--secondary-background-color)
   color: var(--text-color)
