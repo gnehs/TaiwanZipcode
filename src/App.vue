@@ -9,7 +9,7 @@
         @selectItem="selectItem"
         v-model="addressInput"
       />
-      <div class="search-tips">
+      <div class="tips">
         <i class="bx bxs-info-circle"></i>
         <span v-if="addressInput==''">你可以透過像是：「中山北路」、「信義區松山路」、「台北 忠孝東路」等關鍵字來查詢郵遞區號。</span>
         <span v-else>點選下列郵遞區號即可查詢詳細資訊或將地址轉換為英文。</span>
@@ -43,57 +43,59 @@
       <button class="back-btn" @click="selectedZipcode=null">
         <i class="bx bx-arrow-back"></i> 返回
       </button>
-      <p>
+      <section class="detail-section">
+        <div class="bold">後續地址</div>
+        <input
+          type="text"
+          id="addressForm"
+          v-model="addressForm"
+          autocomplete="off"
+          placeholder="如：31巷12號之5 5樓、31號404室⋯等"
+        />
+        <div class="tips" v-if="!Object.values(address.form).some(x=>x)">
+          <i class="bx bxs-info-circle"></i> 該功能可能會有錯誤，使用前請務必確認中文地址是否正確。
+        </div>
+        <div class="matched-address">
+          <div class="matched-address-item" v-if="address.form.ln">{{address.form.ln}}巷</div>
+          <div class="matched-address-item" v-if="address.form.aly">{{address.form.aly}}弄</div>
+          <div
+            class="matched-address-item"
+            v-if="address.form.no"
+          >{{address.form.no}}號{{ address.form.noDash && `之${ address.form.noDash}` }}</div>
+          <div
+            class="matched-address-item"
+            v-if="address.form.floor"
+          >{{address.form.floor}}樓{{ address.form.floorDash && `之${ address.form.floorDash}` }}</div>
+          <div class="matched-address-item" v-if="address.form.room">{{address.form.room}}室</div>
+        </div>
+        <ul v-if="addressFormAlert.length">
+          <li v-for="alert of addressFormAlert" :key="alert">{{ alert }}</li>
+        </ul>
+      </section>
+      <section class="detail-section">
         <span class="bold">
           郵遞區號
           <br />
         </span>
         {{ selectedZipcode.zipcode }}
-      </p>
-      <p>
+      </section>
+      <section class="detail-section">
         <span class="bold">
           中文地址
           <br />
         </span>
         {{ address.zh }}
-      </p>
-      <div style="margin: 1em 0;">
+      </section>
+      <section class="detail-section">
         <span class="bold">
           英文地址
           <br />
         </span>
         {{ address.en }}
-        <div class="search-tips">
-          <i class="bx bxs-info-circle"></i> 可填寫下方後續地址欄位，取得完整英文地址。
+        <div class="tips">
+          <i class="bx bxs-info-circle"></i> 可填寫上方後續地址欄位，取得完整英文地址。
         </div>
-      </div>
-      <div class="bold">後續地址</div>
-      <input
-        type="text"
-        id="addressForm"
-        v-model="addressForm"
-        autocomplete="off"
-        placeholder="如：31巷12號之5 5樓、31號404室⋯等"
-      />
-      <div class="search-tips" v-if="!Object.values(address.form).some(x=>x)">
-        <i class="bx bxs-info-circle"></i> 該功能可能會有錯誤，使用前請務必確認中文地址是否正確。
-      </div>
-      <div class="matched-address">
-        <div class="matched-address-item" v-if="address.form.ln">{{address.form.ln}}巷</div>
-        <div class="matched-address-item" v-if="address.form.aly">{{address.form.aly}}弄</div>
-        <div
-          class="matched-address-item"
-          v-if="address.form.no"
-        >{{address.form.no}}號{{ address.form.noDash && `之${ address.form.noDash}` }}</div>
-        <div
-          class="matched-address-item"
-          v-if="address.form.floor"
-        >{{address.form.floor}}樓{{ address.form.floorDash && `之${ address.form.floorDash}` }}</div>
-        <div class="matched-address-item" v-if="address.form.room">{{address.form.room}}室</div>
-      </div>
-      <ul v-if="addressFormAlert.length">
-        <li v-for="alert of addressFormAlert" :key="alert">{{ alert }}</li>
-      </ul>
+      </section>
       <!-- <pre>{{ address.form }}</pre> -->
     </div>
     <div class="footer">
@@ -138,7 +140,7 @@
 body
   background-color: var(--secondary-background-color)
   color: var(--text-color)
-  font-family: 'Noto Sans TC', sans-serif
+  font-family: 'PingFang TC', 'Noto Sans TC', sans-serif
   line-height: 1.5
 .container
   width: 95%
@@ -159,7 +161,7 @@ body
     margin-top: -16px
   @media (max-width: 768px)
     font-size: 18px
-.search-tips
+.tips
   margin: .5em 0
   display: flex
   align-items: center
@@ -167,6 +169,8 @@ body
   gap: .25em
   font-size: 14px
   opacity: .75
+.detail-section
+  margin: 1em 0
 .matched-address
   display: flex
   align-items: center
@@ -226,13 +230,23 @@ body
 .bold
   font-weight: bold
 #addressForm
-  width: 100%
-  padding: .5em
+  line-height: 1
+  box-shadow: 0 8px 8px transparent
+  background-color: var(--background-color)
   border: 1px solid var(--border-color)
+  color: var(--text-color)
   border-radius: var(--border-radius)
-  font-size: 16px
+  width: 100%
+  font-size: 18px
+  padding: .75em
+  transition: all .2s ease
+  &:focus
+    outline: none
+    border: 1px solid var(--border-focus-color)
+    box-shadow: 0 8px 8px rgba(0,0,0,.1)
   @media (max-width: 768px)
-    font-size: 14px
+    font-size: 18px
+    padding: .5em
 .footer,.statement
   text-align: center
   font-size: 12px
