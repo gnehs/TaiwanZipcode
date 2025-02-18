@@ -24,19 +24,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 16
-        cache: 'npm'
-    - name: Install npm packages
-      run: npm install
-    - name: Generate Pages
-      run: npm run build
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v1
-      with:
-        path: dist
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - name: Install npm packages
+        run: npm install
+      - name: Generate Pages
+        run: npm run build
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
   deploy:
     runs-on: ubuntu-latest
     environment:
@@ -44,6 +44,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
     steps:
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v2
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
