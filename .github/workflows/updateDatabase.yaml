@@ -3,36 +3,62 @@ name: Update database
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 1 * *'
+    - cron: "0 0 1 * *"
 jobs:
+  get-install-file:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "npm"
+      #sudo apt-get install zip
+      - name: Install zip
+        run: sudo apt-get install zip
+      - name: Install npm packages
+        run: npm install
+        working-directory: ./utils/database-conventer
+      - name: Download Installer
+        run: node downloadDatabase.js
+        working-directory: ./utils/database-conventer
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: ./utils/database-conventer/temp/installer.exe
+
   update-database:
     runs-on: windows-latest
+    needs: get-install-file
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18
-        cache: 'npm'
-    - name: Install npm packages
-      run: npm install
-      working-directory: ./utils/database-conventer
-    - name: Download Installer
-      run: node downloadDatabase.js
-      working-directory: ./utils/database-conventer
-    - name: Extract Installer
-      run: ../innoextract.exe installer.exe
-      working-directory: ./utils/database-conventer/temp
-    - name: Copy database
-      run: cp ./utils/database-conventer/temp/app/DBF/rall1.dbf ./utils/database-conventer/src/rall1.dbf
-    - name: Convert database
-      run: node index.js
-      working-directory: ./utils/database-conventer
-    - name: Copy result
-      run: cp ./utils/database-conventer/result/zipcode.json ./src/assets/zipcode.json
-    - name: Commit changes
-      uses: EndBug/add-and-commit@v9
-      with:
-        committer_name: GitHub Actions
-        committer_email: github-actions[bot]@users.noreply.github.com
-        message: 'Update database'
-        add: 'src/assets/zipcode.json'
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "npm"
+      - name: Install npm packages
+        run: npm install
+        working-directory: ./utils/database-conventer
+      - name: Download Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer
+          path: ./utils/database-conventer/temp
+      - name: Extract Installer
+        run: ../innoextract.exe installer.exe
+        working-directory: ./utils/database-conventer/temp
+      - name: Copy database
+        run: cp ./utils/database-conventer/temp/app/DBF/rall1.dbf ./utils/database-conventer/src/rall1.dbf
+      - name: Convert database
+        run: node index.js
+        working-directory: ./utils/database-conventer
+      - name: Copy result
+        run: cp ./utils/database-conventer/result/zipcode.json ./src/assets/zipcode.json
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          committer_name: GitHub Actions
+          committer_email: github-actions[bot]@users.noreply.github.com
+          message: "Update database"
+          add: "src/assets/zipcode.json"
