@@ -27,3 +27,5 @@ dist-ssr
 utils/database-conventer/src/rall1.dbf
 utils/database-conventer/result/zipcode.json
 utils/database-conventer/temp
+utils/database-conventer/app
+utils/database-conventer/sys

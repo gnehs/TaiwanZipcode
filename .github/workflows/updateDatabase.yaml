@@ -10,8 +10,8 @@ permissions:
 
 jobs:
   update-database:
-    runs-on: windows-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,33 +19,21 @@ jobs:
           node-version: 20
           cache: "npm"
           cache-dependency-path: utils/database-conventer/package-lock.json
+      - name: Install system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unar innoextract
       - name: Install npm packages
         run: npm ci
         working-directory: ./utils/database-conventer
       - name: Download Installer
         run: node downloadDatabase.js
         working-directory: ./utils/database-conventer
-      - name: Install database application
-        shell: pwsh
+      - name: Extract database
         run: |
-          $process = Start-Process `
-            -FilePath "./utils/database-conventer/temp/installer.exe" `
-            -ArgumentList "-silent" `
-            -Wait `
-            -PassThru
-
-          if ($process.ExitCode -ne 0) {
-            throw "Installer exited with code $($process.ExitCode)"
-          }
-
-          $databasePath = "C:\Zip33U\DBF\rall1.dbf"
-          if (-not (Test-Path $databasePath)) {
-            throw "The installer completed but $databasePath was not found"
-          }
-
-          Copy-Item `
-            -Path $databasePath `
-            -Destination "./utils/database-conventer/src/rall1.dbf"
+          innoextract ./temp/installer.exe
+          cp ./app/DBF/rall1.dbf ./src/rall1.dbf
+        working-directory: ./utils/database-conventer
       - name: Convert database
         run: node index.js
         working-directory: ./utils/database-conventer

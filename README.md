@@ -8,6 +8,10 @@ npm run dev
 ```
 ## 資料庫
 有關轉換工具與資料庫取得，請檢視 [utils/database-conventer](https://github.com/gnehs/TaiwanZipcode/tree/main/utils/database-conventer) 說明
+
+> 資料來源現況：中華郵政 V2603 之後的官方程式已不再內含資料庫檔，本專案改自
+> [Wayback Machine 上的官方舊版安裝包](https://web.archive.org/web/20250701184425/https://www.post.gov.tw/post/download/Zip33USetup2503.part1.rar)
+> 以 `innoextract` 直接解出（詳見 [DATA_SOURCE.md](utils/database-conventer/DATA_SOURCE.md)）。
 ### 資料庫授權條款
 - [中華郵政股份有限公司「3+3 郵遞區號」公開授權聲明](https://www.post.gov.tw/post/download/%E4%B8%AD%E8%8F%AF%E9%83%B5%E6%94%BF%E8%82%A1%E4%BB%BD%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B83%2B3%E9%83%B5%E9%81%9E%E5%8D%80%E8%99%9F%E5%85%AC%E9%96%8B%E6%8E%88%E6%AC%8A%E8%81%B2%E6%98%8E.pdf)
 ## 特別感謝 Special Thanks
