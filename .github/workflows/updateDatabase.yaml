@@ -4,49 +4,48 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 0 1 * *"
+
+permissions:
+  contents: write
+
 jobs:
-  get-install-file:
-    runs-on: ubuntu-latest
+  update-database:
+    runs-on: windows-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
+          cache-dependency-path: utils/database-conventer/package-lock.json
       - name: Install npm packages
-        run: npm install
+        run: npm ci
         working-directory: ./utils/database-conventer
       - name: Download Installer
         run: node downloadDatabase.js
         working-directory: ./utils/database-conventer
-      - name: Upload Installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: installer
-          path: ./utils/database-conventer/temp/installer.exe
+      - name: Install database application
+        shell: pwsh
+        run: |
+          $process = Start-Process `
+            -FilePath "./utils/database-conventer/temp/installer.exe" `
+            -ArgumentList "-silent" `
+            -Wait `
+            -PassThru
 
-  update-database:
-    runs-on: windows-latest
-    needs: get-install-file
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-      - name: Install npm packages
-        run: npm install
-        working-directory: ./utils/database-conventer
-      - name: Download Installer
-        uses: actions/download-artifact@v4
-        with:
-          name: installer
-          path: ./utils/database-conventer/temp
-      - name: Extract Installer
-        run: ../innoextract.exe installer.exe
-        working-directory: ./utils/database-conventer/temp
-      - name: Copy database
-        run: cp ./utils/database-conventer/temp/app/DBF/rall1.dbf ./utils/database-conventer/src/rall1.dbf
+          if ($process.ExitCode -ne 0) {
+            throw "Installer exited with code $($process.ExitCode)"
+          }
+
+          $databasePath = "C:\Zip33U\DBF\rall1.dbf"
+          if (-not (Test-Path $databasePath)) {
+            throw "The installer completed but $databasePath was not found"
+          }
+
+          Copy-Item `
+            -Path $databasePath `
+            -Destination "./utils/database-conventer/src/rall1.dbf"
       - name: Convert database
         run: node index.js
         working-directory: ./utils/database-conventer
@@ -57,5 +56,5 @@ jobs:
         with:
           committer_name: GitHub Actions
           committer_email: github-actions[bot]@users.noreply.github.com
-          message: "Update database"
+          message: "chore(data): update zipcode database"
           add: "src/assets/zipcode.json"
