@@ -1,95 +1,160 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const { JSDOM } = require("jsdom");
 
-// 中華郵政自 V2603 之後提供的「3+3 郵遞區號應用系統」安裝包
-// 已不再內含資料庫檔 DBF/rall1.dbf（詳見 REPOSITORY.md），
-// 資料改由系統執行時的「每日線上更新」取得，需登入
-// 資料傳輸管理系統 (https://fpp.post.gov.tw/) 才可下載。
-//
-// 因此這裡固定下載 Wayback Machine 上「最後仍內含 DBF/rall1.dbf」
-// 的官方版本：3+3 郵遞區號 V2503（2025/07/01 資料）。
-// 若之後有更新的官方版本仍內含 DBF，直接更新 INSTALLER_VOLUMES 即可。
-const INSTALLER_VERSION = "V2503";
-const INSTALLER_VOLUMES = [
-  "https://web.archive.org/web/20250701184425if_/https://www.post.gov.tw/post/download/Zip33USetup2503.part1.rar",
-  "https://web.archive.org/web/20250701184434if_/https://www.post.gov.tw/post/download/Zip33USetup2503.part2.rar",
-  "https://web.archive.org/web/20250701184446if_/https://www.post.gov.tw/post/download/Zip33USetup2503.part3.rar",
-  "https://web.archive.org/web/20250701184700if_/https://www.post.gov.tw/post/download/Zip33USetup2503.part4.rar",
-  "https://web.archive.org/web/20250701182920if_/https://www.post.gov.tw/post/download/Zip33USetup2503.part5.rar",
-  "https://web.archive.org/web/20250701184510if_/https://www.post.gov.tw/post/download/Zip33USetup2503.part6.rar",
-  "https://web.archive.org/web/20250701184519if_/https://www.post.gov.tw/post/download/Zip33USetup2503.part7.rar",
-];
+const DOWNLOAD_PAGE =
+  "https://www.post.gov.tw/post/internet/Download/index.jsp?ID=220306";
+const DOWNLOAD_HOST_SUFFIX = ".post.gov.tw";
+const MINIMUM_VOLUME_SIZE = 1024 * 1024;
+const MINIMUM_INSTALLER_SIZE = 10 * 1024 * 1024;
+const DOWNLOAD_TIMEOUT_MS = 120_000;
+const RAR_MAGIC = Buffer.from([0x52, 0x61, 0x72, 0x21, 0x1a, 0x07]);
 
-const FILE_SIZE_THRESHOLD = 1024 * 1024; // 1 MiB，擋掉 Wayback 的回傳錯誤頁
+function isOfficialDownload(url) {
+  return (
+    url.protocol === "https:" &&
+    (url.hostname === "post.gov.tw" ||
+      url.hostname.endsWith(DOWNLOAD_HOST_SUFFIX)) &&
+    url.pathname.startsWith("/post/download/")
+  );
+}
 
-async function fetchBytesWithRetry(url, attempts = 6) {
+async function fetchWithRetry(url, transform, attempts = 4) {
   let lastError;
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      const response = await fetch(url, { headers: { "user-agent": "Mozilla/5.0" } });
+      const response = await fetch(url, {
+        headers: { "user-agent": "TaiwanZipcode database updater" },
+        signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+      });
       if (!response.ok) {
         throw new Error(`${response.status} ${response.statusText}`);
       }
-      const bytes = Buffer.from(await response.arrayBuffer());
-      // Wayback 偶爾會回傳錯誤頁但是 200，靠檔案大小判斷
-      if (bytes.length < FILE_SIZE_THRESHOLD) {
-        throw new Error(`unexpectedly small response (${bytes.length} bytes)`);
-      }
-      return bytes;
+      return await transform(response);
     } catch (error) {
       lastError = error;
       console.warn(`  retry ${attempt}/${attempts}: ${error.message}`);
-      await new Promise((resolve) => setTimeout(resolve, attempt * 2000));
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 2_000));
+      }
     }
   }
 
   throw new Error(`Failed to download ${url}: ${lastError.message}`);
 }
 
-function findFile(directory, extension) {
+async function discoverInstallerVolumes() {
+  const html = await fetchWithRetry(DOWNLOAD_PAGE, (response) => response.text());
+  const document = new JSDOM(html, { url: DOWNLOAD_PAGE }).window.document;
+  const groups = new Map();
+
+  for (const link of document.querySelectorAll("a[href]")) {
+    const url = new URL(link.getAttribute("href"), DOWNLOAD_PAGE);
+    if (!isOfficialDownload(url)) continue;
+
+    const filename = decodeURIComponent(path.posix.basename(url.pathname));
+    const match = filename.match(
+      /^(Zip33Usetup_(V?\d+)(?:_\d+)?\.part)(\d+)(\.rar)$/i,
+    );
+    if (!match) continue;
+
+    const [, prefix, version, partText, extension] = match;
+    const key = `${prefix.toLowerCase()}${extension.toLowerCase()}`;
+    if (!groups.has(key)) {
+      groups.set(key, { version: version.toUpperCase(), volumes: new Map() });
+    }
+    groups.get(key).volumes.set(Number(partText), url);
+  }
+
+  const candidates = [...groups.values()]
+    .map((candidate) => ({
+      ...candidate,
+      volumes: [...candidate.volumes.entries()].sort(([a], [b]) => a - b),
+    }))
+    .filter(
+      ({ volumes }) =>
+        volumes.length > 0 &&
+        volumes.every(([part], index) => part === index + 1),
+    )
+    .sort((a, b) => Number(b.version.replace("V", "")) - Number(a.version.replace("V", "")));
+
+  if (candidates.length === 0) {
+    throw new Error("No complete 3+3 zipcode installer was found on the official page");
+  }
+
+  return candidates[0];
+}
+
+async function downloadVolume(url, destination) {
+  const bytes = await fetchWithRetry(url, async (response) => {
+    const body = Buffer.from(await response.arrayBuffer());
+    if (body.length < MINIMUM_VOLUME_SIZE) {
+      throw new Error(`${url} is unexpectedly small (${body.length} bytes)`);
+    }
+    if (!body.subarray(0, RAR_MAGIC.length).equals(RAR_MAGIC)) {
+      throw new Error(`${url} is not a RAR archive`);
+    }
+    return body;
+  });
+  fs.writeFileSync(destination, bytes);
+  return bytes.length;
+}
+
+function findFiles(directory, extension) {
+  const matches = [];
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const entryPath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
-      const match = findFile(entryPath, extension);
-      if (match) return match;
+      matches.push(...findFiles(entryPath, extension));
     } else if (entry.name.toLowerCase().endsWith(extension)) {
-      return entryPath;
+      matches.push(entryPath);
     }
   }
-
-  return undefined;
+  return matches;
 }
 
-(async () => {
-  const tempDir = path.resolve("./temp");
+async function main() {
+  const tempDir = path.resolve(__dirname, "temp");
   fs.rmSync(tempDir, { recursive: true, force: true });
   fs.mkdirSync(tempDir, { recursive: true });
 
-  console.log(`Downloading ${INSTALLER_VERSION} (${INSTALLER_VOLUMES.length} volumes) from web.archive.org ...`);
-  for (const [index, url] of INSTALLER_VOLUMES.entries()) {
-    console.log(`  [${index + 1}/${INSTALLER_VOLUMES.length}] ${url}`);
-    const bytes = await fetchBytesWithRetry(url);
-    fs.writeFileSync(path.join(tempDir, `part${index + 1}.rar`), bytes);
+  console.log(`Discovering the latest installer from ${DOWNLOAD_PAGE} ...`);
+  const installer = await discoverInstallerVolumes();
+  console.log(`Downloading ${installer.version} (${installer.volumes.length} volumes) ...`);
+
+  for (const [index, [, url]] of installer.volumes.entries()) {
+    const destination = path.join(tempDir, `part${index + 1}.rar`);
+    const size = await downloadVolume(url, destination);
+    console.log(`  [${index + 1}/${installer.volumes.length}] ${url} (${size} bytes)`);
   }
 
-  console.log("Extracting volumes with unar ...");
-  execFileSync("unar", ["-o", tempDir, path.join(tempDir, "part1.rar")], {
+  console.log("Extracting the multi-volume RAR archive with unar ...");
+  execFileSync("unar", ["-quiet", "-force-overwrite", "-o", tempDir, path.join(tempDir, "part1.rar")], {
     stdio: "inherit",
   });
 
-  const installerPath = findFile(tempDir, ".exe");
-  if (!installerPath) {
-    throw new Error("The downloaded archive did not contain an installer");
+  const installers = findFiles(tempDir, ".exe").filter(
+    (filename) => fs.statSync(filename).size >= MINIMUM_INSTALLER_SIZE,
+  );
+  if (installers.length !== 1) {
+    throw new Error(`Expected one installer executable, found ${installers.length}`);
   }
 
-  const destinationPath = path.join(tempDir, "installer.exe");
-  if (installerPath !== destinationPath) {
-    fs.renameSync(installerPath, destinationPath);
+  const installerBytes = fs.readFileSync(installers[0]);
+  if (installerBytes[0] !== 0x4d || installerBytes[1] !== 0x5a) {
+    throw new Error("The extracted installer is not a Windows executable");
   }
-  console.log("installer.exe saved to ./temp/installer.exe");
-})().catch((error) => {
+
+  const destination = path.join(tempDir, "installer.exe");
+  if (installers[0] !== destination) {
+    fs.renameSync(installers[0], destination);
+  }
+  console.log(`${installer.version} installer saved to ${destination}`);
+}
+
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });

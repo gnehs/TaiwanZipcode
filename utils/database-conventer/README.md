@@ -1,37 +1,39 @@
 # 資料庫轉換器
 
-將郵局資料庫轉換為 json 格式。
+自動下載中華郵政最新的「3+3 郵遞區號應用系統」，不執行安裝程式，直接從內嵌的
+Gentee GEA 封裝解出 `rall1.dbf`，再轉換為專案使用的 JSON。
 
-> [資料來源說明（DATA_SOURCE.md）](./DATA_SOURCE.md)
+完整來源與封裝說明請見 [DATA_SOURCE.md](./DATA_SOURCE.md)。
 
-## 取得
+## Linux 使用方式
 
-中華郵政自 **V2603（115/06/30）** 後提供的官方安裝包已 **不再內含資料庫檔**
-（`DBF/rall1.dbf`），資料改由需登入的每日線上更新提供（[https://fpp.post.gov.tw/](https://fpp.post.gov.tw/)）。
-
-因此本專案固定使用 Wayback Machine 上、最後仍內含 DBF 的官方版本
-（`Zip33USetup2503.exe`，2025/07/01 資料）：
+本工具使用 npm。先安裝 Node.js 20 以上、npm、C 編譯器、`make` 與 `unar`，然後執行：
 
 ```bash
-# 會在 ./temp 下載 RAR、解出 installer.exe
+npm ci
+make
 node downloadDatabase.js
+./gea-extract ./temp/installer.exe ./src/rall1.dbf
+node index.js
 ```
 
-然後用 `innoextract`（Linux 版即可）解出資料庫：
+輸出位於 `./result/zipcode.json`。GitHub Actions 會每月執行相同流程，資料有變更時才
+更新 `src/assets/zipcode.json`。
+
+### Ubuntu / Debian 相依套件
 
 ```bash
-cd temp
-innoextract installer.exe   # -> ./app/DBF/rall1.dbf
-cp app/DBF/rall1.dbf ../src/rall1.dbf
+sudo apt-get update
+sudo apt-get install --no-install-recommends build-essential unar
 ```
 
-## 轉換
+Windows 使用者可在 WSL 執行同一套流程；不需要啟動或自動操作郵局的 Windows 安裝程式。
 
-將資料庫檔案放在 `./src` 之下後：
+## 自動更新 Action
 
-```bash
-node index.js   # -> ./result/zipcode.json
-```
+`.github/workflows/updateDatabase.yaml` 每月 1 日執行，也支援手動觸發。流程包含 RAR
+檔頭、EXE、GEA CRC、DBF header/schema、資料筆數與輸出 JSON 驗證。只在
+`src/assets/zipcode.json` 有差異時才提交 Conventional Commit。
 
 ## 資料庫授權條款
 

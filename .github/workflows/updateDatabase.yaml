@@ -6,43 +6,90 @@ on:
     - cron: "0 0 1 * *"
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   update-database:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 20
           cache: "npm"
           cache-dependency-path: utils/database-conventer/package-lock.json
       - name: Install system tools
         run: |
+          set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y unar innoextract
+          sudo apt-get install --no-install-recommends -y build-essential unar
+          make --version
+          unar -version
       - name: Install npm packages
         run: npm ci
+        working-directory: ./utils/database-conventer
+      - name: Build GEA extractor
+        run: make
         working-directory: ./utils/database-conventer
       - name: Download Installer
         run: node downloadDatabase.js
         working-directory: ./utils/database-conventer
       - name: Extract database
         run: |
-          innoextract ./temp/installer.exe
-          cp ./app/DBF/rall1.dbf ./src/rall1.dbf
+          set -euo pipefail
+          test -x ./gea-extract
+          ./gea-extract ./temp/installer.exe ./src/rall1.dbf
+          test -s ./src/rall1.dbf
         working-directory: ./utils/database-conventer
       - name: Convert database
         run: node index.js
         working-directory: ./utils/database-conventer
+      - name: Validate converted database
+        run: |
+          set -euo pipefail
+          test -s ./utils/database-conventer/result/zipcode.json
+          node - <<'NODE'
+          const fs = require("fs");
+          const resultPath = "./utils/database-conventer/result/zipcode.json";
+          const data = JSON.parse(fs.readFileSync(resultPath, "utf8"));
+          const cities = Object.keys(data);
+          if (cities.length < 20) {
+            throw new Error(`Expected at least 20 cities, found ${cities.length}`);
+          }
+          const scopes = cities.flatMap((city) =>
+            Object.values(data[city].areas).flatMap((area) =>
+              Object.values(area.roads).flatMap((road) => road.scopes),
+            ),
+          );
+          if (scopes.length < 10000) {
+            throw new Error(`Expected at least 10000 scopes, found ${scopes.length}`);
+          }
+          if (scopes.some((scope) => !Number.isInteger(scope.zipcode))) {
+            throw new Error("The converted database contains an invalid zipcode");
+          }
+          console.log(`Validated ${cities.length} cities and ${scopes.length} scopes`);
+          NODE
       - name: Copy result
-        run: cp ./utils/database-conventer/result/zipcode.json ./src/assets/zipcode.json
+        run: |
+          set -euo pipefail
+          cp ./utils/database-conventer/result/zipcode.json ./src/assets/zipcode.json
+          git diff --check
       - name: Commit changes
-        uses: EndBug/add-and-commit@v9
-        with:
-          committer_name: GitHub Actions
-          committer_email: github-actions[bot]@users.noreply.github.com
-          message: "chore(data): update zipcode database"
-          add: "src/assets/zipcode.json"
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- src/assets/zipcode.json
+          if git diff --cached --quiet; then
+            echo "The zipcode database is already up to date"
+            exit 0
+          fi
+          git commit -m "chore(data): update zipcode database"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
