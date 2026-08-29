@@ -4,7 +4,8 @@
 
 ## 前端開發
 
-本專案使用 npm：
+本專案使用 React、TypeScript、Vite、Tailwind CSS v4 與 shadcn/ui（Base UI
+primitives），並以 npm 管理套件：
 
 ```bash
 npm install
@@ -51,5 +52,6 @@ Action 只在轉換後的郵遞區號 JSON 確實改變時，建立
 
 ## 特別感謝 Special Thanks
 
-- [frikinside/vue3-simple-typeahead](https://github.com/frikinside/vue3-simple-typeahead)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Base UI](https://base-ui.com/)
 - [中華郵政](https://www.post.gov.tw/)

@@ -3,8 +3,8 @@
  *
  * The source data uses the notation published by Chunghwa Post.  A scope
  * describes a path of 巷/弄/號 components and may add a parity, range, floor,
- * or attached-number qualifier.  This module deliberately has no Vue (or
- * browser) dependency so it can be used by the UI and by data validation
+ * or attached-number qualifier.  This module deliberately has no UI framework
+ * (or browser) dependency so it can be used by the view and data validation
  * scripts alike.
  */
 
@@ -706,7 +706,7 @@ function pendingScope(scopeTextOrItem, address) {
  * Resolve a list of scope records for an address suffix.
  *
  * `matches` and `pending` contain the original scope records (not parsed
- * copies), making the result directly usable by the Vue view.
+ * copies), making the result directly usable by the application view.
  */
 function resolveZipcodeScopes(scopes, addressText) {
   const items = Array.isArray(scopes) ? scopes : [];
