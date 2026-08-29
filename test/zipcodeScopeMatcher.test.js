@@ -16,6 +16,10 @@ function allScopeItems() {
   );
 }
 
+function roadScopes(city, area, road) {
+  return zipcodeData[city].areas[area].roads[road].scopes;
+}
+
 test('matches the four 永和區信義路 boundary rules', () => {
   const scopes = zipcodeData['新北市'].areas['永和區'].roads['信義路'].scopes;
   const cases = [
@@ -32,6 +36,7 @@ test('matches the four 永和區信義路 boundary rules', () => {
   }
 
   assert.equal(resolveZipcodeScopes(scopes, '75').status, 'incomplete');
+  assert.equal(resolveZipcodeScopes(scopes, '75號404室').matches[0].zipcode, 234008);
   assert.equal(resolveZipcodeScopes(scopes, '').status, 'empty');
 });
 
@@ -45,6 +50,10 @@ test('parses nested 巷/弄 paths and applies parity at the next level', () => {
 
   const address = parseAddressSuffix('54巷5弄1號');
   assert.deepEqual(address.path.map((part) => [part.unit, part.value]), [['巷', 54], ['弄', 5], ['號', 1]]);
+  assert.equal(matchZipcodeScope('單全', '209巷20弄12號'), true);
+  assert.equal(matchZipcodeScope('雙全', '210巷19弄11號'), true);
+  assert.equal(matchZipcodeScope('單全', '210巷19弄11號'), false);
+  assert.equal(matchZipcodeScope('192巷單全', '192巷1弄2號'), true);
 });
 
 test('matches exact, branch/附號, and floor-specific scopes', () => {
@@ -55,7 +64,7 @@ test('matches exact, branch/附號, and floor-specific scopes', () => {
     { scope: '151號 2樓以上', zipcode: 4 },
   ];
 
-  assert.equal(resolveZipcodeScopes(scopes, '151號').matches[0].zipcode, 2);
+  assert.equal(resolveZipcodeScopes(scopes, '151號').status, 'incomplete');
   assert.equal(resolveZipcodeScopes(scopes, '151號之1').matches[0].zipcode, 3);
   assert.equal(resolveZipcodeScopes(scopes, '151附號').matches[0].zipcode, 3);
   assert.equal(resolveZipcodeScopes(scopes, '151號2樓').matches[0].zipcode, 4);
@@ -64,6 +73,27 @@ test('matches exact, branch/附號, and floor-specific scopes', () => {
   assert.equal(matchZipcodeScope('10號地下1樓至1樓', '10號地下1樓'), true);
   assert.equal(matchZipcodeScope('10號地下1樓至1樓', '10號1樓'), true);
   assert.equal(matchZipcodeScope('10號地下1樓至1樓', '10號2樓'), false);
+  assert.equal(matchZipcodeScope('2之4號及以上附號', '2之5號'), true);
+  assert.equal(matchZipcodeScope('2之4號及以上附號', '2之3號'), false);
+  assert.equal(matchZipcodeScope('2之4號及以上附號', '3之5號'), false);
+});
+
+test('waits for a required floor instead of choosing a broader result', () => {
+  const scopes = zipcodeData['臺北市'].areas['北投區'].roads['新市街'].scopes;
+
+  assert.equal(resolveZipcodeScopes(scopes, '30號').status, 'incomplete');
+  assert.equal(resolveZipcodeScopes(scopes, '30號2樓').matches[0].zipcode, 112024);
+  assert.equal(resolveZipcodeScopes(scopes, '30號3樓').matches[0].zipcode, 112023);
+});
+
+test('does not keep an unrelated deeper prefix as a pending candidate', () => {
+  const result = resolveZipcodeScopes([
+    { scope: '全', zipcode: 1 },
+    { scope: '58巷33弄33號', zipcode: 2 },
+  ], '12巷');
+
+  assert.equal(result.status, 'matched');
+  assert.equal(result.matches[0].zipcode, 1);
 });
 
 test('supports mixed 巷/弄/號 endpoints and inclusive ranges', () => {
@@ -78,12 +108,57 @@ test('supports mixed 巷/弄/號 endpoints and inclusive ranges', () => {
   assert.equal(matchZipcodeScope('連 1號至100號', '101巷1號'), false);
 });
 
+test('normalizes the database descending numeric interval', () => {
+  const scopes = roadScopes('花蓮縣', '花蓮市', '順興路');
+
+  assert.equal(matchZipcodeScope('單 329巷至 293號', '329巷'), true);
+  assert.equal(matchZipcodeScope('單 329巷至 293號', '311號'), true);
+  assert.equal(matchZipcodeScope('單 329巷至 293號', '293號'), true);
+  assert.equal(matchZipcodeScope('單 329巷至 293號', '312號'), false);
+  assert.equal(matchZipcodeScope('單 329巷至 293號', '291號'), false);
+  assert.equal(resolveZipcodeScopes(scopes, '311號').matches[0].zipcode, 970064);
+  assert.equal(matchZipcodeScope('41之15號至之1號', '41之8號'), true);
+});
+
+test('keeps all matching records available when overlapping ranges are ambiguous', () => {
+  const scopes = roadScopes('臺北市', '中山區', '八德路二段');
+  const selected = scopes.find((item) => item.zipcode === 104498 && item.scope.includes('306'));
+  const result = resolveZipcodeScopes(scopes, '306號');
+
+  assert.equal(result.status, 'ambiguous');
+  assert.equal(result.matches.includes(selected), true);
+  assert.equal(result.matches.some((item) => item.zipcode === 104098), true);
+});
+
+test('matches representative nested, attached-number, and floor records from the database', () => {
+  const cases = [
+    ['臺北市', '北投區', '大業路', '527巷12號', 112056],
+    ['臺北市', '北投區', '中央北路三段', '120巷1號', 112017],
+    ['臺北市', '北投區', '石牌路一段', '58巷35號', 112053],
+    ['臺北市', '北投區', '石牌路一段', '58巷37號', 112050],
+    ['臺北市', '北投區', '新市街', '30號3樓', 112023],
+    ['新北市', '板橋區', '中正路', '10號地下1樓', 220210],
+    ['新北市', '淡水區', '英專路', '151號之1', 251025],
+    ['新北市', '鶯歌區', '西湖街', '2之4號', 239608],
+  ];
+
+  for (const [city, area, road, address, zipcode] of cases) {
+    const result = resolveZipcodeScopes(roadScopes(city, area, road), address);
+    assert.equal(result.status, 'matched', `${city}${area}${road}${address}`);
+    assert.equal(result.matches[0].zipcode, zipcode, `${city}${area}${road}${address}`);
+  }
+});
+
 test('every scope record in the bundled database is parser-supported', () => {
   const items = allScopeItems();
   assert.equal(items.length, 79876);
   assert.equal(new Set(items.map((item) => item.scope)).size, 21998);
+  assert.equal(new Set(items.map((item) => (
+    item.scope.normalize('NFKC').replace(/\s+/gu, '').replace(/\d+/g, '#')
+  ))).size, 226);
   for (const item of items) {
     const parsed = parseScope(item.scope);
     assert.equal(parsed.supported, true, item.scope);
+    assert.equal(parsed.unrecognized, '', item.scope);
   }
 });

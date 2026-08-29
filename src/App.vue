@@ -1,12 +1,13 @@
- <template>
+<template>
   <div class="container">
-    <div v-if="selectedZipcode===null">
+    <div v-if="!isDetailOpen">
       <h1 class="page-title">台灣 3+3 郵遞區號查詢</h1>
       <simple-typeahead
+        ref="searchInput"
         class="search-input"
         :items="Object.keys(addressList)"
         placeholder="輸入關鍵字來查詢…"
-        @selectItem="selectItem"
+        @selectItem="openDetail"
         v-model="addressInput"
       />
       <div class="tips">
@@ -21,11 +22,12 @@
           <div class="result-item-icon"></div>
         </div>
         <div class="result-item" v-if="!resultList.length">查無結果</div>
-        <div
+        <button
+          type="button"
           class="result-item"
           v-for="(item,i) of resultList"
-          :key="i"
-          @click="selectedZipcode = item"
+          :key="`${item.zipcode}-${item.scope}-${i}`"
+          @click="openDetail(addressInput, item)"
         >
           <div class="result-item-zipcode">{{ item.zipcode }}</div>
           <div class="result-item-scope">
@@ -38,23 +40,38 @@
           <div class="result-item-icon">
             <i class="bx bx-right-arrow-alt"></i>
           </div>
-        </div>
+        </button>
       </div>
     </div>
     <div v-else>
-      <button class="back-btn" @click="selectedZipcode=null">
+      <button class="back-btn" @click="returnToSearch">
         <i class="bx bx-arrow-back"></i> 返回
       </button>
-      <h2 class="page-subtitle">{{selectedZipcode.zipcode}} {{addressInput}}</h2>
+      <h2 class="page-subtitle">
+        <span v-if="resolvedScope">{{ resolvedScope.zipcode }} </span>{{ addressInput }}
+      </h2>
       <section class="detail-section">
-        <div class="bold">後續地址</div>
+        <label class="bold" for="addressForm">後續地址</label>
         <input
+          ref="addressFormInput"
           type="text"
           id="addressForm"
           v-model="addressForm"
           autocomplete="off"
           placeholder="如：31巷12號之5 5樓、31號404室⋯等"
         />
+        <div class="tips" v-if="!resolvedScope && (scopeResolution.status === 'empty' || scopeResolution.status === 'incomplete')">
+          <i class="bx bxs-info-circle"></i>
+          請繼續輸入完整的巷、弄、門牌、附號或樓層，系統會自動判斷郵遞區號。
+        </div>
+        <div class="tips error" v-else-if="scopeResolution.status === 'unmatched'">
+          <i class="bx bxs-error"></i>
+          找不到符合此後續地址的郵遞區號範圍，請確認門牌是否正確。
+        </div>
+        <div class="tips error" v-if="!resolvedScope && scopeResolution.status === 'ambiguous'">
+          <i class="bx bxs-error"></i>
+          此地址仍對應多個郵遞區號，請補上附號或樓層等完整資訊。
+        </div>
         <div class="tips error" v-for="warn of address.warns" :key="warn">
           <i class="bx bxs-error"></i>
           {{ warn }}
@@ -76,21 +93,21 @@
           <div
             class="matched-address-item"
             v-if="address.form.floor"
-          >{{address.form.floor}}樓{{ address.form.floorDash && `之${ address.form.floorDash}` }}</div>
+          >{{ address.form.basement ? "地下" : "" }}{{address.form.floor}}樓{{ address.form.floorDash && `之${ address.form.floorDash}` }}</div>
           <div class="matched-address-item" v-if="address.form.room">{{address.form.room}}室</div>
         </div>
       </section>
       <section class="detail-section">
         <div class="bold">郵遞區號</div>
-        {{ selectedZipcode.zipcode }}
+        {{ resolvedScope?.zipcode || "待輸入完整門牌後自動判斷" }}
       </section>
       <section class="detail-section">
         <div class="bold">範圍</div>
-        {{ selectedZipcode.scope }}
+        {{ resolvedScope?.scope || "尚未判斷" }}
       </section>
-      <section class="detail-section" v-if="selectedZipcode.department">
+      <section class="detail-section" v-if="resolvedScope?.department">
         <div class="bold">大宗戶</div>
-        {{ selectedZipcode.department }}
+        {{ resolvedScope.department }}
       </section>
       <section class="detail-section">
         <div class="bold">中文地址</div>
@@ -227,8 +244,16 @@ body
       opacity: .25
       transform: translateX(-2px)
       transition: all .2s ease
-  .result-item
+  button.result-item
+    all: unset
+    box-sizing: border-box
+    width: 100%
+    color: inherit
+    text-align: left
     cursor: pointer
+    &:focus-visible
+      outline: 2px solid var(--border-focus-color)
+      outline-offset: -2px
     &:hover
       background-color: var(--tertiary-background-color)
       .result-item-icon
@@ -338,6 +363,10 @@ body
 <script>
 import zipcodeData from "./assets/zipcode.json";
 import simpleTypeahead from "./components/vue3-simple-typeahead.vue";
+import {
+  parseAddressSuffix,
+  resolveZipcodeScopes
+} from "./utils/zipcodeScopeMatcher.js";
 export default {
   components: {
     simpleTypeahead
@@ -347,7 +376,8 @@ export default {
       addressList: {},
       zhEnAddressList: {},
       addressInput: "",
-      selectedZipcode: null,
+      isDetailOpen: false,
+      manuallySelectedScope: null,
       addressForm: ""
     }
   },
@@ -359,6 +389,35 @@ export default {
       if (!key.length) return []
       return this.addressList[key[0]] || [];
     },
+    scopeResolution() {
+      if (!this.isDetailOpen || !this.addressInput) {
+        return { status: "empty", matches: [], pending: [] };
+      }
+
+      return resolveZipcodeScopes(
+        this.addressList[this.addressInput] || [],
+        this.addressForm
+      );
+    },
+    resolvedScope() {
+      if (
+        this.manuallySelectedScope &&
+        this.scopeResolution.matches?.includes(this.manuallySelectedScope)
+      ) {
+        return this.manuallySelectedScope;
+      }
+      if (this.scopeResolution.status === "matched") {
+        return this.scopeResolution.matches[0] || null;
+      }
+      if (this.scopeResolution.status === "empty") {
+        if (this.manuallySelectedScope) return this.manuallySelectedScope;
+        const scopes = this.addressList[this.addressInput] || [];
+        if (scopes.length === 1 && scopes[0].scope.normalize("NFKC").replace(/\s+/g, "") === "全") {
+          return scopes[0];
+        }
+      }
+      return null;
+    },
     address() {
       let warns = []
       let form = {
@@ -368,9 +427,10 @@ export default {
         noDash: null,
         floor: null,
         floorDash: null,
+        basement: false,
         room: null,
       }
-      if (!this.selectedZipcode) return {
+      if (!this.addressInput || !this.zhEnAddressList[this.addressInput]) return {
         en: "",
         zh: "",
         form,
@@ -388,19 +448,15 @@ export default {
         warns.push("不支援在此介面輸入中文巷弄名稱")
       }
 
-      let formMatch = {
-        ln: /(\d+)巷/,
-        aly: /(\d+)弄/,
-        no: /(\d+)號|(\d+)-\d+號/,
-        noDash: /號之(\d+)|\d+-(\d+)號/,
-        floor: /(\d+)樓/,
-        floorDash: /樓之(\d+)/,
-        room: /(\w+)室|(\d+)室| (.+?)室/,
-      }
-      for (let key in formMatch) {
-        let match = addressForm.match(formMatch[key])
-        if (match) form[key] = match.slice(1).filter(x => x).join("")
-      }
+      const parsedAddress = parseAddressSuffix(addressForm)
+      form.ln = parsedAddress.ln
+      form.aly = parsedAddress.aly
+      form.no = parsedAddress.no
+      form.noDash = parsedAddress.noDash
+      form.floor = parsedAddress.floor
+      form.floorDash = parsedAddress.floorDash
+      form.basement = parsedAddress.basement
+      form.room = addressForm.match(/([\dA-Za-z]+)室/)?.[1] || null
       let zh = this.addressInput
       let en = this.zhEnAddressList[this.addressInput].split(", ").reverse()
       if (form.ln) {
@@ -421,12 +477,12 @@ export default {
         }
       }
       if (form.floor) {
-        zh += form.floor + "樓"
+        zh += (form.basement ? "地下" : "") + form.floor + "樓"
         if (form.floorDash) {
           zh += "之" + form.floorDash + " "
-          en.push(form.floor + "F-" + form.floorDash)
+          en.push((form.basement ? "B" : "") + form.floor + "F-" + form.floorDash)
         } else {
-          en.push(form.floor + "F")
+          en.push((form.basement ? "B" : "") + form.floor + "F")
         }
       }
       if (form.room) {
@@ -449,20 +505,17 @@ export default {
       let [zipcode, address, addressForm] = hashString.split("_");
       zipcode = parseInt(zipcode);
       this.addressInput = address;
-      this.addressForm = addressForm;
-
-      for (let [_, items] of Object.entries(this.addressList)) {
-        for (let item of items) {
-          if (item.zipcode === zipcode) {
-            this.selectedZipcode = item;
-            break;
-          }
-        }
-      }
+      this.addressForm = addressForm || "";
+      this.isDetailOpen = Boolean(address && this.addressList[address]);
+      this.manuallySelectedScope = (this.addressList[address] || [])
+        .find(item => item.zipcode === zipcode) || null;
     }
   },
   watch: {
-    selectedZipcode() {
+    isDetailOpen() {
+      this.updateHash()
+    },
+    addressInput() {
       this.updateHash()
     },
     addressForm() {
@@ -489,14 +542,29 @@ export default {
       this.addressList = result;
       this.zhEnAddressList = zhEnResult;
     },
-    selectItem(item) {
-      this.addressInput = item;
+    openDetail(address, scope = null) {
+      this.addressInput = address;
+      this.addressForm = "";
+      this.manuallySelectedScope = scope;
+      this.isDetailOpen = true;
+      this.$nextTick(() => {
+        const input = this.$refs.addressFormInput;
+        if (!input) return;
+        input.focus();
+        input.setSelectionRange?.(input.value.length, input.value.length);
+      });
+    },
+    returnToSearch() {
+      this.isDetailOpen = false;
+      this.manuallySelectedScope = null;
+      this.addressForm = "";
+      this.$nextTick(() => this.$refs.searchInput?.focusInput());
     },
     updateHash() {
-      let selectedZipcode = this.selectedZipcode?.zipcode
+      let selectedZipcode = this.resolvedScope?.zipcode || ""
       let addressInput = this.addressInput
       let addressForm = this.addressForm
-      if (!selectedZipcode) {
+      if (!this.isDetailOpen || !addressInput) {
         window.location.hash = "";
         return;
       }

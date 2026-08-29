@@ -210,7 +210,11 @@ function parseAddressSuffix(addressText) {
   const normalized = normalizeText(original);
   const compact = compactText(original);
   const firstFloor = normalized.search(/(?:地下)?\s*\d+\s*樓/);
-  const pathText = firstFloor < 0 ? normalized : normalized.slice(0, firstFloor);
+  const firstRoom = normalized.search(/[\dA-Za-z]+室/);
+  const pathEnd = [firstFloor, firstRoom]
+    .filter((index) => index >= 0)
+    .reduce((lowest, index) => Math.min(lowest, index), normalized.length);
+  const pathText = normalized.slice(0, pathEnd);
   const floorText = firstFloor < 0 ? '' : normalized.slice(firstFloor);
   const tokens = tokenizePath(pathText);
   const rawPath = tokens.filter((token) => token.kind === 'atom');
@@ -353,6 +357,10 @@ function parseScope(scopeText) {
   const original = scopeText === null || scopeText === undefined ? '' : String(scopeText);
   const normalized = cleanScopeText(original);
   const compact = compactText(original);
+  const unrecognized = compact.replace(
+    /\d+|及以上附號|含附號|附號|地下|以下|以上|全|單|雙|連|號|巷|弄|之|樓|至/g,
+    '',
+  );
   const floorIndex = normalized.search(/(?:地下)?\s*\d+\s*樓/);
   const pathAndQualifier = floorIndex < 0 ? normalized : normalized.slice(0, floorIndex);
   const floorText = floorIndex < 0 ? '' : normalized.slice(floorIndex);
@@ -441,7 +449,7 @@ function parseScope(scopeText) {
   const unitFlexible = Boolean(target && end && target.unit !== end.unit);
   const hasPath = atomTokens.length > 0;
   const supported = Boolean(
-    normalized &&
+    normalized && !unrecognized &&
       (all || hasPath || parity || floor || /(?:以下|以上|至)/.test(normalized)),
   );
   const exact = mode === 'exact' && Boolean(target);
@@ -451,6 +459,7 @@ function parseScope(scopeText) {
     input: original,
     normalized,
     compact,
+    unrecognized,
     supported,
     tokens,
     atoms: atomTokens,
@@ -483,6 +492,11 @@ function branchValue(value) {
   return value === null || value === undefined ? 0 : value;
 }
 
+function compareSegmentValue(left, right) {
+  if (left.value !== right.value) return left.value - right.value;
+  return branchValue(left.branch) - branchValue(right.branch);
+}
+
 function sameSegment(scopeSegment, addressSegment, allowAttached = false) {
   if (!scopeSegment || !addressSegment) return false;
   if (scopeSegment.unit !== addressSegment.unit) return false;
@@ -500,13 +514,25 @@ function sameSegment(scopeSegment, addressSegment, allowAttached = false) {
 
 function segmentInRange(segment, min, max, allowAttached = false) {
   if (!segment || segment.value === null) return false;
-  if (min && min.value !== null && min.value !== undefined) {
-    if (segment.value < min.value) return false;
-    if (segment.value === min.value && min.branch !== null && branchValue(segment.branch) < min.branch) return false;
+  let lower = min;
+  let upper = max;
+  // The source contains one geographically ordered interval whose numeric
+  // endpoints are descending (`329巷至293號`).  Postal intervals are inclusive,
+  // so compare the numeric bounds in ascending order without changing parity.
+  if (
+    lower?.value !== null && lower?.value !== undefined &&
+    upper?.value !== null && upper?.value !== undefined &&
+    compareSegmentValue(lower, upper) > 0
+  ) {
+    [lower, upper] = [upper, lower];
   }
-  if (max && max.value !== null && max.value !== undefined) {
-    if (segment.value > max.value) return false;
-    if (segment.value === max.value && max.branch !== null && branchValue(segment.branch) > max.branch) return false;
+  if (lower && lower.value !== null && lower.value !== undefined) {
+    if (segment.value < lower.value) return false;
+    if (segment.value === lower.value && lower.branch !== null && branchValue(segment.branch) < lower.branch) return false;
+  }
+  if (upper && upper.value !== null && upper.value !== undefined) {
+    if (segment.value > upper.value) return false;
+    if (segment.value === upper.value && upper.branch !== null && branchValue(segment.branch) > upper.branch) return false;
   }
   // Ranges are over the numeric address line.  An attached number therefore
   // remains inside `75號以下` (and the source's explicit branch endpoints are
@@ -527,11 +553,11 @@ function floorCouldMatchPartially(floor, value) {
 }
 
 function pathPrefixMatches(scopePrefix, addressPath, allowPartial = false) {
-  if (scopePrefix.length > addressPath.length) return allowPartial;
-  for (let index = 0; index < scopePrefix.length; index += 1) {
+  const comparableLength = Math.min(scopePrefix.length, addressPath.length);
+  for (let index = 0; index < comparableLength; index += 1) {
     if (!sameSegment(scopePrefix[index], addressPath[index])) return false;
   }
-  return true;
+  return scopePrefix.length <= addressPath.length || allowPartial;
 }
 
 function scopeMatchesParsed(scope, address, { allowPartial = false } = {}) {
@@ -546,7 +572,6 @@ function scopeMatchesParsed(scope, address, { allowPartial = false } = {}) {
   if (scope.implicitTarget) {
     const segment = addressPath[targetIndex];
     if (!segment) return allowPartial;
-    if (segment.unit !== '號') return false;
     if (scope.parity && scope.parity !== '連' && segment.value % 2 !== (scope.parity === '單' ? 1 : 0)) return false;
   } else if (scope.target) {
     const segment = addressPath[targetIndex];
@@ -555,7 +580,14 @@ function scopeMatchesParsed(scope, address, { allowPartial = false } = {}) {
     // At a given address level the official notation permits endpoints to
     // switch between 巷/弄/號; compare their numeric values, not the glyph.
     if (!rangeMode && !scope.unitFlexible && scope.target.unit !== segment.unit) return false;
-    if (rangeMode) {
+    if (scope.attachedFrom) {
+      if (
+        segment.unit !== scope.attachedFrom.unit ||
+        segment.value !== scope.attachedFrom.value ||
+        segment.branch === null ||
+        segment.branch < scope.attachedFrom.branch
+      ) return false;
+    } else if (rangeMode) {
       const min = scope.mode === 'atMost' ? null : (scope.min || scope.target);
       const max = scope.mode === 'atLeast' ? null : (scope.max || scope.end || scope.target);
       if (!segmentInRange(segment, min, max, scope.includeAttached)) return false;
@@ -638,6 +670,23 @@ function resolveZipcodeScopes(scopes, addressText) {
   const matches = parsedItems
     .filter(({ parsed }) => scopeMatchesParsed(parsed, address))
     .sort((a, b) => b.parsed.specificity - a.parsed.specificity || a.index - b.index);
+  const pending = candidates
+    .filter(({ parsed }) => !scopeMatchesParsed(parsed, address))
+    .sort((a, b) => b.parsed.specificity - a.parsed.specificity || a.index - b.index);
+  const topMatchScore = matches[0]?.parsed.specificity ?? Number.NEGATIVE_INFINITY;
+  const topPendingScore = pending[0]?.parsed.specificity ?? Number.NEGATIVE_INFINITY;
+
+  // A complete house/lane token can still be insufficient when the database
+  // further divides that address by floor or attached number.  Do not fall
+  // back to a broader match (or report it as invalid) until that qualifier is
+  // supplied.
+  if (pending.length && topPendingScore > topMatchScore) {
+    return {
+      status: 'incomplete',
+      matches: [],
+      pending: pending.map(({ item }) => item),
+    };
+  }
   if (!matches.length) return { status: 'unmatched', matches: [], pending: [] };
 
   const topScore = matches[0].parsed.specificity;
