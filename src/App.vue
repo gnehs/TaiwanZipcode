@@ -48,7 +48,7 @@
         <i class="bx bx-arrow-back"></i> 返回
       </button>
       <h2 class="page-subtitle">
-        <span v-if="resolvedScope">{{ resolvedScope.zipcode }} </span>{{ addressInput }}
+        <span v-if="displayedZipcode">{{ displayedZipcode }} </span>{{ addressInput }}
       </h2>
       <section class="detail-section">
         <label class="bold" for="addressForm">後續地址</label>
@@ -97,13 +97,65 @@
           <div class="matched-address-item" v-if="address.form.room">{{address.form.room}}室</div>
         </div>
       </section>
-      <section class="detail-section">
-        <div class="bold">郵遞區號</div>
-        {{ resolvedScope?.zipcode || "待輸入完整門牌後自動判斷" }}
-      </section>
-      <section class="detail-section">
-        <div class="bold">範圍</div>
-        {{ resolvedScope?.scope || "尚未判斷" }}
+      <section class="detail-section zipcode-section">
+        <div class="zipcode-label-row">
+          <div class="bold">郵遞區號</div>
+          <div
+            class="rules-disclosure"
+            @mouseenter="showRulesInfoOnHover"
+            @mouseleave="hideRulesInfoOnHover"
+          >
+            <button
+              type="button"
+              class="rules-info-button"
+              aria-label="顯示此道路的所有郵遞區號規則"
+              aria-controls="allZipcodeRules"
+              :aria-expanded="isRulesInfoVisible"
+              @click="toggleRulesInfo"
+              @keydown.esc.stop="closeRulesInfo"
+            >
+              <i class="bx bxs-info-circle" aria-hidden="true"></i>
+            </button>
+            <div
+              v-show="isRulesInfoVisible"
+              id="allZipcodeRules"
+              class="rules-popover"
+              role="region"
+              aria-labelledby="allZipcodeRulesTitle"
+            >
+              <div id="allZipcodeRulesTitle" class="rules-popover-title">
+                此道路的所有郵遞區號規則
+              </div>
+              <ul class="rules-list">
+                <li
+                  v-for="(rule, index) of currentRoadScopes"
+                  :key="`${rule.zipcode}-${rule.scope}-${index}`"
+                  class="rules-list-item"
+                  :class="{ 'is-active': rule === resolvedScope }"
+                >
+                  <span class="rules-list-zipcode">{{ displayRuleZipcode(rule.zipcode) }}</span>
+                  <span>
+                    <span v-if="rule.department" class="rules-list-department">
+                      {{ rule.department }}
+                    </span>
+                    {{ formatScopeRule(rule.scope) }}
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="zipcode-value">
+          {{ displayedZipcode || "待輸入完整門牌後自動判斷" }}
+        </div>
+        <small class="matched-rule-caption" v-if="!hasAddressForm">
+          {{ baseZipcodePrefixes.length === 1
+            ? "尚未輸入後續地址，後三碼暫不顯示"
+            : "此道路包含不同前三碼，請輸入後續地址後判斷" }}
+        </small>
+        <small class="matched-rule-caption" v-else-if="resolvedScope">
+          匹配規則：{{ formatScopeRule(resolvedScope.scope) }}
+        </small>
       </section>
       <section class="detail-section" v-if="resolvedScope?.department">
         <div class="bold">大宗戶</div>
@@ -197,6 +249,79 @@ body
     color: red
 .detail-section
   margin: 1em 0
+.zipcode-section
+  position: relative
+.zipcode-label-row
+  display: flex
+  align-items: center
+  gap: .35em
+.zipcode-value
+  margin-top: .1em
+  font-size: 22px
+  font-weight: 700
+.matched-rule-caption
+  display: block
+  margin-top: .1em
+  font-size: 13px
+  opacity: .75
+.rules-disclosure
+  display: flex
+.rules-info-button
+  all: unset
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  width: 1.5em
+  height: 1.5em
+  cursor: pointer
+  opacity: .6
+  border-radius: 50%
+  transition: opacity .15s ease, background-color .15s ease
+  &:hover,
+  &:focus-visible
+    opacity: 1
+    background-color: var(--tertiary-background-color)
+  &:focus-visible
+    outline: 2px solid var(--border-focus-color)
+    outline-offset: 2px
+.rules-popover
+  position: absolute
+  top: 2em
+  left: 0
+  z-index: 10
+  width: min(420px, 100%)
+  max-height: 320px
+  overflow-y: auto
+  overscroll-behavior: contain
+  padding: .75em
+  background-color: var(--background-color)
+  border: 1px solid var(--border-color)
+  border-radius: var(--border-radius)
+  box-shadow: 0 12px 32px rgba(0,0,0,.18)
+.rules-popover-title
+  padding: 0 .25em .5em
+  font-size: 13px
+  font-weight: 700
+.rules-list
+  list-style: none
+  margin: 0
+  padding: 0
+.rules-list-item
+  display: grid
+  grid-template-columns: 5.25em minmax(0, 1fr)
+  gap: .5em
+  padding: .45em .5em
+  font-size: 13px
+  border-top: 1px solid var(--border-color)
+  overflow-wrap: anywhere
+  &.is-active
+    background-color: var(--tertiary-background-color)
+    border-radius: calc(var(--border-radius) / 2)
+.rules-list-zipcode
+  font-weight: 700
+.rules-list-department
+  display: block
+  font-weight: 700
 .matched-address
   display: flex
   align-items: center
@@ -378,6 +503,9 @@ export default {
       addressInput: "",
       isDetailOpen: false,
       manuallySelectedScope: null,
+      isRulesInfoPinned: false,
+      isRulesInfoHovered: false,
+      isRulesInfoHoverSuppressed: false,
       addressForm: ""
     }
   },
@@ -397,6 +525,28 @@ export default {
       return resolveZipcodeScopes(
         this.addressList[this.addressInput] || [],
         this.addressForm
+      );
+    },
+    currentRoadScopes() {
+      return this.addressList[this.addressInput] || [];
+    },
+    hasAddressForm() {
+      return Boolean(this.addressForm.trim());
+    },
+    baseZipcodePrefixes() {
+      return [...new Set(this.currentRoadScopes
+        .map(rule => String(rule.zipcode || "").slice(0, 3))
+        .filter(Boolean))];
+    },
+    displayedZipcode() {
+      if (this.hasAddressForm) {
+        return this.resolvedScope?.zipcode ? String(this.resolvedScope.zipcode) : "";
+      }
+      return this.baseZipcodePrefixes.length === 1 ? this.baseZipcodePrefixes[0] : "";
+    },
+    isRulesInfoVisible() {
+      return this.isRulesInfoPinned || (
+        this.isRulesInfoHovered && !this.isRulesInfoHoverSuppressed
       );
     },
     resolvedScope() {
@@ -542,10 +692,44 @@ export default {
       this.addressList = result;
       this.zhEnAddressList = zhEnResult;
     },
+    formatScopeRule(scope) {
+      return String(scope || "")
+        .normalize("NFKC")
+        .replace(/\s+/gu, " ")
+        .trim();
+    },
+    displayRuleZipcode(zipcode) {
+      const normalized = String(zipcode || "");
+      return this.hasAddressForm ? normalized : normalized.slice(0, 3);
+    },
+    showRulesInfoOnHover() {
+      this.isRulesInfoHovered = true;
+      this.isRulesInfoHoverSuppressed = false;
+    },
+    hideRulesInfoOnHover() {
+      this.isRulesInfoHovered = false;
+      this.isRulesInfoHoverSuppressed = false;
+    },
+    toggleRulesInfo() {
+      if (this.isRulesInfoPinned) {
+        this.isRulesInfoPinned = false;
+        this.isRulesInfoHoverSuppressed = true;
+        return;
+      }
+      this.isRulesInfoPinned = true;
+      this.isRulesInfoHoverSuppressed = false;
+    },
+    closeRulesInfo() {
+      this.isRulesInfoPinned = false;
+      this.isRulesInfoHoverSuppressed = true;
+    },
     openDetail(address, scope = null) {
       this.addressInput = address;
       this.addressForm = "";
       this.manuallySelectedScope = scope;
+      this.isRulesInfoPinned = false;
+      this.isRulesInfoHovered = false;
+      this.isRulesInfoHoverSuppressed = false;
       this.isDetailOpen = true;
       this.$nextTick(() => {
         const input = this.$refs.addressFormInput;
@@ -557,6 +741,9 @@ export default {
     returnToSearch() {
       this.isDetailOpen = false;
       this.manuallySelectedScope = null;
+      this.isRulesInfoPinned = false;
+      this.isRulesInfoHovered = false;
+      this.isRulesInfoHoverSuppressed = false;
       this.addressForm = "";
       this.$nextTick(() => this.$refs.searchInput?.focusInput());
     },
