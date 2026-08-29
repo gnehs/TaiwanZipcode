@@ -273,7 +273,10 @@ function removeAttachedQualifiers(text) {
     const candidates = tokenizePath(before).filter((token) => token.kind === 'atom');
     const last = candidates[candidates.length - 1];
     if (last && last.unit === '號') attachedFrom = last;
-    pathText = pathText.replace(/及以上附號/g, '');
+    // Preserve the lower-bound operator while removing the prose qualifier:
+    // `2之4號及以上附號` becomes the ordinary range `2之4號以上`, with
+    // includeAttached=true carried separately.
+    pathText = pathText.replace(/及以上附號/g, '以上');
   }
   if (/含附號/.test(pathText)) {
     includeAttached = true;
