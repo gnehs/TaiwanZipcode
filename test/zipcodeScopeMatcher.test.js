@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import zipcodeData from '../src/assets/zipcode.json' with { type: 'json' };
 import {
+  getZipcodeScopeMatchBasis,
   matchZipcodeScope,
   parseAddressSuffix,
   parseScope,
@@ -37,7 +38,22 @@ test('matches the four 永和區信義路 boundary rules', () => {
 
   assert.equal(resolveZipcodeScopes(scopes, '75').status, 'incomplete');
   assert.equal(resolveZipcodeScopes(scopes, '75號404室').matches[0].zipcode, 234008);
+  assert.equal(resolveZipcodeScopes(scopes, '25巷85號5樓').matches[0].zipcode, 234006);
+  assert.equal(resolveZipcodeScopes(scopes, '85號5樓').matches[0].zipcode, 234006);
+  assert.equal(resolveZipcodeScopes(scopes, '77巷85號').matches[0].zipcode, 234006);
+  assert.equal(resolveZipcodeScopes(scopes, '25巷76號').status, 'unmatched');
+  assert.equal(resolveZipcodeScopes(scopes, '25巷').status, 'incomplete');
   assert.equal(resolveZipcodeScopes(scopes, '').status, 'empty');
+});
+
+test('explains which address level caused a scope match', () => {
+  assert.equal(getZipcodeScopeMatchBasis('單 77號以上', '25巷85號5樓').text, '85號');
+  assert.equal(getZipcodeScopeMatchBasis('單 77號以上', '85號5樓').text, '85號');
+  assert.equal(getZipcodeScopeMatchBasis('192巷單全', '192巷1弄2號').text, '1弄');
+  assert.equal(getZipcodeScopeMatchBasis('30號3樓至10樓', '30號5樓').text, '30號、5樓');
+  assert.equal(getZipcodeScopeMatchBasis('2之4號及以上附號', '2之4號附號').text, '2之4號附號');
+  assert.equal(getZipcodeScopeMatchBasis('全', '25巷85號').text, '路名');
+  assert.equal(getZipcodeScopeMatchBasis('單 75號以下', '85號'), null);
 });
 
 test('parses nested 巷/弄 paths and applies parity at the next level', () => {
@@ -104,8 +120,10 @@ test('supports mixed 巷/弄/號 endpoints and inclusive ranges', () => {
   assert.equal(matchZipcodeScope('雙 10號以上', '12號'), true);
   assert.equal(matchZipcodeScope('雙 10號以上', '11號'), false);
   assert.equal(matchZipcodeScope('單 75號以下', '75號之1'), true);
-  assert.equal(matchZipcodeScope('連 1號至100號', '90巷122號'), true);
-  assert.equal(matchZipcodeScope('連 1號至100號', '101巷1號'), false);
+  assert.equal(matchZipcodeScope('連 1號至100號', '90巷122號'), false);
+  assert.equal(matchZipcodeScope('連 1號至100號', '101巷1號'), true);
+  assert.equal(matchZipcodeScope('58巷單35號以下', '58巷33弄113號'), false);
+  assert.equal(matchZipcodeScope('58巷單35號以下', '58巷33弄35號'), true);
 });
 
 test('normalizes the database descending numeric interval', () => {
@@ -140,6 +158,8 @@ test('matches representative nested, attached-number, and floor records from the
     ['新北市', '板橋區', '中正路', '10號地下1樓', 220210],
     ['新北市', '淡水區', '英專路', '151號之1', 251025],
     ['新北市', '鶯歌區', '西湖街', '2之4號', 239608],
+    ['臺北市', '大安區', '忠孝東路三段', '217巷7弄1號', 106665],
+    ['新北市', '三重區', '中興北街', '42巷17弄12號', 241460],
   ];
 
   for (const [city, area, road, address, zipcode] of cases) {

@@ -560,6 +560,31 @@ function pathPrefixMatches(scopePrefix, addressPath, allowPartial = false) {
   return scopePrefix.length <= addressPath.length || allowPartial;
 }
 
+function addressTargetIndex(scope, addressPath) {
+  const prefixLength = (scope.prefix || []).length;
+  // Implicit and mixed-unit selectors intentionally inspect the next address
+  // level after their fixed prefix.
+  if (scope.implicitTarget || !scope.target || scope.unitFlexible) {
+    return prefixLength;
+  }
+
+  // A rule with a concrete unit must inspect that same unit. For example,
+  // `單75號以下` applied to `25巷85號` judges `85號`; the lane must not be
+  // substituted for a house-number rule.
+  return addressPath.findIndex((segment, index) => (
+    index >= prefixLength && segment.unit === scope.target.unit
+  ));
+}
+
+function missingTargetCouldBeAppended(scope, addressPath) {
+  const lastSegment = addressPath[addressPath.length - 1];
+  if (!lastSegment) return true;
+  const unitOrder = { 巷: 0, 弄: 1, 號: 2 };
+  const targetOrder = unitOrder[scope.target?.unit];
+  const lastOrder = unitOrder[lastSegment.unit];
+  return targetOrder !== undefined && lastOrder !== undefined && targetOrder > lastOrder;
+}
+
 function scopeMatchesParsed(scope, address, { allowPartial = false } = {}) {
   if (!scope?.supported || !address?.supported) return false;
   const addressPath = address.path || [];
@@ -567,15 +592,15 @@ function scopeMatchesParsed(scope, address, { allowPartial = false } = {}) {
 
   // Explicit nested prefixes (e.g. 58巷 33弄) must be present in order.
   if (!pathPrefixMatches(scope.prefix || [], addressPath, allowPartial)) return false;
-  const targetIndex = (scope.prefix || []).length;
+  const targetIndex = addressTargetIndex(scope, addressPath);
 
   if (scope.implicitTarget) {
-    const segment = addressPath[targetIndex];
+    const segment = targetIndex >= 0 ? addressPath[targetIndex] : null;
     if (!segment) return allowPartial;
     if (scope.parity && scope.parity !== '連' && segment.value % 2 !== (scope.parity === '單' ? 1 : 0)) return false;
   } else if (scope.target) {
-    const segment = addressPath[targetIndex];
-    if (!segment) return allowPartial;
+    const segment = targetIndex >= 0 ? addressPath[targetIndex] : null;
+    if (!segment) return allowPartial && missingTargetCouldBeAppended(scope, addressPath);
     const rangeMode = scope.mode === 'range' || scope.mode === 'atMost' || scope.mode === 'atLeast';
     // At a given address level the official notation permits endpoints to
     // switch between 巷/弄/號; compare their numeric values, not the glyph.
@@ -598,7 +623,7 @@ function scopeMatchesParsed(scope, address, { allowPartial = false } = {}) {
   }
 
   if (scope.attachedRequired) {
-    const targetSegment = addressPath[targetIndex] || addressPath[addressPath.length - 1];
+    const targetSegment = (targetIndex >= 0 ? addressPath[targetIndex] : null) || addressPath[addressPath.length - 1];
     if (!targetSegment?.attached && !address.attached) return false;
   }
   if (!floorCouldMatchPartially(scope.floor, address.floors)) return false;
@@ -610,9 +635,13 @@ function scopeSpecificity(scope) {
   let score = 0;
   if (scope.floor) score += 1000;
   if (scope.exact) score += 700;
+  // A fixed `527巷全` exception outranks a broad root house-number range, while
+  // deeper nested exceptions still win through their prefix-depth score.
+  if (scope.mode === 'all' && scope.target) score += 400;
   if (scope.mode === 'range' || scope.mode === 'atMost' || scope.mode === 'atLeast') score += 350;
   if (scope.mode === 'all') score += 50;
   score += (scope.atoms?.length || 0) * 45;
+  score += (scope.prefix?.length || 0) * 200;
   if (scope.target?.unit === '弄') score += 12;
   if (scope.target?.unit === '巷') score += 8;
   if (scope.parity) score += 20;
@@ -632,6 +661,40 @@ function matchZipcodeScope(scopeTextOrItem, addressTextOrParsed) {
   const address = addressTextOrParsed?.path ? addressTextOrParsed : parseAddressSuffix(addressTextOrParsed);
   if (!address.complete) return false;
   return scopeMatchesParsed(scope, address);
+}
+
+/**
+ * Return the concrete address part that caused a scope to match.
+ *
+ * The reported part follows the rule's explicit unit. For example,
+ * `25巷85號` matched by `單77號以上` reports `85號`; a preceding lane is not
+ * substituted for a house-number rule.
+ */
+function getZipcodeScopeMatchBasis(scopeTextOrItem, addressTextOrParsed) {
+  const scope = scopeTextOrItem?.atoms ? scopeTextOrItem : parseScope(scopeItemText(scopeTextOrItem));
+  const address = addressTextOrParsed?.path ? addressTextOrParsed : parseAddressSuffix(addressTextOrParsed);
+  if (!address.complete || !scopeMatchesParsed(scope, address)) return null;
+
+  const parts = [];
+  if (scope.target || scope.implicitTarget) {
+    const targetIndex = addressTargetIndex(scope, address.path);
+    const segment = targetIndex >= 0 ? address.path[targetIndex] : null;
+    if (segment?.raw) {
+      let segmentText = compactText(segment.raw);
+      if (segment.attached && address.compact?.includes(`${segmentText}附號`)) {
+        segmentText += '附號';
+      }
+      parts.push(segmentText);
+    }
+  }
+  if (scope.floor && address.floors?.floors?.length) {
+    parts.push(...address.floors.floors.map((floor) => compactText(floor.raw)));
+  }
+
+  return {
+    parts,
+    text: parts.join('、') || '路名',
+  };
 }
 
 function pendingScope(scopeTextOrItem, address) {
@@ -709,6 +772,7 @@ const parseZipcodeScope = parseScope;
 
 export {
   findMatchingScope,
+  getZipcodeScopeMatchBasis,
   matchScope,
   matchZipcodeScope,
   parseAddressSuffix,
@@ -719,6 +783,7 @@ export {
 
 export default {
   findMatchingScope,
+  getZipcodeScopeMatchBasis,
   matchScope,
   matchZipcodeScope,
   parseAddressSuffix,

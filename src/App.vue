@@ -154,7 +154,7 @@
             : "此道路包含不同前三碼，請輸入後續地址後判斷" }}
         </small>
         <small class="matched-rule-caption" v-else-if="resolvedScope">
-          匹配規則：{{ formatScopeRule(resolvedScope.scope) }}
+          匹配規則：{{ formatScopeRule(resolvedScope.scope) }}<span v-if="matchedRuleBasis">（以 {{ matchedRuleBasis }}判斷）</span>
         </small>
       </section>
       <section class="detail-section" v-if="resolvedScope?.department">
@@ -489,6 +489,7 @@ body
 import zipcodeData from "./assets/zipcode.json";
 import simpleTypeahead from "./components/vue3-simple-typeahead.vue";
 import {
+  getZipcodeScopeMatchBasis,
   parseAddressSuffix,
   resolveZipcodeScopes
 } from "./utils/zipcodeScopeMatcher.js";
@@ -548,6 +549,10 @@ export default {
       return this.isRulesInfoPinned || (
         this.isRulesInfoHovered && !this.isRulesInfoHoverSuppressed
       );
+    },
+    matchedRuleBasis() {
+      if (!this.resolvedScope || !this.hasAddressForm) return "";
+      return getZipcodeScopeMatchBasis(this.resolvedScope, this.addressForm)?.text || "";
     },
     resolvedScope() {
       if (
