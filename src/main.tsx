@@ -2,15 +2,11 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import App from "@/App"
+import { initializeTheme } from "@/lib/theme"
 import "@/index.css"
 
-const colorScheme = window.matchMedia("(prefers-color-scheme: dark)")
-const syncColorScheme = () => {
-  document.documentElement.classList.toggle("dark", colorScheme.matches)
-}
-
-syncColorScheme()
-colorScheme.addEventListener("change", syncColorScheme)
+const disposeTheme = initializeTheme()
+if (import.meta.hot) import.meta.hot.dispose(disposeTheme)
 
 createRoot(document.getElementById("app")!).render(
   <StrictMode>
