@@ -1,5 +1,9 @@
 import zipcodeData from "@/assets/zipcode.json"
+import { hasUnconvertedAddressParts } from "@/utils/addressConversion.js"
+import { searchAddressList } from "@/utils/addressSearch.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
+
+export { normalizeSearchText } from "@/utils/addressSearch.js"
 
 export type ZipcodeScope = {
   zipcode: number
@@ -76,26 +80,21 @@ export const addressIndex = buildAddressIndex(
   zipcodeData as unknown as ZipcodeDatabase,
 )
 
-export function normalizeSearchText(value: string) {
-  return value.normalize("NFKC").replaceAll("台", "臺").trim()
+export const ADDRESS_SEARCH_LIMIT = 30
+
+export function searchAddresses(query: string, limit = ADDRESS_SEARCH_LIMIT) {
+  return searchAddressList(query, addressIndex.addresses, limit)
 }
 
-export function filterAddresses(query: string, limit = 100) {
-  const keywords = normalizeSearchText(query).split(/\s+/u).filter(Boolean)
-  if (!keywords.length) return []
-
-  const matches: string[] = []
-  for (const address of addressIndex.addresses) {
-    if (keywords.every((keyword) => address.includes(keyword))) {
-      matches.push(address)
-      if (matches.length >= limit) break
-    }
-  }
-  return matches
+export function filterAddresses(query: string, limit = ADDRESS_SEARCH_LIMIT) {
+  return searchAddresses(query, limit).matches
 }
 
 export function formatScopeRule(scope: string) {
-  return String(scope || "").normalize("NFKC").replace(/\s+/gu, " ").trim()
+  return String(scope || "")
+    .normalize("NFKC")
+    .replace(/\s+/gu, " ")
+    .trim()
 }
 
 export function formatAddress(
@@ -130,7 +129,8 @@ export function formatAddress(
   }
 
   const parsed = parseAddressSuffix(addressSuffix)
-  const room = addressSuffix.match(/([\dA-Za-z]+)室/u)?.[1] || null
+  const room =
+    addressSuffix.normalize("NFKC").match(/([\dA-Za-z]+)室/u)?.[1] || null
   const form: ParsedAddress["form"] = {
     ln: parsed.ln,
     aly: parsed.aly,
@@ -176,6 +176,10 @@ export function formatAddress(
   if (form.room) {
     zh += `${form.room}室`
     englishParts.push(`${form.room} Room`)
+  }
+
+  if (hasUnconvertedAddressParts(addressSuffix, zh.slice(baseAddress.length))) {
+    warns.push("部分門牌內容未能轉換成英文")
   }
 
   return {

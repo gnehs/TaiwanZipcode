@@ -16,21 +16,18 @@ type ScopeResolution = {
   pending?: ZipcodeScope[]
 }
 
+const EMPTY_SCOPES: ZipcodeScope[] = []
+
 export default function App() {
   const initialState = useMemo(() => readHashState(), [])
   const [addressInput, setAddressInput] = useState(initialState.address)
-  const [addressSuffix, setAddressSuffix] = useState(
-    initialState.addressSuffix,
-  )
-  const [isDetailOpen, setIsDetailOpen] = useState(
-    initialState.isDetailOpen,
-  )
-  const [manuallySelectedScope, setManuallySelectedScope] =
-    useState<ZipcodeScope | null>(initialState.manuallySelectedScope)
+  const [searchQuery, setSearchQuery] = useState(initialState.address)
+  const [addressSuffix, setAddressSuffix] = useState(initialState.addressSuffix)
+  const [isDetailOpen, setIsDetailOpen] = useState(initialState.isDetailOpen)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const addressInputRef = useRef<HTMLInputElement>(null)
 
-  const scopes = addressIndex.scopesByAddress[addressInput] || []
+  const scopes = addressIndex.scopesByAddress[addressInput] || EMPTY_SCOPES
   const scopeResolution = useMemo<ScopeResolution>(
     () =>
       !isDetailOpen || !addressInput
@@ -38,27 +35,11 @@ export default function App() {
         : (resolveZipcodeScopes(scopes, addressSuffix) as ScopeResolution),
     [addressInput, addressSuffix, isDetailOpen, scopes],
   )
-  const resolvedScope = useMemo(() => {
-    if (
-      manuallySelectedScope &&
-      scopeResolution.matches?.includes(manuallySelectedScope)
-    ) {
-      return manuallySelectedScope
-    }
-    if (scopeResolution.status === "matched") {
-      return (scopeResolution.matches[0] as ZipcodeScope | undefined) || null
-    }
-    if (scopeResolution.status === "empty") {
-      if (manuallySelectedScope) return manuallySelectedScope
-      if (
-        scopes.length === 1 &&
-        scopes[0].scope.normalize("NFKC").replace(/\s+/gu, "") === "全"
-      ) {
-        return scopes[0]
-      }
-    }
-    return null
-  }, [manuallySelectedScope, scopeResolution, scopes])
+  // A saved zipcode is only a URL hint; always resolve the current input.
+  const resolvedScope =
+    scopeResolution.status === "matched"
+      ? scopeResolution.matches[0] || null
+      : null
   const baseZipcodePrefixes = useMemo(
     () => [
       ...new Set(
@@ -93,9 +74,9 @@ export default function App() {
     const syncFromHash = () => {
       const nextState = readHashState()
       setAddressInput(nextState.address)
+      setSearchQuery(nextState.address)
       setAddressSuffix(nextState.addressSuffix)
       setIsDetailOpen(nextState.isDetailOpen)
-      setManuallySelectedScope(nextState.manuallySelectedScope)
     }
 
     window.addEventListener("hashchange", syncFromHash)
@@ -103,31 +84,38 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const target = isDetailOpen ? addressInputRef.current : searchInputRef.current
+    const isDesktop = window.matchMedia(
+      "(hover: hover) and (pointer: fine)",
+    ).matches
+    const target = isDesktop
+      ? isDetailOpen
+        ? addressInputRef.current
+        : searchInputRef.current
+      : document.getElementById(isDetailOpen ? "detail-title" : "search-title")
     if (!target) return
     const frame = window.requestAnimationFrame(() => {
       target.focus()
-      target.setSelectionRange?.(target.value.length, target.value.length)
+      if (target instanceof HTMLInputElement) {
+        target.setSelectionRange(target.value.length, target.value.length)
+      }
     })
     return () => window.cancelAnimationFrame(frame)
   }, [isDetailOpen])
 
-  function openDetail(address: string, scope: ZipcodeScope | null = null) {
+  function openDetail(address: string, suffix?: string) {
     setAddressInput(address)
-    setAddressSuffix("")
-    setManuallySelectedScope(scope)
+    setAddressSuffix(suffix ?? (address === addressInput ? addressSuffix : ""))
     setIsDetailOpen(true)
   }
 
   function returnToSearch() {
+    setSearchQuery(addressInput)
     setIsDetailOpen(false)
-    setManuallySelectedScope(null)
-    setAddressSuffix("")
   }
 
   return (
     <div className="min-h-svh bg-muted/30">
-      <main className="mx-auto w-full max-w-3xl px-4 pt-6 sm:px-6 sm:pt-16">
+      <main className="mx-auto w-full max-w-3xl px-4 pt-6 sm:px-6 sm:pt-12">
         {isDetailOpen ? (
           <AddressDetail
             address={addressInput}
@@ -144,9 +132,9 @@ export default function App() {
           />
         ) : (
           <AddressSearch
-            addressInput={addressInput}
+            addressInput={searchQuery}
             inputRef={searchInputRef}
-            onAddressInputChange={setAddressInput}
+            onAddressInputChange={setSearchQuery}
             onOpenDetail={openDetail}
           />
         )}

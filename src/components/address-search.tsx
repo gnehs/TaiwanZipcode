@@ -1,16 +1,7 @@
 import { useMemo, useState } from "react"
-import { ArrowRightIcon, InfoIcon, SearchIcon } from "lucide-react"
+import { SearchIcon, XIcon } from "lucide-react"
 
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   Combobox,
   ComboboxContent,
@@ -20,19 +11,25 @@ import {
   ComboboxList,
   useComboboxAnchor,
 } from "@/components/ui/combobox"
-import { InputGroupAddon } from "@/components/ui/input-group"
 import {
-  addressIndex,
-  filterAddresses,
-  type ZipcodeScope,
-} from "@/lib/addresses"
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group"
+import { addressIndex, searchAddresses } from "@/lib/addresses"
+import { getAddressSelection } from "@/utils/addressSearch.js"
 
 type AddressSearchProps = {
   addressInput: string
   inputRef: React.RefObject<HTMLInputElement | null>
   onAddressInputChange: (value: string) => void
-  onOpenDetail: (address: string, scope?: ZipcodeScope | null) => void
+  onOpenDetail: (address: string, suffix?: string) => void
 }
+
+const ROAD_KEYWORD_EXAMPLES = ["中山北路", "忠孝東路", "和平東路"]
+const MIN_QUERY_LENGTH = 2
 
 export function AddressSearch({
   addressInput,
@@ -45,14 +42,44 @@ export function AddressSearch({
     null,
   )
   const comboboxAnchor = useComboboxAnchor()
-  const suggestions = useMemo(
+  const searchResult = useMemo(
     () =>
-      addressInput.trim().length >= 2
-        ? filterAddresses(addressInput)
-        : [],
+      addressInput.trim().length >= MIN_QUERY_LENGTH
+        ? searchAddresses(addressInput)
+        : { matches: [], hasMore: false, prefixMatch: null },
     [addressInput],
   )
-  const resultList = addressIndex.scopesByAddress[addressInput] || []
+  const suggestions = searchResult.matches
+  const helperText = useMemo(() => {
+    const query = addressInput.trim()
+    if (!query) {
+      return "輸入至少 2 個字元開始搜尋，也可以貼上含門牌的完整地址。"
+    }
+    if (query.length < MIN_QUERY_LENGTH) {
+      return "再輸入 1 個字元開始搜尋。"
+    }
+    if (!suggestions.length) {
+      return "找不到相符道路，請縮短關鍵字或確認縣市、行政區。"
+    }
+    if (searchResult.prefixMatch?.suffix) {
+      return "已辨識道路；按 Enter 選擇後，後面的門牌會保留。"
+    }
+    if (searchResult.hasMore) {
+      return `顯示前 ${suggestions.length} 條相符道路，請加入縣市或行政區縮小範圍。`
+    }
+    return `找到 ${suggestions.length} 條相符道路，請用 ↑↓ 選擇後按 Enter。`
+  }, [addressInput, searchResult, suggestions.length])
+
+  function handleKeywordExample(keyword: string) {
+    onAddressInputChange(keyword)
+    setIsSuggestionsOpen(true)
+    inputRef.current?.focus()
+  }
+
+  function selectAddress(address: string) {
+    const selection = getAddressSelection(addressInput, address)
+    onOpenDetail(address, selection?.suffix || undefined)
+  }
 
   return (
     <section className="flex flex-col gap-6" aria-labelledby="search-title">
@@ -64,6 +91,7 @@ export function AddressSearch({
         </div>
         <h1
           id="search-title"
+          tabIndex={-1}
           className="text-2xl font-semibold tracking-tight sm:text-3xl"
         >
           台灣 3+3 郵遞區號查詢
@@ -73,135 +101,165 @@ export function AddressSearch({
         </p>
       </header>
 
-      <div className="flex flex-col gap-3">
-        <Combobox
-          items={addressIndex.addresses}
-          filteredItems={suggestions}
-          filter={null}
-          open={isSuggestionsOpen && suggestions.length > 0}
-          onOpenChange={(open, eventDetails) => {
-            if (open) {
-              setIsSuggestionsOpen(true)
-              return
-            }
-            if (
-              [
-                "escape-key",
-                "outside-press",
-                "focus-out",
-                "close-press",
-                "clear-press",
-                "cancel-open",
-              ].includes(eventDetails.reason)
-            ) {
-              setIsSuggestionsOpen(false)
-            }
-          }}
-          onItemHighlighted={(address) => {
-            setHighlightedAddress(
-              typeof address === "string" ? address : null,
-            )
-          }}
-          inputValue={addressInput}
-          onInputValueChange={(value) => {
-            onAddressInputChange(value)
-            setHighlightedAddress(null)
-            setIsSuggestionsOpen(value.trim().length >= 2)
-          }}
-          onValueChange={(address) => {
-            if (typeof address === "string") {
-              onOpenDetail(address)
-            }
-          }}
-          autoHighlight
-        >
-          <div ref={comboboxAnchor} className="w-full">
-            <ComboboxInput
-              ref={inputRef}
-              className="h-12 w-full"
-              placeholder="輸入縣市、行政區或道路名稱…"
-              aria-label="搜尋台灣地址"
-              autoComplete="off"
-              onKeyDown={(event) => {
-                const tabSelection = highlightedAddress || suggestions[0]
-                if (event.key === "Tab" && tabSelection) {
-                  event.preventDefault()
-                  onOpenDetail(tabSelection)
-                }
-              }}
-              showTrigger={false}
-              showClear={Boolean(addressInput)}
-            >
-              <InputGroupAddon align="inline-start">
-                <SearchIcon />
-              </InputGroupAddon>
-            </ComboboxInput>
-          </div>
-          <ComboboxContent anchor={comboboxAnchor}>
-            <ComboboxEmpty>找不到符合的道路</ComboboxEmpty>
-            <ComboboxList>
-              {(address: string) => (
-                <ComboboxItem key={address} value={address}>
-                  {address}
-                </ComboboxItem>
-              )}
-            </ComboboxList>
-          </ComboboxContent>
-        </Combobox>
+      <ol
+        className="grid grid-cols-3 gap-2 rounded-xl border bg-card p-3 text-xs sm:gap-3 sm:p-4 sm:text-sm"
+        aria-label="查詢步驟"
+      >
+        <li className="flex min-w-0 items-center gap-1.5 sm:items-start sm:gap-3">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[0.7rem] font-semibold text-primary-foreground sm:size-6 sm:text-xs">
+            1
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-medium">選擇道路</span>
+            <span className="hidden text-xs text-muted-foreground sm:block">
+              輸入道路或點選範例
+            </span>
+          </span>
+        </li>
+        <li className="flex min-w-0 items-center gap-1.5 sm:items-start sm:gap-3">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[0.7rem] font-semibold text-primary-foreground sm:size-6 sm:text-xs">
+            2
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-medium">補上門牌</span>
+            <span className="hidden text-xs text-muted-foreground sm:block">
+              輸入巷、弄、號與樓層
+            </span>
+          </span>
+        </li>
+        <li className="flex min-w-0 items-center gap-1.5 sm:items-start sm:gap-3">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[0.7rem] font-semibold text-primary-foreground sm:size-6 sm:text-xs">
+            3
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-medium">複製區號</span>
+            <span className="hidden text-xs text-muted-foreground sm:block">
+              確認完整六碼後複製
+            </span>
+          </span>
+        </li>
+      </ol>
 
-        <Alert>
-          <InfoIcon />
-          <AlertDescription>
-            {addressInput
-              ? suggestions.length
-                ? `找到 ${suggestions.length} 條相符道路；選擇後即可輸入門牌。`
-                : "找不到相符道路，請嘗試縮短關鍵字或調整空白。"
-              : "可輸入「中山北路」、「信義區松山路」或「台北 忠孝東路」。"}
-          </AlertDescription>
-        </Alert>
-      </div>
-
-      <Card>
-        <CardHeader className="border-b">
-          <CardTitle>查詢結果</CardTitle>
-          <CardDescription>
-            {resultList.length
-              ? `找到 ${resultList.length} 筆郵遞區號規則`
-              : "請先從搜尋建議中選擇道路"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-0">
-          {resultList.length ? (
-            <div className="flex flex-col">
-              {resultList.map((item, index) => (
-                <Button
-                  key={`${item.zipcode}-${item.scope}-${index}`}
-                  variant="ghost"
-                  className="h-auto w-full justify-start rounded-none px-4 py-3 text-left"
-                  onClick={() => onOpenDetail(addressInput, item)}
-                >
-                  <span className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-                    <Badge variant="outline">{item.zipcode}</Badge>
-                    <span className="min-w-0 whitespace-normal">
-                      {item.department ? (
-                        <span className="block font-medium">
-                          {item.department}
-                        </span>
-                      ) : null}
-                      <span className="text-muted-foreground">{item.scope}</span>
-                    </span>
-                    <ArrowRightIcon data-icon="inline-end" />
-                  </span>
-                </Button>
-              ))}
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="address-search">搜尋道路</FieldLabel>
+          <Combobox
+            items={addressIndex.addresses}
+            filteredItems={suggestions}
+            filter={null}
+            open={isSuggestionsOpen && suggestions.length > 0}
+            onOpenChange={(open) => setIsSuggestionsOpen(open)}
+            inputValue={addressInput}
+            onInputValueChange={(value, details) => {
+              // Keep the search text when the popup blurs or changes selection.
+              if (
+                details.reason !== "input-change" &&
+                details.reason !== "clear-press"
+              )
+                return
+              onAddressInputChange(value)
+              setHighlightedAddress(null)
+              setIsSuggestionsOpen(value.trim().length >= MIN_QUERY_LENGTH)
+            }}
+            onItemHighlighted={(address) =>
+              setHighlightedAddress(
+                typeof address === "string" ? address : null,
+              )
+            }
+            onValueChange={(address) => {
+              if (typeof address !== "string") return
+              selectAddress(address)
+            }}
+            autoHighlight
+          >
+            <div ref={comboboxAnchor} className="w-full">
+              <ComboboxInput
+                ref={inputRef}
+                id="address-search"
+                name="address"
+                className="h-12 w-full bg-background"
+                placeholder="例如：中山北路或臺北市中山區中山北路一段…"
+                aria-describedby="address-search-help"
+                autoComplete="off"
+                showTrigger={false}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return
+                  event.preventBaseUIHandler()
+                  if (
+                    event.nativeEvent.isComposing ||
+                    event.nativeEvent.keyCode === 229
+                  )
+                    return
+                  const selection =
+                    highlightedAddress &&
+                    suggestions.includes(highlightedAddress)
+                      ? highlightedAddress
+                      : suggestions[0]
+                  if (selection) {
+                    event.preventDefault()
+                    selectAddress(selection)
+                  }
+                }}
+              >
+                <InputGroupAddon align="inline-start">
+                  <SearchIcon aria-hidden="true" />
+                </InputGroupAddon>
+                {addressInput ? (
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="清除搜尋內容"
+                      onClick={() => {
+                        onAddressInputChange("")
+                        setHighlightedAddress(null)
+                        setIsSuggestionsOpen(false)
+                        inputRef.current?.focus()
+                      }}
+                    >
+                      <XIcon aria-hidden="true" />
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                ) : null}
+              </ComboboxInput>
             </div>
-          ) : (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-              尚無結果
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            <ComboboxContent anchor={comboboxAnchor}>
+              <ComboboxEmpty>找不到符合的道路，請調整關鍵字</ComboboxEmpty>
+              <ComboboxList>
+                {(address: string) => (
+                  <ComboboxItem
+                    key={address}
+                    value={address}
+                    className="min-h-11 whitespace-normal break-words"
+                  >
+                    <span className="min-w-0 whitespace-normal break-words">
+                      {address}
+                    </span>
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
+          <FieldDescription id="address-search-help" aria-live="polite">
+            {helperText}
+          </FieldDescription>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">試試道路：</span>
+            {ROAD_KEYWORD_EXAMPLES.map((keyword) => (
+              <Button
+                key={keyword}
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => handleKeywordExample(keyword)}
+              >
+                {keyword}
+              </Button>
+            ))}
+          </div>
+        </Field>
+      </FieldGroup>
     </section>
   )
 }

@@ -5,12 +5,12 @@ import {
   MapPinIcon,
 } from "lucide-react"
 
+import { CopyButton } from "@/components/copy-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -37,6 +37,7 @@ import {
   formatScopeRule,
   type ZipcodeScope,
 } from "@/lib/addresses"
+import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type ScopeResolution = {
   status: "empty" | "incomplete" | "unmatched" | "ambiguous" | "matched"
@@ -58,63 +59,6 @@ type AddressDetailProps = {
   onBack: () => void
 }
 
-function AddressAlerts({
-  addressSuffix,
-  parsedAddress,
-  resolvedScope,
-  scopeResolution,
-}: {
-  addressSuffix: string
-  parsedAddress: ReturnType<typeof formatAddress>
-  resolvedScope: ZipcodeScope | null
-  scopeResolution: ScopeResolution
-}) {
-  const needsMoreInput =
-    !resolvedScope &&
-    (scopeResolution.status === "empty" ||
-      scopeResolution.status === "incomplete")
-
-  return (
-    <div className="flex flex-col gap-2" aria-live="polite">
-      {needsMoreInput ? (
-        <Alert>
-          <InfoIcon />
-          <AlertDescription>
-            請輸入完整巷、弄、門牌、附號或樓層，系統會自動判斷郵遞區號。
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      {scopeResolution.status === "unmatched" ? (
-        <Alert variant="destructive">
-          <CircleAlertIcon />
-          <AlertDescription>
-            找不到符合此後續地址的郵遞區號範圍，請確認門牌是否正確。
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      {!resolvedScope && scopeResolution.status === "ambiguous" ? (
-        <Alert variant="destructive">
-          <CircleAlertIcon />
-          <AlertDescription>
-            此地址仍對應多個郵遞區號，請補上附號或樓層等完整資訊。
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      {parsedAddress.warns.map((warning) => (
-        <Alert key={warning} variant="destructive">
-          <CircleAlertIcon />
-          <AlertDescription>{warning}</AlertDescription>
-        </Alert>
-      ))}
-      {!addressSuffix ? (
-        <p className="text-xs text-muted-foreground">
-          地址轉換仍可能有誤，使用前請確認中文地址內容。
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
 export function AddressDetail({
   address,
   addressSuffix,
@@ -129,15 +73,32 @@ export function AddressDetail({
   onBack,
 }: AddressDetailProps) {
   const parsedAddress = formatAddress(address, addressSuffix)
-  const hasParsedParts = Object.values(parsedAddress.form).some(Boolean)
+  const hasSuffix = Boolean(addressSuffix.trim())
+  const isSuffixIncomplete =
+    hasSuffix && !parseAddressSuffix(addressSuffix).complete
+  const isComplete = displayedZipcode.length === 6
+  const isUnmatched = scopeResolution.status === "unmatched"
+  const chineseAddress = `${address}${addressSuffix.trim()}`
+  const message = !hasSuffix
+    ? "補上門牌即可查詢完整六碼；有巷、弄或樓層時請一併填寫。"
+    : isUnmatched
+      ? "找不到符合的門牌範圍。請確認道路、巷弄與門牌，或查看下方道路規則。"
+      : !resolvedScope && scopeResolution.status === "ambiguous"
+        ? "此地址對應多個區號，請補上附號或樓層，協助縮小範圍。"
+        : !resolvedScope && scopeResolution.status === "incomplete"
+          ? "還需要更完整的門牌資訊。請確認已填寫「號」，並補上適用的附號或樓層。"
+          : ""
 
   return (
     <section className="flex flex-col gap-5" aria-labelledby="detail-title">
-      <div>
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeftIcon data-icon="inline-start" />
-          返回搜尋
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Button variant="ghost" className="min-h-11" onClick={onBack}>
+          <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
+          更換道路
         </Button>
+        <p className="text-xs text-muted-foreground">
+          已選道路 → 補上門牌 → 複製區號
+        </p>
       </div>
 
       <header className="flex flex-col gap-2">
@@ -147,7 +108,8 @@ export function AddressDetail({
         </div>
         <h1
           id="detail-title"
-          className="text-2xl font-semibold tracking-tight sm:text-3xl"
+          tabIndex={-1}
+          className="break-words text-2xl font-semibold tracking-tight sm:text-3xl"
         >
           {address}
         </h1>
@@ -155,169 +117,198 @@ export function AddressDetail({
 
       <Card>
         <CardHeader>
-          <CardTitle>輸入後續地址</CardTitle>
-          <CardDescription>
-            系統會依郵局規則即時判斷完整的 3+3 郵遞區號。
-          </CardDescription>
+          <CardTitle>補上門牌，立即查詢</CardTitle>
+          <CardDescription>輸入時自動更新結果，不必再按查詢。</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-5">
           <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="address-suffix">巷、弄、門牌與樓層</FieldLabel>
+            <Field data-invalid={isUnmatched || undefined}>
+              <FieldLabel htmlFor="address-suffix">
+                巷、弄、門牌與樓層
+              </FieldLabel>
               <Input
                 ref={addressInputRef}
                 id="address-suffix"
+                name="address-suffix"
+                className="h-12"
                 value={addressSuffix}
                 onChange={(event) => onAddressSuffixChange(event.target.value)}
                 autoComplete="off"
-                placeholder="例如：31巷12號之5 5樓、31號404室"
+                spellCheck={false}
+                aria-invalid={isUnmatched || undefined}
+                aria-describedby="suffix-help suffix-status"
+                placeholder="例如：12巷3號之1 2樓…"
               />
-              <FieldDescription>
-                請使用阿拉伯數字；附號可輸入「之」或連字號。
+              <FieldDescription id="suffix-help">
+                請使用阿拉伯數字；附號可用「之」或「-」。
               </FieldDescription>
             </Field>
           </FieldGroup>
-
-          <div className="mt-4 flex flex-col gap-3">
-            <AddressAlerts
-              addressSuffix={addressSuffix}
-              parsedAddress={parsedAddress}
-              resolvedScope={resolvedScope}
-              scopeResolution={scopeResolution}
-            />
-            {hasParsedParts ? (
-              <div className="flex flex-wrap gap-2" aria-label="已辨識的地址部分">
-                {parsedAddress.form.ln ? (
-                  <Badge variant="secondary">{parsedAddress.form.ln}巷</Badge>
-                ) : null}
-                {parsedAddress.form.aly ? (
-                  <Badge variant="secondary">{parsedAddress.form.aly}弄</Badge>
-                ) : null}
-                {parsedAddress.form.no ? (
-                  <Badge variant="secondary">
-                    {parsedAddress.form.no}號
-                    {parsedAddress.form.noDash
-                      ? `之${parsedAddress.form.noDash}`
-                      : ""}
-                  </Badge>
-                ) : null}
-                {parsedAddress.form.floor ? (
-                  <Badge variant="secondary">
-                    {parsedAddress.form.basement ? "地下" : ""}
-                    {parsedAddress.form.floor}樓
-                    {parsedAddress.form.floorDash
-                      ? `之${parsedAddress.form.floorDash}`
-                      : ""}
-                  </Badge>
-                ) : null}
-                {parsedAddress.form.room ? (
-                  <Badge variant="secondary">{parsedAddress.form.room}室</Badge>
-                ) : null}
-              </div>
+          <div
+            id="suffix-status"
+            className={message ? undefined : "sr-only"}
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {message ? (
+              <Alert variant={isUnmatched ? "destructive" : "default"}>
+                {isUnmatched ? (
+                  <CircleAlertIcon aria-hidden="true" />
+                ) : (
+                  <InfoIcon aria-hidden="true" />
+                )}
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
             ) : null}
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>郵遞區號</CardTitle>
-          <CardDescription>
-            {displayedZipcode || "待輸入完整門牌後自動判斷"}
-          </CardDescription>
-          <CardAction>
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="顯示此道路的所有郵遞區號規則"
-                  />
+          <Separator />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-sm font-medium">3+3 郵遞區號</h2>
+              <Badge variant={isComplete ? "default" : "secondary"}>
+                {isComplete ? "完整六碼" : hasSuffix ? "尚未確認" : "待補門牌"}
+              </Badge>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p
+                className="select-all text-5xl font-semibold tracking-tight tabular-nums sm:text-6xl"
+                aria-live="polite"
+                aria-atomic="true"
+                aria-label={
+                  isComplete
+                    ? `郵遞區號 ${displayedZipcode}`
+                    : displayedZipcode
+                      ? `前三碼 ${displayedZipcode}，後三碼待確認`
+                      : "郵遞區號待確認"
                 }
               >
-                <InfoIcon />
+                {isComplete ? (
+                  displayedZipcode
+                ) : (
+                  <>
+                    {displayedZipcode || "···"}
+                    <span
+                      className="ml-2 text-muted-foreground"
+                      aria-hidden="true"
+                    >
+                      ···
+                    </span>
+                  </>
+                )}
+              </p>
+              <CopyButton
+                text={isComplete ? displayedZipcode : ""}
+                label="複製郵遞區號"
+                disabled={!isComplete}
+                variant="default"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {isComplete && resolvedScope
+                ? `符合規則：${formatScopeRule(resolvedScope.scope)}${matchedRuleBasis ? `（依 ${matchedRuleBasis} 判斷）` : ""}`
+                : !hasSuffix && baseZipcodePrefixes.length === 1
+                  ? "目前僅顯示前三碼，完整六碼確認後即可複製。"
+                  : "確認完整門牌後，這裡會顯示可複製的六碼郵遞區號。"}
+            </p>
+            <Popover>
+              <PopoverTrigger
+                render={<Button variant="outline" className="min-h-11 w-fit" />}
+              >
+                <InfoIcon data-icon="inline-start" aria-hidden="true" />
+                查看此道路的 {scopes.length} 筆規則
               </PopoverTrigger>
-              <PopoverContent align="end" className="max-h-80 w-80 overflow-y-auto sm:w-96">
+              <PopoverContent
+                align="start"
+                className="max-h-80 w-80 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain sm:w-96"
+              >
                 <PopoverHeader>
-                  <PopoverTitle>此道路的所有郵遞區號規則</PopoverTitle>
+                  <PopoverTitle>此道路的郵遞區號規則</PopoverTitle>
                   <PopoverDescription>
-                    共 {scopes.length} 筆；目前符合的規則會標示為「已匹配」。
+                    請依巷弄、門牌範圍與樓層確認；符合的規則會標示於下方。
                   </PopoverDescription>
                 </PopoverHeader>
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-2">
                   {scopes.map((rule, index) => (
                     <div
                       key={`${rule.zipcode}-${rule.scope}-${index}`}
-                      className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2 rounded-md px-2 py-1.5 text-sm"
+                      className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2 rounded-md py-2 text-sm"
                     >
                       <Badge
-                        variant={rule === resolvedScope ? "default" : "outline"}
+                        variant={
+                          isComplete && rule === resolvedScope
+                            ? "default"
+                            : "outline"
+                        }
                       >
-                        {addressSuffix
-                          ? rule.zipcode
-                          : String(rule.zipcode).slice(0, 3)}
+                        {rule.zipcode}
                       </Badge>
-                      <span className="min-w-0">
-                        {rule === resolvedScope ? (
-                          <span className="block text-xs font-medium text-muted-foreground">
-                            已匹配
-                          </span>
+                      <div className="min-w-0 break-words">
+                        {isComplete && rule === resolvedScope ? (
+                          <p className="font-medium">目前符合</p>
                         ) : null}
                         {rule.department ? (
-                          <span className="block font-medium">
-                            {rule.department}
-                          </span>
+                          <p className="font-medium">{rule.department}</p>
                         ) : null}
-                        {formatScopeRule(rule.scope)}
-                      </span>
+                        <p>{formatScopeRule(rule.scope)}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </PopoverContent>
             </Popover>
-          </CardAction>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          <p className="text-4xl font-semibold tracking-tight tabular-nums">
-            {displayedZipcode || "— — — — — —"}
-          </p>
-          {!addressSuffix ? (
-            <p className="text-sm text-muted-foreground">
-              {baseZipcodePrefixes.length === 1
-                ? "尚未輸入後續地址，後三碼暫不顯示。"
-                : "此道路包含不同前三碼，請輸入後續地址後判斷。"}
-            </p>
-          ) : resolvedScope ? (
-            <p className="text-sm text-muted-foreground">
-              匹配規則：{formatScopeRule(resolvedScope.scope)}
-              {matchedRuleBasis ? `（以 ${matchedRuleBasis}判斷）` : ""}
-            </p>
-          ) : null}
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>地址資訊</CardTitle>
-          <CardDescription>中文地址與英文地址會隨輸入即時更新。</CardDescription>
+          <CardDescription>
+            確認內容後，可分別複製中文地址或英文地址。
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {resolvedScope?.department ? (
+        <CardContent className="flex flex-col gap-5">
+          {resolvedScope?.department && isComplete ? (
             <div className="flex flex-col gap-1">
-              <p className="text-xs font-medium text-muted-foreground">大宗戶</p>
+              <p className="text-xs font-medium text-muted-foreground">
+                大宗戶
+              </p>
               <p>{resolvedScope.department}</p>
               <Separator className="mt-3" />
             </div>
           ) : null}
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-medium text-muted-foreground">中文地址</p>
-            <p>{parsedAddress.zh}</p>
+          <div className="flex flex-col items-start gap-3">
+            <h2 className="text-sm font-medium">中文地址</h2>
+            <p className="w-full break-words select-all">{chineseAddress}</p>
+            <CopyButton text={chineseAddress} label="複製中文地址" />
           </div>
           <Separator />
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-medium text-muted-foreground">英文地址</p>
-            <p className="break-words">{parsedAddress.en}</p>
+          <div className="flex flex-col items-start gap-3">
+            <h2 className="text-sm font-medium">英文地址</h2>
+            <p lang="en" className="w-full break-words select-all">
+              {parsedAddress.en}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              英文地址依已辨識的內容轉換，使用前請與中文地址核對。
+            </p>
+            {isSuffixIncomplete ? (
+              <p className="text-sm text-muted-foreground" role="status">
+                門牌尚未辨識完整，補齊後即可複製英文地址。
+              </p>
+            ) : null}
+            {parsedAddress.warns.length ? (
+              <Alert variant="destructive">
+                <CircleAlertIcon aria-hidden="true" />
+                <AlertDescription>
+                  {parsedAddress.warns.join("；")}。請修正後再複製英文地址。
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            <CopyButton
+              text={parsedAddress.en}
+              label="複製英文地址"
+              disabled={isSuffixIncomplete || parsedAddress.warns.length > 0}
+            />
           </div>
         </CardContent>
       </Card>
