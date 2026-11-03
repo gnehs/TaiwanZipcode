@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, useSyncExternalStore } from "react"
 import { SearchIcon, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,10 @@ import {
 } from "@/components/ui/field"
 import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group"
 import { addressIndex, searchAddresses } from "@/lib/addresses"
+import {
+  getRecentLookups,
+  subscribeRecentLookups,
+} from "@/lib/recent-lookups"
 import { getAddressSelection, getMatchRanges } from "@/utils/addressSearch.js"
 
 type AddressSearchProps = {
@@ -64,6 +68,9 @@ export function AddressSearch({
   onQueryChange,
 }: AddressSearchProps) {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
+  // Examples only help first-time visitors; returning ones get their history.
+  const hasHistory =
+    useSyncExternalStore(subscribeRecentLookups, getRecentLookups).length > 0
   const [highlightedAddress, setHighlightedAddress] = useState<string | null>(
     null,
   )
@@ -232,7 +239,7 @@ export function AddressSearch({
           </FieldDescription>
           <div
             className="flex flex-wrap items-center gap-2 px-2"
-            hidden={Boolean(road)}
+            hidden={Boolean(road) || hasHistory}
           >
             <span className="text-xs text-muted-foreground">試試</span>
             {ROAD_KEYWORD_EXAMPLES.map((keyword) => (

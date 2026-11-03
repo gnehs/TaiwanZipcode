@@ -5,6 +5,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+    /* Stronger than Tailwind's defaults; every ease-out in the app uses these. */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;
@@ -27,6 +33,8 @@
     --color-border: var(--border);
     --color-destructive: var(--destructive);
     --color-success: var(--success);
+    --color-paper: var(--paper);
+    --color-paper-ink: var(--paper-ink);
     --shadow-surface: var(--surface-shadow);
     --shadow-control: var(--control-shadow);
     --shadow-popover: var(--popover-shadow);
@@ -76,11 +84,22 @@
     --border: oklch(0.92 0.004 265);
     --input: oklch(0.91 0.004 265);
     --ring: oklch(0.6 0.19 40);
+    /* Cream "paper" from the icon; it sits on the orange card in both themes. */
+    --paper: oklch(0.995 0.004 50);
+    --paper-ink: oklch(0.646 0.222 41.116);
     /* Borders are drawn as translucent 1px shadows so they blend with any background. */
+    /* Outline buttons: lit from above, slightly darker at the bottom. */
+    --control-top: oklch(0.995 0.002 265);
+    --control-bottom: oklch(0.955 0.003 265);
     --surface-shadow: 0 0 0 1px oklch(0.2 0.02 265 / 0.07), 0 1px 2px oklch(0.2 0.02 265 / 0.05), 0 6px 20px -6px oklch(0.2 0.02 265 / 0.08);
-    --control-shadow: 0 0 0 1px oklch(0.2 0.02 265 / 0.09), 0 1px 2px oklch(0.2 0.02 265 / 0.06);
+    /* The edge is a 1px gradient border: brighter where light hits the top. */
+    --control-edge-top: oklch(0.2 0.02 265 / 0.08);
+    --control-edge-bottom: oklch(0.2 0.02 265 / 0.17);
+    /* Inner rim goes all the way round: brightest on top, still lit at the bottom. */
+    --control-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.7), inset 0 0 6px oklch(1 0 0 / 0.5), 0 1px 2px oklch(0.2 0.02 265 / 0.06);
     --popover-shadow: 0 0 0 1px oklch(0.2 0.02 265 / 0.08), 0 4px 8px -2px oklch(0.2 0.02 265 / 0.06), 0 16px 36px -8px oklch(0.2 0.02 265 / 0.16);
-    --primary-shadow: inset 0 1px 0 oklch(1 0 0 / 0.22), 0 0 0 1px oklch(0.45 0.15 38 / 0.9), 0 1px 2px oklch(0.45 0.15 38 / 0.3), 0 4px 10px -4px oklch(0.55 0.18 40 / 0.45);
+    /* Offset inset shadows turn into crescents at rounded corners, so the rim itself is the `rim` utility. */
+    --primary-shadow: inset 0 0 14px oklch(1 0 0 / 0.16), 0 0 0 1px oklch(0.52 0.19 36), 0 2px 3px oklch(0.4 0.14 38 / 0.22), 0 10px 20px -8px oklch(0.45 0.16 40 / 0.5);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -118,10 +137,15 @@
     --border: oklch(0.3 0.004 265);
     --input: oklch(0.32 0.004 265);
     --ring: oklch(0.66 0.18 42);
-    --surface-shadow: inset 0 1px 0 oklch(1 0 0 / 0.04), 0 0 0 1px oklch(1 0 0 / 0.08), 0 1px 2px oklch(0 0 0 / 0.5), 0 8px 24px -8px oklch(0 0 0 / 0.6);
-    --control-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05), 0 0 0 1px oklch(1 0 0 / 0.1), 0 1px 2px oklch(0 0 0 / 0.5);
+    --control-top: oklch(0.29 0.003 265);
+    --control-bottom: oklch(0.235 0.003 265);
+    /* Dark edges come from the light ring and top highlight; black shadows only fall below. */
+    --surface-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08), 0 0 0 1px oklch(1 0 0 / 0.07), 0 8px 24px -8px oklch(0 0 0 / 0.6);
+    --control-edge-top: oklch(1 0 0 / 0.16);
+    --control-edge-bottom: oklch(1 0 0 / 0.07);
+    --control-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.04), inset 0 0 8px oklch(1 0 0 / 0.04), 0 3px 8px -3px oklch(0 0 0 / 0.6);
     --popover-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05), 0 0 0 1px oklch(1 0 0 / 0.1), 0 16px 36px -8px oklch(0 0 0 / 0.7);
-    --primary-shadow: inset 0 1px 0 oklch(1 0 0 / 0.25), 0 0 0 1px oklch(0.5 0.16 38), 0 1px 2px oklch(0 0 0 / 0.5), 0 4px 12px -4px oklch(0.6 0.18 40 / 0.35);
+    --primary-shadow: inset 0 0 14px oklch(1 0 0 / 0.16), 0 0 0 1px oklch(0.52 0.19 36), 0 2px 3px oklch(0 0 0 / 0.5), 0 10px 22px -8px oklch(0.6 0.18 40 / 0.35);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -150,4 +174,85 @@
   html {
     @apply font-sans;
     }
+}
+
+/* The icon's "+" texture. Painted in currentColor and faded toward the bottom. */
+@utility plus-grid {
+  background-color: currentColor;
+  mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cpath d='M16 11v10M11 16h10' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"),
+    linear-gradient(to bottom, black, transparent);
+  mask-size: 32px 32px, 100% 100%;
+  mask-repeat: repeat, no-repeat;
+  mask-composite: intersect;
+}
+
+@layer components {
+  /* Rise into place on mount. Stagger with --enter-delay. */
+  .enter-rise {
+    transition:
+      opacity 250ms var(--ease-out) var(--enter-delay, 0ms),
+      transform 250ms var(--ease-out) var(--enter-delay, 0ms);
+  }
+  @starting-style {
+    .enter-rise {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+
+  /* A digit slides up into its cell whenever it changes (the cell is re-keyed). */
+  .digit-in {
+    animation: digit-in 220ms var(--ease-out) var(--enter-delay, 0ms) both;
+  }
+}
+
+@keyframes digit-in {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion keeps the fades and drops the movement. */
+@media (prefers-reduced-motion: reduce) {
+  @starting-style {
+    .enter-rise {
+      transform: none;
+    }
+  }
+  .digit-in {
+    animation-name: fade-in;
+  }
+}
+
+/* Soft light speckles, like a sprayed finish. Layer it over orange surfaces. */
+@utility grain {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22180%22%20height%3D%22180%22%3E%3Cfilter%20id%3D%22g%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.6%22%20numOctaves%3D%222%22%20seed%3D%227%22%20stitchTiles%3D%22stitch%22/%3E%3CfeColorMatrix%20values%3D%220%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200%201%20%200%200%200%201%200%22/%3E%3CfeComponentTransfer%3E%3CfeFuncA%20type%3D%22discrete%22%20tableValues%3D%220%200%200%200%200%200%200%200.22%200.36%200.5%22/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23g%29%22/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* An even 1px inner rim: brightest on top, faint on the sides, lit again at the bottom.
+   Put it on an absolutely positioned overlay inside a rounded surface. */
+@utility rim {
+  border: 1px solid transparent;
+  border-radius: inherit;
+  background: linear-gradient(
+      to bottom,
+      oklch(1 0 0 / 0.5),
+      oklch(1 0 0 / 0.14) 35%,
+      oklch(1 0 0 / 0.14) 70%,
+      oklch(1 0 0 / 0.3)
+    )
+    border-box;
+  mask:
+    linear-gradient(#000 0 0) padding-box,
+    linear-gradient(#000 0 0) border-box;
+  mask-composite: exclude;
 }

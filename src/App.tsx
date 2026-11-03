@@ -105,9 +105,14 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-svh bg-background">
-      <main className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 pt-6 sm:px-6 sm:pt-14">
-        <SiteHeader />
+    <div className="relative min-h-svh bg-background">
+      <main className="relative mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 pt-6 sm:px-6 sm:pt-14">
+        <SiteHeader
+          onHome={() => {
+            setQuery("")
+            window.scrollTo({ top: 0 })
+          }}
+        />
         <AddressSearch
           query={query}
           road={road}

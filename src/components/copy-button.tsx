@@ -4,6 +4,92 @@ import { CheckIcon, CopyIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
+// The async Clipboard API can be refused (insecure context, permissions), so
+// fall back to the legacy textarea + execCommand path before giving up.
+async function writeClipboard(text: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // Try the legacy path below.
+  }
+  try {
+    const textarea = document.createElement("textarea")
+    textarea.value = text
+    textarea.setAttribute("readonly", "")
+    textarea.style.cssText =
+      "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none"
+    document.body.appendChild(textarea)
+    textarea.select()
+    textarea.setSelectionRange(0, text.length)
+    const copied = document.execCommand("copy")
+    textarea.remove()
+    return copied
+  } catch {
+    return false
+  }
+}
+
+const ICON_LAYER =
+  "col-start-1 row-start-1 transition-[opacity,filter,scale] duration-200 ease-out motion-reduce:scale-100 motion-reduce:blur-none"
+
+// The icons trade places through a blur: the outgoing one softens and shrinks
+// while the incoming one sharpens into focus.
+function IconSwap({
+  swapped,
+  from,
+  to,
+}: {
+  swapped: boolean
+  from: React.ReactNode
+  to: React.ReactNode
+}) {
+  return (
+    <span data-icon="inline-start" className="grid" aria-hidden="true">
+      <span className={cn(ICON_LAYER, swapped && "scale-75 opacity-0 blur-[3px]")}>
+        {from}
+      </span>
+      <span className={cn(ICON_LAYER, !swapped && "scale-75 opacity-0 blur-[3px]")}>
+        {to}
+      </span>
+    </span>
+  )
+}
+
+const SWAP_LAYER =
+  "col-start-1 row-start-1 transition-[opacity,translate] duration-150 ease-out motion-reduce:translate-y-0"
+
+// Both states share one grid cell, so the button keeps the wider width and the
+// change is a crossfade instead of a jump. Transitions retarget on rapid clicks.
+function Swap({
+  swapped,
+  from,
+  to,
+}: {
+  swapped: boolean
+  from: React.ReactNode
+  to: React.ReactNode
+}) {
+  return (
+    <span className="grid justify-items-center">
+      <span
+        className={cn(SWAP_LAYER, swapped && "-translate-y-1.5 opacity-0")}
+        aria-hidden={swapped}
+      >
+        {from}
+      </span>
+      <span
+        className={cn(SWAP_LAYER, !swapped && "translate-y-1.5 opacity-0")}
+        aria-hidden={!swapped}
+      >
+        {to}
+      </span>
+    </span>
+  )
+}
+
 export function CopyButton({
   text,
   label,
@@ -34,12 +120,8 @@ export function CopyButton({
 
   async function copy() {
     setFeedback({ text, status: "pending" })
-    try {
-      await navigator.clipboard.writeText(text)
-      setFeedback({ text, status: "copied" })
-    } catch {
-      setFeedback({ text, status: "failed" })
-    }
+    const copied = await writeClipboard(text)
+    setFeedback({ text, status: copied ? "copied" : "failed" })
   }
 
   return (
@@ -49,7 +131,7 @@ export function CopyButton({
         variant={variant}
         className={cn(
           iconOnly
-            ? "size-10 p-0"
+            ? "size-10 p-0 has-data-[icon=inline-start]:pl-0"
             : "min-h-11 px-4 has-data-[icon=inline-start]:pl-3.5",
           className,
         )}
@@ -57,18 +139,18 @@ export function CopyButton({
         disabled={disabled || !text || status === "pending"}
         aria-label={label}
       >
-        {status === "copied" ? (
-          <CheckIcon data-icon="inline-start" aria-hidden="true" />
-        ) : (
-          <CopyIcon data-icon="inline-start" aria-hidden="true" />
+        <IconSwap
+          swapped={status === "copied"}
+          from={<CopyIcon />}
+          to={<CheckIcon />}
+        />
+        {iconOnly ? null : (
+          <Swap
+            swapped={status === "copied"}
+            from={visibleLabel}
+            to="已複製"
+          />
         )}
-        {iconOnly
-          ? null
-          : status === "copied"
-            ? "已複製"
-            : status === "pending"
-              ? "複製中…"
-              : visibleLabel}
       </Button>
       <span
         role="status"
