@@ -18,10 +18,12 @@ export function compactSearchText(value) {
 function compactSearchTextWithSource(value) {
   const source = String(value ?? '');
   const compact = [];
+  const sourceStarts = [];
   const sourceEnds = [];
   let sourceIndex = 0;
 
   for (const sourceCharacter of source) {
+    const sourceStart = sourceIndex;
     sourceIndex += sourceCharacter.length;
     const normalizedCharacter = sourceCharacter
       .normalize('NFKC')
@@ -29,11 +31,84 @@ function compactSearchTextWithSource(value) {
     for (const character of normalizedCharacter) {
       if (/\s/u.test(character)) continue;
       compact.push(character);
+      sourceStarts.push(sourceStart);
       sourceEnds.push(sourceIndex);
     }
   }
 
-  return { compact: compact.join(''), sourceEnds };
+  return { compact: compact.join(''), sourceStarts, sourceEnds };
+}
+
+function isSubsequence(query, target) {
+  let index = 0;
+  for (const character of target) {
+    if (character === query[index]) index += 1;
+    if (index === query.length) return true;
+  }
+  return index === query.length;
+}
+
+/**
+ * Match the query characters in order inside the target, using as few
+ * contiguous runs as possible ("永和信義" → 永和|區|信義). On a tie the path that
+ * extends the current run wins, so "臺北市信義路" highlights 信義路 together.
+ */
+function findFuzzyMatch(query, target) {
+  const queryCharacters = Array.from(query);
+  if (!queryCharacters.length || !isSubsequence(queryCharacters, target)) {
+    return null;
+  }
+  const targetCharacters = Array.from(target);
+
+  const parents = [];
+  let previous = targetCharacters.map((character) =>
+    character === queryCharacters[0] ? { runs: 1, parent: -1 } : null,
+  );
+  parents.push(previous);
+
+  for (let queryIndex = 1; queryIndex < queryCharacters.length; queryIndex += 1) {
+    const current = new Array(targetCharacters.length).fill(null);
+    let bestBefore = null;
+    let bestBeforeIndex = -1;
+    for (let targetIndex = 0; targetIndex < targetCharacters.length; targetIndex += 1) {
+      const gapIndex = targetIndex - 2;
+      if (gapIndex >= 0 && previous[gapIndex] &&
+        (!bestBefore || previous[gapIndex].runs < bestBefore.runs)) {
+        bestBefore = previous[gapIndex];
+        bestBeforeIndex = gapIndex;
+      }
+      if (targetCharacters[targetIndex] !== queryCharacters[queryIndex]) continue;
+
+      const contiguous = targetIndex > 0 ? previous[targetIndex - 1] : null;
+      if (contiguous && (!bestBefore || contiguous.runs <= bestBefore.runs + 1)) {
+        current[targetIndex] = { runs: contiguous.runs, parent: targetIndex - 1 };
+      } else if (bestBefore) {
+        current[targetIndex] = { runs: bestBefore.runs + 1, parent: bestBeforeIndex };
+      }
+    }
+    parents.push(current);
+    previous = current;
+  }
+
+  let endIndex = -1;
+  for (let targetIndex = 0; targetIndex < previous.length; targetIndex += 1) {
+    if (previous[targetIndex] &&
+      (endIndex < 0 || previous[targetIndex].runs < previous[endIndex].runs)) {
+      endIndex = targetIndex;
+    }
+  }
+  if (endIndex < 0) return null;
+
+  const indices = [];
+  for (let queryIndex = parents.length - 1, targetIndex = endIndex; queryIndex >= 0; queryIndex -= 1) {
+    indices.unshift(targetIndex);
+    targetIndex = parents[queryIndex][targetIndex].parent;
+  }
+  return {
+    runs: previous[endIndex].runs,
+    span: indices[indices.length - 1] - indices[0],
+    indices,
+  };
 }
 
 function suffixAfterPrefix(query, compactAddress) {
@@ -65,6 +140,20 @@ function splitAtAddressSuffix(query) {
   return road ? { road, suffix: source.slice(index) } : null;
 }
 
+const compactListCache = new WeakMap();
+
+// The address list is fixed for the page's lifetime, so normalize it once.
+function getCompactList(list) {
+  let compactList = compactListCache.get(list);
+  if (!compactList) {
+    compactList = list.map((address) =>
+      typeof address === 'string' ? compactSearchText(address) : '',
+    );
+    compactListCache.set(list, compactList);
+  }
+  return compactList;
+}
+
 /**
  * Find the longest canonical road name at the start of a pasted address.
  * Returning the remaining text lets the caller open the detail view with the
@@ -75,9 +164,9 @@ export function findLongestAddressPrefix(query, addresses) {
   if (!compactQuery || !Array.isArray(addresses)) return null;
 
   let best = null;
-  for (const address of addresses) {
-    if (typeof address !== 'string' || !address) continue;
-    const compactAddress = compactSearchText(address);
+  const compactList = getCompactList(addresses);
+  for (const [index, address] of addresses.entries()) {
+    const compactAddress = compactList[index];
     if (!compactAddress || !compactQuery.startsWith(compactAddress)) continue;
 
     if (!best || compactAddress.length > best.compactAddress.length) {
@@ -111,7 +200,10 @@ export function getAddressSelection(query, selectedAddress) {
     const roadKeyword = split && compactSearchText(split.road);
     return {
       address: selectedAddress,
-      suffix: roadKeyword && compactAddress.includes(roadKeyword) ? split.suffix : '',
+      suffix:
+        roadKeyword && findFuzzyMatch(roadKeyword, compactAddress)
+          ? split.suffix
+          : '',
     };
   }
 
@@ -156,21 +248,55 @@ function searchByKeywords(normalizedQuery, list, safeLimit) {
   }
 
   const matches = [];
-  let hasMore = false;
-  for (const address of list) {
-    if (typeof address !== 'string' || !address) continue;
-    const compactAddress = compactSearchText(address);
-    if (!keywords.every((keyword) => compactAddress.includes(keyword))) {
+  const fuzzyMatches = [];
+  const compactQuery = keywords.join('');
+  // Scattered single characters are noise: each run must average two characters.
+  const maxFuzzyRuns = Math.ceil(Array.from(compactQuery).length / 2);
+  const compactList = getCompactList(list);
+  for (const [index, address] of list.entries()) {
+    const compactAddress = compactList[index];
+    if (!compactAddress) continue;
+    if (keywords.every((keyword) => compactAddress.includes(keyword))) {
+      matches.push(address);
+      if (matches.length > safeLimit) break;
       continue;
     }
+    if (matches.length >= safeLimit) continue;
 
-    if (matches.length < safeLimit) {
-      matches.push(address);
-    } else {
-      hasMore = true;
-      break;
+    const fuzzyMatch = findFuzzyMatch(compactQuery, compactAddress);
+    if (fuzzyMatch && fuzzyMatch.runs <= maxFuzzyRuns) {
+      fuzzyMatches.push({ address, ...fuzzyMatch });
     }
   }
 
-  return { matches, hasMore, prefixMatch: null };
+  fuzzyMatches.sort((a, b) => a.runs - b.runs || a.span - b.span);
+  const ranked = [...matches, ...fuzzyMatches.map((match) => match.address)];
+  return {
+    matches: ranked.slice(0, safeLimit),
+    hasMore: ranked.length > safeLimit,
+    prefixMatch: null,
+  };
+}
+
+/**
+ * Source-string ranges of the suggestion characters that matched the query,
+ * for highlighting. A trailing house number is ignored.
+ */
+export function getMatchRanges(query, address) {
+  const addressData = compactSearchTextWithSource(address);
+  const split = splitAtAddressSuffix(query);
+  const match =
+    findFuzzyMatch(compactSearchText(query), addressData.compact) ||
+    (split && findFuzzyMatch(compactSearchText(split.road), addressData.compact));
+  if (!match) return [];
+
+  const ranges = [];
+  for (const index of match.indices) {
+    const start = addressData.sourceStarts[index];
+    const end = addressData.sourceEnds[index];
+    const last = ranges[ranges.length - 1];
+    if (last && last[1] === start) last[1] = end;
+    else ranges.push([start, end]);
+  }
+  return ranges;
 }

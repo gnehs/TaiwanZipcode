@@ -5,6 +5,7 @@ import {
   compactSearchText,
   findLongestAddressPrefix,
   getAddressSelection,
+  getMatchRanges,
   normalizeSearchText,
   searchAddressList,
 } from '../src/utils/addressSearch.js';
@@ -112,4 +113,61 @@ test('keeps the house number when a road is picked for a partial address', () =>
     getAddressSelection('另一條街 120號', '臺北市虛構區測試路一段'),
     { address: '臺北市虛構區測試路一段', suffix: '' },
   );
+});
+
+const fuzzyAddresses = [
+  '新北市虛構區永和路',
+  '新北市永和區中正路信義巷',
+  '新北市永和區信義路',
+  '臺北市信義區信義路',
+];
+
+test('matches characters in order across city, area, and road', () => {
+  const result = searchAddressList('永和信義', fuzzyAddresses);
+
+  assert.deepEqual(result.matches, [
+    '新北市永和區信義路',
+    '新北市永和區中正路信義巷',
+  ]);
+  assert.equal(result.prefixMatch, null);
+});
+
+test('ignores fuzzy matches scattered into single characters', () => {
+  assert.deepEqual(searchAddressList('永信路', fuzzyAddresses).matches, []);
+});
+
+test('ranks exact substring matches before fuzzy ones', () => {
+  const result = searchAddressList('信義路', fuzzyAddresses);
+
+  assert.deepEqual(result.matches.slice(0, 2), [
+    '新北市永和區信義路',
+    '臺北市信義區信義路',
+  ]);
+});
+
+test('keeps the house number when picking a fuzzy match', () => {
+  assert.deepEqual(
+    searchAddressList('永和信義路 10號', fuzzyAddresses).matches,
+    ['新北市永和區信義路'],
+  );
+  assert.deepEqual(
+    getAddressSelection('永和信義路 10號', '新北市永和區信義路'),
+    { address: '新北市永和區信義路', suffix: '10號' },
+  );
+});
+
+test('reports which characters of a suggestion matched', () => {
+  assert.deepEqual(getMatchRanges('永和 信義', '新北市永和區信義路'), [
+    [3, 5],
+    [6, 8],
+  ]);
+  assert.deepEqual(getMatchRanges('台北市信義路', '臺北市信義區信義路'), [
+    [0, 3],
+    [6, 9],
+  ]);
+  assert.deepEqual(getMatchRanges('永和信義路10號', '新北市永和區信義路'), [
+    [3, 5],
+    [6, 9],
+  ]);
+  assert.deepEqual(getMatchRanges('不相干', '新北市永和區信義路'), []);
 });

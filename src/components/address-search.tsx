@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/field"
 import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group"
 import { addressIndex, searchAddresses } from "@/lib/addresses"
-import { getAddressSelection } from "@/utils/addressSearch.js"
+import { getAddressSelection, getMatchRanges } from "@/utils/addressSearch.js"
 
 type AddressSearchProps = {
   query: string
@@ -29,6 +29,28 @@ type AddressSearchProps = {
   isUnmatched: boolean
   inputRef: React.RefObject<HTMLInputElement | null>
   onQueryChange: (value: string) => void
+}
+
+function HighlightedAddress({
+  address,
+  query,
+}: {
+  address: string
+  query: string
+}) {
+  const parts: React.ReactNode[] = []
+  let cursor = 0
+  for (const [start, end] of getMatchRanges(query, address)) {
+    if (start > cursor) parts.push(address.slice(cursor, start))
+    parts.push(
+      <mark key={start} className="bg-transparent font-semibold text-primary">
+        {address.slice(start, end)}
+      </mark>,
+    )
+    cursor = end
+  }
+  parts.push(address.slice(cursor))
+  return <>{parts}</>
 }
 
 const ROAD_KEYWORD_EXAMPLES = ["中山北路", "忠孝東路", "和平東路"]
@@ -215,7 +237,7 @@ export function AddressSearch({
                     className="min-h-11 px-3 whitespace-normal break-words"
                   >
                     <span className="min-w-0 whitespace-normal break-words">
-                      {address}
+                      <HighlightedAddress address={address} query={query} />
                     </span>
                   </ComboboxItem>
                 )}
