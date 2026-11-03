@@ -1,50 +1,26 @@
-import { addressIndex, type ZipcodeScope } from "@/lib/addresses"
+import { addressIndex } from "@/lib/addresses"
 
-export type HashState = {
-  address: string
-  addressSuffix: string
-  isDetailOpen: boolean
-  manuallySelectedScope: ZipcodeScope | null
-}
-
-export function readHashState(hash = window.location.hash): HashState {
+export function readHashQuery(hash = window.location.hash): string {
   const rawHash = hash.replace(/^#/, "")
-  let zipcodeText = ""
   let address = ""
   let addressSuffix = ""
 
   try {
     if (rawHash.startsWith("z=")) {
       const params = new URLSearchParams(rawHash)
-      zipcodeText = params.get("z") || ""
       address = params.get("a") || ""
       addressSuffix = params.get("s") || ""
     } else {
-      const [legacyZipcode = "", legacyAddress = "", ...legacySuffix] =
+      const [, legacyAddress = "", ...legacySuffix] =
         decodeURIComponent(rawHash).split("_")
-      zipcodeText = legacyZipcode
       address = legacyAddress
       addressSuffix = legacySuffix.join("_")
     }
   } catch {
-    return {
-      address: "",
-      addressSuffix: "",
-      isDetailOpen: false,
-      manuallySelectedScope: null,
-    }
+    return ""
   }
 
-  const zipcode = Number.parseInt(zipcodeText, 10)
-  const scopes = addressIndex.scopesByAddress[address] || []
-
-  return {
-    address,
-    addressSuffix,
-    isDetailOpen: Boolean(address && scopes.length),
-    manuallySelectedScope:
-      scopes.find((scope) => scope.zipcode === zipcode) || null,
-  }
+  return addressIndex.scopesByAddress[address] ? `${address}${addressSuffix}` : ""
 }
 
 export function writeHashState(

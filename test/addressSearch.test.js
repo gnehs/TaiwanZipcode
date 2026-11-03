@@ -93,9 +93,23 @@ test('reports a capped result window without claiming the full count', () => {
   assert.equal(result.hasMore, true);
 });
 
-test('does not guess an omitted city or area in a full-address paste', () => {
+test('suggests roads for a house number typed without city or area', () => {
   const result = searchAddressList('測試路一段１２０號', fictionalAddresses);
 
-  assert.deepEqual(result.matches, []);
-  assert.equal(result.hasMore, false);
+  assert.deepEqual(result.matches, [
+    '臺北市虛構區測試路一段',
+    '臺北市虛構區測試路一段深巷',
+  ]);
+  assert.equal(result.prefixMatch, null);
+});
+
+test('keeps the house number when a road is picked for a partial address', () => {
+  assert.deepEqual(
+    getAddressSelection('測試路一段 １２０號5樓', '臺北市虛構區測試路一段'),
+    { address: '臺北市虛構區測試路一段', suffix: '１２０號5樓' },
+  );
+  assert.deepEqual(
+    getAddressSelection('另一條街 120號', '臺北市虛構區測試路一段'),
+    { address: '臺北市虛構區測試路一段', suffix: '' },
+  );
 });

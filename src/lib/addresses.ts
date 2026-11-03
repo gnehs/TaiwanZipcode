@@ -1,9 +1,10 @@
 import zipcodeData from "@/assets/zipcode.json"
 import { hasUnconvertedAddressParts } from "@/utils/addressConversion.js"
-import { searchAddressList } from "@/utils/addressSearch.js"
+import {
+  findLongestAddressPrefix,
+  searchAddressList,
+} from "@/utils/addressSearch.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
-
-export { normalizeSearchText } from "@/utils/addressSearch.js"
 
 export type ZipcodeScope = {
   zipcode: number
@@ -86,8 +87,10 @@ export function searchAddresses(query: string, limit = ADDRESS_SEARCH_LIMIT) {
   return searchAddressList(query, addressIndex.addresses, limit)
 }
 
-export function filterAddresses(query: string, limit = ADDRESS_SEARCH_LIMIT) {
-  return searchAddresses(query, limit).matches
+export function findAddressPrefix(
+  query: string,
+): { address: string; suffix: string } | null {
+  return findLongestAddressPrefix(query, addressIndex.addresses)
 }
 
 export function formatScopeRule(scope: string) {

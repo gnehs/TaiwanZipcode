@@ -22,20 +22,24 @@ import { addressIndex, searchAddresses } from "@/lib/addresses"
 import { getAddressSelection } from "@/utils/addressSearch.js"
 
 type AddressSearchProps = {
-  addressInput: string
+  query: string
+  road: string
+  addressSuffix: string
+  isUnmatched: boolean
   inputRef: React.RefObject<HTMLInputElement | null>
-  onAddressInputChange: (value: string) => void
-  onOpenDetail: (address: string, suffix?: string) => void
+  onQueryChange: (value: string) => void
 }
 
 const ROAD_KEYWORD_EXAMPLES = ["中山北路", "忠孝東路", "和平東路"]
 const MIN_QUERY_LENGTH = 2
 
 export function AddressSearch({
-  addressInput,
+  query,
+  road,
+  addressSuffix,
+  isUnmatched,
   inputRef,
-  onAddressInputChange,
-  onOpenDetail,
+  onQueryChange,
 }: AddressSearchProps) {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
   const [highlightedAddress, setHighlightedAddress] = useState<string | null>(
@@ -44,41 +48,53 @@ export function AddressSearch({
   const comboboxAnchor = useComboboxAnchor()
   const searchResult = useMemo(
     () =>
-      addressInput.trim().length >= MIN_QUERY_LENGTH
-        ? searchAddresses(addressInput)
+      query.trim().length >= MIN_QUERY_LENGTH
+        ? searchAddresses(query)
         : { matches: [], hasMore: false, prefixMatch: null },
-    [addressInput],
+    [query],
   )
-  const suggestions = searchResult.matches
-  const helperText = useMemo(() => {
-    const query = addressInput.trim()
-    if (!query) {
-      return "輸入至少 2 個字元開始搜尋，也可以貼上含門牌的完整地址。"
+  // Once the road is recognized, only offer suggestions that would change it.
+  const suggestions = searchResult.prefixMatch
+    ? []
+    : searchResult.matches.filter((address) => address !== road)
+  const isPopupOpen = isSuggestionsOpen && suggestions.length > 0
+  const helperText = (() => {
+    const trimmedQuery = query.trim()
+    if (road) {
+      return addressSuffix.trim()
+        ? "請使用阿拉伯數字；附號可用「之」或「-」。"
+        : "已辨識道路，請在同一欄接著輸入巷、弄、號與樓層。"
     }
-    if (query.length < MIN_QUERY_LENGTH) {
+    if (!trimmedQuery) {
+      return "輸入道路後接著輸入門牌，也可以直接貼上完整地址。"
+    }
+    if (trimmedQuery.length < MIN_QUERY_LENGTH) {
       return "再輸入 1 個字元開始搜尋。"
     }
     if (!suggestions.length) {
       return "找不到相符道路，請縮短關鍵字或確認縣市、行政區。"
     }
-    if (searchResult.prefixMatch?.suffix) {
-      return "已辨識道路；按 Enter 選擇後，後面的門牌會保留。"
-    }
     if (searchResult.hasMore) {
       return `顯示前 ${suggestions.length} 條相符道路，請加入縣市或行政區縮小範圍。`
     }
-    return `找到 ${suggestions.length} 條相符道路，請用 ↑↓ 選擇後按 Enter。`
-  }, [addressInput, searchResult, suggestions.length])
+    return `找到 ${suggestions.length} 條相符道路，選擇後即可接著輸入門牌。`
+  })()
 
-  function handleKeywordExample(keyword: string) {
-    onAddressInputChange(keyword)
-    setIsSuggestionsOpen(true)
-    inputRef.current?.focus()
+  function updateQuery(value: string, openSuggestions: boolean) {
+    onQueryChange(value)
+    setHighlightedAddress(null)
+    setIsSuggestionsOpen(openSuggestions)
+    const input = inputRef.current
+    if (!input) return
+    input.focus()
+    window.requestAnimationFrame(() =>
+      input.setSelectionRange(value.length, value.length),
+    )
   }
 
   function selectAddress(address: string) {
-    const selection = getAddressSelection(addressInput, address)
-    onOpenDetail(address, selection?.suffix || undefined)
+    const selection = getAddressSelection(query, address)
+    updateQuery(`${address}${selection?.suffix || ""}`, false)
   }
 
   return (
@@ -112,7 +128,7 @@ export function AddressSearch({
           <span className="min-w-0">
             <span className="block truncate font-medium">選擇道路</span>
             <span className="hidden text-xs text-muted-foreground sm:block">
-              輸入道路或點選範例
+              輸入或選擇道路
             </span>
           </span>
         </li>
@@ -121,9 +137,9 @@ export function AddressSearch({
             2
           </span>
           <span className="min-w-0">
-            <span className="block truncate font-medium">補上門牌</span>
+            <span className="block truncate font-medium">接著輸入門牌</span>
             <span className="hidden text-xs text-muted-foreground sm:block">
-              輸入巷、弄、號與樓層
+              在同一欄輸入巷、弄、號與樓層
             </span>
           </span>
         </li>
@@ -141,15 +157,16 @@ export function AddressSearch({
       </ol>
 
       <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="address-search">搜尋道路</FieldLabel>
+        <Field data-invalid={isUnmatched || undefined}>
+          <FieldLabel htmlFor="address-search">地址</FieldLabel>
           <Combobox
             items={addressIndex.addresses}
             filteredItems={suggestions}
             filter={null}
-            open={isSuggestionsOpen && suggestions.length > 0}
+            value={null}
+            open={isPopupOpen}
             onOpenChange={(open) => setIsSuggestionsOpen(open)}
-            inputValue={addressInput}
+            inputValue={query}
             onInputValueChange={(value, details) => {
               // Keep the search text when the popup blurs or changes selection.
               if (
@@ -157,7 +174,7 @@ export function AddressSearch({
                 details.reason !== "clear-press"
               )
                 return
-              onAddressInputChange(value)
+              onQueryChange(value)
               setHighlightedAddress(null)
               setIsSuggestionsOpen(value.trim().length >= MIN_QUERY_LENGTH)
             }}
@@ -178,13 +195,16 @@ export function AddressSearch({
                 id="address-search"
                 name="address"
                 className="h-12 w-full bg-background"
-                placeholder="例如：中山北路或臺北市中山區中山北路一段…"
+                placeholder="例如：臺北市中山區中山北路一段100號3樓…"
                 aria-describedby="address-search-help"
+                aria-invalid={isUnmatched || undefined}
                 autoComplete="off"
+                spellCheck={false}
                 showTrigger={false}
                 onKeyDown={(event) => {
                   if (event.key !== "Enter") return
                   event.preventBaseUIHandler()
+                  event.preventDefault()
                   if (
                     event.nativeEvent.isComposing ||
                     event.nativeEvent.keyCode === 229
@@ -195,28 +215,20 @@ export function AddressSearch({
                     suggestions.includes(highlightedAddress)
                       ? highlightedAddress
                       : suggestions[0]
-                  if (selection) {
-                    event.preventDefault()
-                    selectAddress(selection)
-                  }
+                  if (isPopupOpen && selection) selectAddress(selection)
                 }}
               >
                 <InputGroupAddon align="inline-start">
                   <SearchIcon aria-hidden="true" />
                 </InputGroupAddon>
-                {addressInput ? (
+                {query ? (
                   <InputGroupAddon align="inline-end">
                     <InputGroupButton
                       type="button"
                       variant="ghost"
                       size="icon-sm"
                       aria-label="清除搜尋內容"
-                      onClick={() => {
-                        onAddressInputChange("")
-                        setHighlightedAddress(null)
-                        setIsSuggestionsOpen(false)
-                        inputRef.current?.focus()
-                      }}
+                      onClick={() => updateQuery("", false)}
                     >
                       <XIcon aria-hidden="true" />
                     </InputGroupButton>
@@ -244,7 +256,10 @@ export function AddressSearch({
           <FieldDescription id="address-search-help" aria-live="polite">
             {helperText}
           </FieldDescription>
-          <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="flex flex-wrap items-center gap-2"
+            hidden={Boolean(road)}
+          >
             <span className="text-xs text-muted-foreground">試試道路：</span>
             {ROAD_KEYWORD_EXAMPLES.map((keyword) => (
               <Button
@@ -252,7 +267,7 @@ export function AddressSearch({
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => handleKeywordExample(keyword)}
+                onClick={() => updateQuery(keyword, true)}
               >
                 {keyword}
               </Button>

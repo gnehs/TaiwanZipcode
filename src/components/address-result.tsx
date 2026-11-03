@@ -1,9 +1,4 @@
-import {
-  ArrowLeftIcon,
-  CircleAlertIcon,
-  InfoIcon,
-  MapPinIcon,
-} from "lucide-react"
+import { CircleAlertIcon, InfoIcon } from "lucide-react"
 
 import { CopyButton } from "@/components/copy-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -16,13 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import {
   Popover,
   PopoverContent,
@@ -45,33 +33,27 @@ type ScopeResolution = {
   pending?: ZipcodeScope[]
 }
 
-type AddressDetailProps = {
+type AddressResultProps = {
   address: string
   addressSuffix: string
-  addressInputRef: React.RefObject<HTMLInputElement | null>
   baseZipcodePrefixes: string[]
   displayedZipcode: string
   matchedRuleBasis: string
   resolvedScope: ZipcodeScope | null
   scopeResolution: ScopeResolution
   scopes: ZipcodeScope[]
-  onAddressSuffixChange: (value: string) => void
-  onBack: () => void
 }
 
-export function AddressDetail({
+export function AddressResult({
   address,
   addressSuffix,
-  addressInputRef,
   baseZipcodePrefixes,
   displayedZipcode,
   matchedRuleBasis,
   resolvedScope,
   scopeResolution,
   scopes,
-  onAddressSuffixChange,
-  onBack,
-}: AddressDetailProps) {
+}: AddressResultProps) {
   const hasSuffix = Boolean(addressSuffix.trim())
   const isSuffixIncomplete =
     hasSuffix && !parseAddressSuffix(addressSuffix).complete
@@ -81,7 +63,7 @@ export function AddressDetail({
   const isUnmatched = scopeResolution.status === "unmatched"
   const chineseAddress = `${fullZipcode}${address}${addressSuffix.trim()}`
   const message = !hasSuffix
-    ? "補上門牌即可查詢完整六碼；有巷、弄或樓層時請一併填寫。"
+    ? ""
     : isUnmatched
       ? "找不到符合的門牌範圍。請確認道路、巷弄與門牌，或查看下方道路規則。"
       : !resolvedScope && scopeResolution.status === "ambiguous"
@@ -91,60 +73,15 @@ export function AddressDetail({
           : ""
 
   return (
-    <section className="flex flex-col gap-5" aria-labelledby="detail-title">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button variant="ghost" className="min-h-11" onClick={onBack}>
-          <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-          更換道路
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          已選道路 → 補上門牌 → 複製區號
-        </p>
-      </div>
-
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <MapPinIcon className="size-4" aria-hidden="true" />
-          查詢地址
-        </div>
-        <h1
-          id="detail-title"
-          tabIndex={-1}
-          className="break-words text-2xl font-semibold tracking-tight sm:text-3xl"
-        >
-          {address}
-        </h1>
-      </header>
-
+    <section className="flex flex-col gap-5" aria-label="查詢結果">
       <Card>
         <CardHeader>
-          <CardTitle>補上門牌，立即查詢</CardTitle>
-          <CardDescription>輸入時自動更新結果，不必再按查詢。</CardDescription>
+          <CardTitle className="break-words">{address}</CardTitle>
+          <CardDescription>
+            輸入時自動更新結果，修改上方地址即可重新查詢。
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
-          <FieldGroup>
-            <Field data-invalid={isUnmatched || undefined}>
-              <FieldLabel htmlFor="address-suffix">
-                巷、弄、門牌與樓層
-              </FieldLabel>
-              <Input
-                ref={addressInputRef}
-                id="address-suffix"
-                name="address-suffix"
-                className="h-12"
-                value={addressSuffix}
-                onChange={(event) => onAddressSuffixChange(event.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-                aria-invalid={isUnmatched || undefined}
-                aria-describedby="suffix-help suffix-status"
-                placeholder="例如：12巷3號之1 2樓…"
-              />
-              <FieldDescription id="suffix-help">
-                請使用阿拉伯數字；附號可用「之」或「-」。
-              </FieldDescription>
-            </Field>
-          </FieldGroup>
           <div
             id="suffix-status"
             className={message ? undefined : "sr-only"}
@@ -162,7 +99,6 @@ export function AddressDetail({
               </Alert>
             ) : null}
           </div>
-          <Separator />
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-sm font-medium">3+3 郵遞區號</h2>

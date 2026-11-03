@@ -52,6 +52,20 @@ function startsWithAddressSuffix(value) {
 }
 
 /**
+ * Split "測試路一段 120號" into the road keywords and the house number, so a
+ * road typed without its city or area can still be looked up.
+ */
+function splitAtAddressSuffix(query) {
+  const source = String(query ?? '');
+  const index = source.normalize('NFKC').search(/\d|地下\s*\d/u);
+  if (index <= 0 || source.normalize('NFKC').length !== source.length) {
+    return null;
+  }
+  const road = source.slice(0, index).trim();
+  return road ? { road, suffix: source.slice(index) } : null;
+}
+
+/**
  * Find the longest canonical road name at the start of a pasted address.
  * Returning the remaining text lets the caller open the detail view with the
  * house number already filled in.
@@ -93,7 +107,12 @@ export function getAddressSelection(query, selectedAddress) {
   const compactQuery = compactQueryData.compact;
   const compactAddress = compactSearchText(selectedAddress);
   if (!compactQuery.startsWith(compactAddress)) {
-    return { address: selectedAddress, suffix: '' };
+    const split = splitAtAddressSuffix(query);
+    const roadKeyword = split && compactSearchText(split.road);
+    return {
+      address: selectedAddress,
+      suffix: roadKeyword && compactAddress.includes(roadKeyword) ? split.suffix : '',
+    };
   }
 
   return {
@@ -120,6 +139,14 @@ export function searchAddressList(query, addresses, limit = 30) {
     return { matches: [prefixMatch.address], hasMore: false, prefixMatch };
   }
 
+  const result = searchByKeywords(normalizedQuery, list, safeLimit);
+  const split = result.matches.length ? null : splitAtAddressSuffix(query);
+  return split
+    ? searchByKeywords(normalizeSearchText(split.road), list, safeLimit)
+    : result;
+}
+
+function searchByKeywords(normalizedQuery, list, safeLimit) {
   const keywords = normalizedQuery
     .split(/\s+/u)
     .map(compactSearchText)
