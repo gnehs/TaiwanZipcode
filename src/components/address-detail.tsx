@@ -72,13 +72,14 @@ export function AddressDetail({
   onAddressSuffixChange,
   onBack,
 }: AddressDetailProps) {
-  const parsedAddress = formatAddress(address, addressSuffix)
   const hasSuffix = Boolean(addressSuffix.trim())
   const isSuffixIncomplete =
     hasSuffix && !parseAddressSuffix(addressSuffix).complete
   const isComplete = displayedZipcode.length === 6
+  const fullZipcode = isComplete ? displayedZipcode : ""
+  const parsedAddress = formatAddress(address, addressSuffix, fullZipcode)
   const isUnmatched = scopeResolution.status === "unmatched"
-  const chineseAddress = `${address}${addressSuffix.trim()}`
+  const chineseAddress = `${fullZipcode}${address}${addressSuffix.trim()}`
   const message = !hasSuffix
     ? "補上門牌即可查詢完整六碼；有巷、弄或樓層時請一併填寫。"
     : isUnmatched
@@ -264,7 +265,9 @@ export function AddressDetail({
         <CardHeader>
           <CardTitle>地址資訊</CardTitle>
           <CardDescription>
-            確認內容後，可分別複製中文地址或英文地址。
+            {isComplete
+              ? "已附上郵遞區號，可直接貼到寄件資料。"
+              : "確認內容後，可分別複製中文地址或英文地址。"}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">

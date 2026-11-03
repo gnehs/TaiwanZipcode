@@ -26,6 +26,7 @@ export default function App() {
   const [isDetailOpen, setIsDetailOpen] = useState(initialState.isDetailOpen)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const addressInputRef = useRef<HTMLInputElement>(null)
+  const hasDetailHistoryRef = useRef(false)
 
   const scopes = addressIndex.scopesByAddress[addressInput] || EMPTY_SCOPES
   const scopeResolution = useMemo<ScopeResolution>(
@@ -74,7 +75,9 @@ export default function App() {
     const syncFromHash = () => {
       const nextState = readHashState()
       setAddressInput(nextState.address)
-      setSearchQuery(nextState.address)
+      // Going back to search keeps whatever the user had typed there.
+      if (nextState.isDetailOpen) setSearchQuery(nextState.address)
+      else hasDetailHistoryRef.current = false
       setAddressSuffix(nextState.addressSuffix)
       setIsDetailOpen(nextState.isDetailOpen)
     }
@@ -103,6 +106,12 @@ export default function App() {
   }, [isDetailOpen])
 
   function openDetail(address: string, suffix?: string) {
+    if (!isDetailOpen) {
+      // Give the detail view its own history entry so the browser back
+      // gesture returns to search instead of leaving the site.
+      window.history.pushState(null, "", window.location.href)
+      hasDetailHistoryRef.current = true
+    }
     setAddressInput(address)
     setAddressSuffix(suffix ?? (address === addressInput ? addressSuffix : ""))
     setIsDetailOpen(true)
@@ -110,6 +119,10 @@ export default function App() {
 
   function returnToSearch() {
     setSearchQuery(addressInput)
+    if (hasDetailHistoryRef.current) {
+      window.history.back()
+      return
+    }
     setIsDetailOpen(false)
   }
 

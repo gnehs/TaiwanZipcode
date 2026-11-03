@@ -100,6 +100,7 @@ export function formatScopeRule(scope: string) {
 export function formatAddress(
   baseAddress: string,
   addressSuffix: string,
+  zipcode = "",
 ): ParsedAddress {
   const emptyForm: ParsedAddress["form"] = {
     ln: null,
@@ -144,6 +145,8 @@ export function formatAddress(
 
   let zh = baseAddress
   const englishParts = englishBase.split(", ").reverse()
+  // Postal format places the zipcode after the city: "Taipei City 104001".
+  if (zipcode) englishParts[1] = `${englishParts[1]} ${zipcode}`
 
   if (form.ln) {
     zh += `${form.ln}巷`
