@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 
 import { AddressResult } from "@/components/address-result"
 import { AddressSearch } from "@/components/address-search"
@@ -9,7 +9,13 @@ import { RecentLookups } from "@/components/recent-lookups"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { lookupCleanedAddress, type AddressLookup } from "@/lib/addresses"
+import {
+  getCorrectionsVersion,
+  loadCorrections,
+  lookupCleanedAddress,
+  subscribeCorrections,
+  type AddressLookup,
+} from "@/lib/addresses"
 import { isBatchHash, readHashQuery, writeHashState } from "@/lib/hash-state"
 import { cn } from "@/lib/utils"
 import { rememberLookup } from "@/lib/recent-lookups"
@@ -19,7 +25,19 @@ import { rememberLookup } from "@/lib/recent-lookups"
 export default function App() {
   const [isBatch, setIsBatch] = useState(() => isBatchHash())
   const [query, setQuery] = useState(() => readHashQuery())
-  const lookup = useMemo(() => lookupCleanedAddress(query), [query])
+  const correctionsVersion = useSyncExternalStore(
+    subscribeCorrections,
+    getCorrectionsVersion,
+  )
+  const lookup = useMemo(
+    () => lookupCleanedAddress(query),
+    // A new version means the correction tables arrived; read the query again.
+    [query, correctionsVersion],
+  )
+
+  useEffect(() => {
+    void loadCorrections()
+  }, [])
 
   useEffect(() => {
     const syncFromHash = () => {

@@ -24,8 +24,9 @@ dist-ssr
 *.sw?
 
 # database-conventer
-utils/database-conventer/src/rall1.dbf
-utils/database-conventer/result/zipcode.json
+utils/database-conventer/src/*.dbf
+utils/database-conventer/src/*.DBF
+utils/database-conventer/result/*.json
 utils/database-conventer/temp
 utils/database-conventer/gea-extract
 utils/database-conventer/app

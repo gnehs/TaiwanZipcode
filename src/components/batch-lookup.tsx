@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState, useSyncExternalStore } from "react"
 import {
   DataSheetGrid,
   keyColumn,
@@ -19,7 +19,12 @@ import {
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { formatAddress, lookupCleanedAddress } from "@/lib/addresses"
+import {
+  formatAddress,
+  getCorrectionsVersion,
+  lookupCleanedAddress,
+  subscribeCorrections,
+} from "@/lib/addresses"
 import { cn } from "@/lib/utils"
 import { toTsv } from "@/utils/batchTable.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
@@ -84,7 +89,7 @@ const MAX_GRID_HEIGHT = 600
 function resolveRow(input: string): BatchResult {
   const text = input.trim()
   if (!text) return EMPTY_RESULT
-  const lookup = lookupCleanedAddress(text)
+  const lookup = lookupCleanedAddress(text, { bareNumberIsHouse: true })
   if (!lookup.road) {
     return { ...EMPTY_RESULT, tone: "destructive", status: "無法辨識道路" }
   }
@@ -119,9 +124,15 @@ function resolveRow(input: string): BatchResult {
   }
 }
 
-// Each input is resolved once; editing one row leaves the others cached.
+// Each input is resolved once per version of the correction tables; editing
+// one row leaves the others cached.
 const resultCache = new Map<string, BatchResult>()
-function resolveCached(input: string) {
+let cachedVersion = -1
+function resolveCached(input: string, version: number) {
+  if (version !== cachedVersion) {
+    resultCache.clear()
+    cachedVersion = version
+  }
   let result = resultCache.get(input)
   if (!result) {
     result = resolveRow(input)
@@ -172,6 +183,10 @@ function ColumnTitle({ title, text }: { title: string; text: string }) {
 
 export function BatchLookup() {
   // Always ends with one empty row; the grid is padded to MIN_ROWS for display.
+  const correctionsVersion = useSyncExternalStore(
+    subscribeCorrections,
+    getCorrectionsVersion,
+  )
   const [inputs, setInputs] = useState(() => padInputs([]))
   const gridRef = useRef<DataSheetGridRef>(null)
   const [showGuide, setShowGuide] = useState(() => !readGuideDismissed())
@@ -179,9 +194,9 @@ export function BatchLookup() {
     () =>
       Array.from({ length: Math.max(inputs.length, MIN_ROWS) }, (_, index) => {
         const input = inputs[index] ?? ""
-        return { input, ...resolveCached(input) }
+        return { input, ...resolveCached(input, correctionsVersion) }
       }),
-    [inputs],
+    [inputs, correctionsVersion],
   )
   // Every row up to the last one with an address, keeping blank rows between.
   const filledRows = rows.slice(0, inputs.length - 1)

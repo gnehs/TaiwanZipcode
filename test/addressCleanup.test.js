@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   cleanAddressSuffix,
   cleanAddressText,
+  withoutVillage,
   parseChineseNumber,
 } from '../src/utils/addressCleanup.js';
 
@@ -30,12 +31,14 @@ test('cleanAddressText fixes look-alike characters and segment digits', () => {
 });
 
 test('cleanAddressText maps merged counties and their towns', () => {
-  const areas = new Set(['新北市板橋區', '桃園市中壢區', '臺南市新市區']);
+  const areas = new Set(['新北市板橋區', '桃園市中壢區', '臺南市新市區', '高雄市鳳山區']);
   const hasArea = (name) => areas.has(name);
   assert.equal(cleanAddressText('台北縣板橋市文化路', hasArea), '新北市板橋區文化路');
   assert.equal(cleanAddressText('桃園縣 中壢市中大路', hasArea), '桃園市中壢區中大路');
   assert.equal(cleanAddressText('台南縣新市鄉測試路', hasArea), '臺南市新市區測試路');
-  assert.equal(cleanAddressText('高雄縣虛構鄉測試路', hasArea), '高雄市虛構鄉測試路');
+  assert.equal(cleanAddressText('高雄縣鳳山區測試路', hasArea), '高雄市鳳山區測試路');
+  // A district the municipality does not have is left as written.
+  assert.equal(cleanAddressText('臺北縣中正區測試路', hasArea), '臺北縣中正區測試路');
 });
 
 test('cleanAddressSuffix normalizes numerals and floor notation', () => {
@@ -46,4 +49,32 @@ test('cleanAddressSuffix normalizes numerals and floor notation', () => {
   assert.equal(cleanAddressSuffix('100號3F'), '100號3樓');
   assert.equal(cleanAddressSuffix('100號（3樓）'), '100號3樓');
   assert.equal(cleanAddressSuffix('100號3樓301室'), '100號3樓301室');
+});
+
+test('withoutVillage offers the text with a 村/里 or 鄰 removed', () => {
+  assert.deepEqual(withoutVillage('竿蓁里中正東路一段139號'), ['中正東路一段139號']);
+  assert.deepEqual(withoutVillage('竿蓁里5鄰中正東路'), ['中正東路']);
+  assert.deepEqual(withoutVillage('3鄰中正路'), ['中正路']);
+  // 新村里 could be 新村 + 里 or 新 + 村里; both are offered, shortest first.
+  assert.deepEqual(withoutVillage('新村里中正路'), ['里中正路', '中正路']);
+  assert.deepEqual(withoutVillage('中正東路一段'), []);
+});
+
+test('cleanAddressSuffix drops a leftover village or neighbourhood', () => {
+  assert.equal(cleanAddressSuffix('村11-6號'), '11-6號');
+  assert.equal(cleanAddressSuffix('12鄰5號'), '5號');
+  assert.equal(cleanAddressSuffix('村路5號'), '村路5號');
+});
+
+test('cleanAddressSuffix drops words after the last numbered unit', () => {
+  assert.equal(cleanAddressSuffix('8號2樓辦公室'), '8號2樓');
+  assert.equal(cleanAddressSuffix('8號地下1樓服務台'), '8號地下1樓');
+  assert.equal(cleanAddressSuffix('8號2樓A室'), '8號2樓A室');
+  assert.equal(cleanAddressSuffix('8號之1'), '8號之1');
+});
+
+test('cleanAddressSuffix completes a bare number only for finished text', () => {
+  assert.equal(cleanAddressSuffix('168', { bareNumberIsHouse: true }), '168號');
+  assert.equal(cleanAddressSuffix('5巷10', { bareNumberIsHouse: true }), '5巷10號');
+  assert.equal(cleanAddressSuffix('168'), '168');
 });

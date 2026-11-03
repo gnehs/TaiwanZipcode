@@ -46,11 +46,15 @@ jobs:
         run: |
           set -euo pipefail
           test -x ./gea-extract
-          ./gea-extract ./temp/installer.exe ./src/rall1.dbf
+          ./gea-extract ./temp/installer.exe ./src \
+            rall1.dbf uroad.dbf uroad1.dbf errword.dbf cityarea.dbf Inds.DBF
           test -s ./src/rall1.dbf
         working-directory: ./utils/database-conventer
       - name: Convert database
-        run: node index.js
+        run: |
+          set -euo pipefail
+          node index.js
+          node corrections.js
         working-directory: ./utils/database-conventer
       - name: Validate converted database
         run: |
@@ -76,11 +80,22 @@ jobs:
             throw new Error("The converted database contains an invalid zipcode");
           }
           console.log(`Validated ${cities.length} cities and ${scopes.length} scopes`);
+
+          const corrections = JSON.parse(
+            fs.readFileSync("./utils/database-conventer/result/corrections.json", "utf8"),
+          );
+          const roadCorrections = Object.values(corrections.roads)
+            .reduce((total, roads) => total + Object.keys(roads).length, 0);
+          if (roadCorrections < 10000 || Object.keys(corrections.places).length < 1000) {
+            throw new Error("The correction tables are unexpectedly small");
+          }
+          console.log(`Validated ${roadCorrections} road corrections`);
           NODE
       - name: Copy result
         run: |
           set -euo pipefail
           cp ./utils/database-conventer/result/zipcode.json ./src/assets/zipcode.json
+          cp ./utils/database-conventer/result/corrections.json ./src/assets/corrections.json
           git diff --check
       - name: Run tests
         run: npm test
@@ -90,7 +105,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- src/assets/zipcode.json
+          git add -- src/assets/zipcode.json src/assets/corrections.json
           if git diff --cached --quiet; then
             echo "The zipcode database is already up to date"
             exit 0

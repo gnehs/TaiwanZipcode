@@ -96,6 +96,11 @@ function tokenizePath(text) {
     }
 
     index = skipSpaces(text, index);
+    // No zipcode rule goes below 弄, so a third-level 衖 (6衖) narrows nothing.
+    if (digit && text[index] === '衖') {
+      index += 1;
+      continue;
+    }
     const unitToken = readUnit(text, index);
     if (!unitToken) {
       // Ignore punctuation and words which are not part of a path token.
@@ -560,7 +565,7 @@ function pathPrefixMatches(scopePrefix, addressPath, allowPartial = false) {
   return scopePrefix.length <= addressPath.length || allowPartial;
 }
 
-function addressTargetIndex(scope, addressPath) {
+function addressTargetIndex(scope, addressPath, { laneFallback = false } = {}) {
   const prefixLength = (scope.prefix || []).length;
   // Implicit and mixed-unit selectors intentionally inspect the next address
   // level after their fixed prefix.
@@ -571,9 +576,24 @@ function addressTargetIndex(scope, addressPath) {
   // A rule with a concrete unit must inspect that same unit. For example,
   // `單75號以下` applied to `25巷85號` judges `85號`; the lane must not be
   // substituted for a house-number rule.
-  return addressPath.findIndex((segment, index) => (
+  const index = addressPath.findIndex((segment, index) => (
     index >= prefixLength && segment.unit === scope.target.unit
   ));
+  // A range bounded by lanes (`單49巷以上`, `單399巷至787號`) runs along the
+  // street's number line, so a plain house number with no lane at that level
+  // can be judged by its own number: `91號` lies inside `單49巷以上`. This is
+  // only a fallback; a rule written in 號 always speaks for that number first.
+  const rangeMode = scope.mode === 'range' || scope.mode === 'atMost' || scope.mode === 'atLeast';
+  if (
+    laneFallback &&
+    index < 0 &&
+    rangeMode &&
+    scope.target.unit !== '號' &&
+    addressPath[prefixLength]?.unit === '號'
+  ) {
+    return prefixLength;
+  }
+  return index;
 }
 
 function missingTargetCouldBeAppended(scope, addressPath) {
@@ -585,14 +605,14 @@ function missingTargetCouldBeAppended(scope, addressPath) {
   return targetOrder !== undefined && lastOrder !== undefined && targetOrder > lastOrder;
 }
 
-function scopeMatchesParsed(scope, address, { allowPartial = false } = {}) {
+function scopeMatchesParsed(scope, address, { allowPartial = false, laneFallback = false } = {}) {
   if (!scope?.supported || !address?.supported) return false;
   const addressPath = address.path || [];
   if (!addressPath.length) return allowPartial;
 
   // Explicit nested prefixes (e.g. 58巷 33弄) must be present in order.
   if (!pathPrefixMatches(scope.prefix || [], addressPath, allowPartial)) return false;
-  const targetIndex = addressTargetIndex(scope, addressPath);
+  const targetIndex = addressTargetIndex(scope, addressPath, { laneFallback });
 
   if (scope.implicitTarget) {
     const segment = targetIndex >= 0 ? addressPath[targetIndex] : null;
@@ -673,11 +693,13 @@ function matchZipcodeScope(scopeTextOrItem, addressTextOrParsed) {
 function getZipcodeScopeMatchBasis(scopeTextOrItem, addressTextOrParsed) {
   const scope = scopeTextOrItem?.atoms ? scopeTextOrItem : parseScope(scopeItemText(scopeTextOrItem));
   const address = addressTextOrParsed?.path ? addressTextOrParsed : parseAddressSuffix(addressTextOrParsed);
-  if (!address.complete || !scopeMatchesParsed(scope, address)) return null;
+  if (!address.complete) return null;
+  const laneFallback = !scopeMatchesParsed(scope, address);
+  if (laneFallback && !scopeMatchesParsed(scope, address, { laneFallback })) return null;
 
   const parts = [];
   if (scope.target || scope.implicitTarget) {
-    const targetIndex = addressTargetIndex(scope, address.path);
+    const targetIndex = addressTargetIndex(scope, address.path, { laneFallback });
     const segment = targetIndex >= 0 ? address.path[targetIndex] : null;
     if (segment?.raw) {
       let segmentText = compactText(segment.raw);
@@ -750,7 +772,13 @@ function resolveZipcodeScopes(scopes, addressText) {
       pending: pending.map(({ item }) => item),
     };
   }
-  if (!matches.length) return { status: 'unmatched', matches: [], pending: [] };
+  if (!matches.length) {
+    const laneMatches = parsedItems
+      .filter(({ parsed }) => scopeMatchesParsed(parsed, address, { laneFallback: true }))
+      .sort((a, b) => b.parsed.specificity - a.parsed.specificity || a.index - b.index);
+    if (!laneMatches.length) return { status: 'unmatched', matches: [], pending: [] };
+    matches.push(...laneMatches);
+  }
 
   const topScore = matches[0].parsed.specificity;
   const top = matches.filter(({ parsed }) => parsed.specificity === topScore);

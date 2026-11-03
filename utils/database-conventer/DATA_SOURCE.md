@@ -6,8 +6,33 @@
 
 1. `downloadDatabase.js` 讀取[中華郵政下載頁](https://www.post.gov.tw/post/internet/Download/index.jsp?ID=220306)，找出最新、分卷連續的 `Zip33Setup_*.partN.rar`（舊名 `Zip33Usetup_*`）。
 2. 逐卷從 `post.gov.tw/post/download/` 下載並驗證 RAR 檔頭，再以 `unar` 組合出安裝程式。
-3. `gea-extract` 解析安裝程式內嵌的 Gentee GEA 封裝，直接解出 `DBF/rall1.dbf`；不執行安裝程式，也不需要 Windows 或 Wine。
-4. `index.js` 驗證 DBF 的欄位與資料量，轉成 `result/zipcode.json`。
+3. `gea-extract` 解析安裝程式內嵌的 Gentee GEA 封裝，解出 `DBF/` 下指定的資料表；不執行安裝程式，也不需要 Windows 或 Wine。
+4. `index.js` 驗證 `rall1.dbf` 的欄位與資料量，轉成 `result/zipcode.json`。
+5. `corrections.js` 讀取同一個安裝程式裡的對照表，轉成 `result/corrections.json`。
+
+## 地址更正對照表
+
+應用系統用來校正地址的資料表，與 `rall1.dbf` 一起出現在安裝程式的 `DBF/` 中：
+
+| 檔案 | 內容 | 轉換後 |
+| --- | --- | --- |
+| `uroad.dbf` | 各鄉鎮市區常見的錯誤路名與正確路名（八得路一段 → 八德路一段） | `roads` |
+| `uroad1.dbf` | 含罕用字的路名與缺字寫法（大路 → 大峰路） | `roads` |
+| `errword.dbf` | 不分地區的錯字（中歷 → 中壢） | `words` |
+| `cityarea.dbf` | 縣市鄉鎮市區的簡稱與舊名（北市中正區、臺北縣板橋市） | `places`（見下） |
+| `Inds.DBF` | 工業區、科學園區名稱與所在行政區 | `parks` |
+
+`places` 不逐條儲存：多數簡稱是「縣市寫法 × 行政區寫法」的組合（新北金山、金山鄉），
+所以只存縣市的其他寫法（`cities`）、行政區錯字（`areas`）與規則推不出的名稱
+（`names`），由 [`placeAliases.js`](../../src/utils/placeAliases.js) 在瀏覽器展開。
+轉檔時會確認每一筆原始簡稱都能展開回正確的行政區。
+
+路名更正只保留「正確路名存在於 `rall1.dbf`、錯誤路名不是當地真實道路」的組合，
+同一錯誤寫法對應到兩條路時整組捨棄，避免把真實路名改掉。網站在第一次載入後才
+另外下載 `corrections.json`，不影響首頁載入。
+
+封裝是一整段固實壓縮（solid）資料：每個檔案都接續前一個檔案的解壓視窗，所以
+`gea-extract` 會依封裝順序解開到最後一個指定檔案為止，並逐一核對 CRC。
 
 目前驗證版本為 **V2603（官方更新日 115/06/30）**。該安裝程式使用 CreateInstall/Gentee
 封裝，不能再用舊版流程的 `innoextract`，但 GEA payload 內仍包含完整的
@@ -41,8 +66,10 @@ cd utils/database-conventer
 npm ci
 make
 node downloadDatabase.js
-./gea-extract ./temp/installer.exe ./src/rall1.dbf
+./gea-extract ./temp/installer.exe ./src \
+  rall1.dbf uroad.dbf uroad1.dbf errword.dbf cityarea.dbf Inds.DBF
 node index.js
+node corrections.js
 ```
 
 ## 實作來源與授權

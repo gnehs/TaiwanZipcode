@@ -1,7 +1,7 @@
 # 資料庫轉換器
 
 自動下載中華郵政最新的「3+3 郵遞區號應用系統」，不執行安裝程式，直接從內嵌的
-Gentee GEA 封裝解出 `rall1.dbf`，再轉換為專案使用的 JSON。
+Gentee GEA 封裝解出 `rall1.dbf` 與幾份地址更正對照表，再轉換為專案使用的 JSON。
 
 完整來源與封裝說明請見 [DATA_SOURCE.md](./DATA_SOURCE.md)。
 
@@ -13,12 +13,14 @@ Gentee GEA 封裝解出 `rall1.dbf`，再轉換為專案使用的 JSON。
 npm ci
 make
 node downloadDatabase.js
-./gea-extract ./temp/installer.exe ./src/rall1.dbf
+./gea-extract ./temp/installer.exe ./src \
+  rall1.dbf uroad.dbf uroad1.dbf errword.dbf cityarea.dbf Inds.DBF
 node index.js
+node corrections.js
 ```
 
-輸出位於 `./result/zipcode.json`。GitHub Actions 會每月執行相同流程，資料有變更時才
-更新 `src/assets/zipcode.json`。
+輸出位於 `./result/zipcode.json` 與 `./result/corrections.json`。GitHub Actions 會每月執行相同流程，資料有變更時才
+更新 `src/assets/zipcode.json` 與 `src/assets/corrections.json`。
 
 ### Ubuntu / Debian 相依套件
 
@@ -33,7 +35,7 @@ Windows 使用者可在 WSL 執行同一套流程；不需要啟動或自動操�
 
 `.github/workflows/updateDatabase.yaml` 每月 1 日執行，也支援手動觸發。流程包含 RAR
 檔頭、EXE、GEA CRC、DBF header/schema、資料筆數與輸出 JSON 驗證。只在
-`src/assets/zipcode.json` 有差異時才提交 Conventional Commit。
+資料檔有差異時才提交 Conventional Commit。
 
 ## 資料庫授權條款
 

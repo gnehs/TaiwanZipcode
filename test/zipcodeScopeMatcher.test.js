@@ -178,3 +178,20 @@ test('every scope record in the bundled database is parser-supported', () => {
     assert.equal(parsed.unrecognized, '', item.scope);
   }
 });
+
+test('a lane-bounded range judges a plain house number by its number', () => {
+  const chongxin = roadScopes('新北市', '三重區', '重新路三段');
+  assert.equal(resolveZipcodeScopes(chongxin, '91號').matches[0].zipcode, 241040);
+  assert.equal(resolveZipcodeScopes(chongxin, '47號').matches[0].zipcode, 241031);
+  assert.equal(resolveZipcodeScopes(chongxin, '51巷3號').matches[0].zipcode, 241040);
+
+  const zhongzheng = roadScopes('新北市', '淡水區', '中正東路一段');
+  assert.equal(resolveZipcodeScopes(zhongzheng, '139號').matches[0].zipcode, 251007);
+});
+
+test('a rule written in 號 outranks a lane-bounded range for that number', () => {
+  const fuzhou = roadScopes('臺北市', '中正區', '福州街');
+  assert.equal(resolveZipcodeScopes(fuzhou, '10號').matches[0].zipcode, 100508);
+  const minsheng = roadScopes('臺北市', '松山區', '民生東路三段');
+  assert.equal(resolveZipcodeScopes(minsheng, '124號').matches[0].zipcode, 105602);
+});

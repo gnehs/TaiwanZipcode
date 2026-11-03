@@ -59,6 +59,11 @@ export function cleanAddressText(value, hasArea = () => false) {
     .replace(/\s*(\d+)\s*段/gu, (match, number) =>
       SEGMENT_NAMES[Number(number)] ? `${SEGMENT_NAMES[Number(number)]}段` : match,
     )
+    // Brackets hold notes (a shop name, "臨"), except a floor such as (3樓).
+    .replace(/\(([^()]*)\)/gu, (match, inner) =>
+      /\d/u.test(inner) && /[樓號室Ff]/u.test(inner) ? inner : '',
+    )
+    .replace(/\s+/gu, ' ')
     .trim();
 
   for (const [county, city] of Object.entries(LEGACY_COUNTIES)) {
@@ -70,28 +75,74 @@ export function cleanAddressText(value, hasArea = () => false) {
         /^[市鎮鄉]$/u.test(rest[length] ?? '') &&
         hasArea(`${city}${rest.slice(0, length)}區`),
     );
-    text = townLength
-      ? `${city}${rest.slice(0, townLength)}區${rest.slice(townLength + 1)}`
-      : `${city}${rest}`;
+    if (townLength) {
+      text = `${city}${rest.slice(0, townLength)}區${rest.slice(townLength + 1)}`;
+    } else if ([2, 3, 4].some((length) => hasArea(`${city}${rest.slice(0, length)}`))) {
+      text = `${city}${rest}`;
+    }
+    // Otherwise the district is not the merged county's (臺北縣中正區 was
+    // always 臺北市), so the text is left for the place-name tables.
     break;
   }
   return text;
 }
 
 /**
- * Clean the house-number part after the road: Chinese numerals become digits,
- * "3F" becomes 3樓, "B1" becomes 地下1樓, and brackets around a floor go.
+ * A unit typed twice (丹陽街街) is one unit. Real names repeat one too
+ * (北大路路頂巷), so this is only tried when the text as written finds no road.
  */
-export function cleanAddressSuffix(value) {
-  return String(value ?? '')
+export function collapseRepeatedUnits(text) {
+  return String(text ?? '').replace(/(路|街|巷|弄|號|段|樓)\1+/gu, '$1');
+}
+
+/**
+ * Forms often name the village (村/里) and neighbourhood (鄰) between the
+ * district and the road, which the zipcode data never includes. Return the
+ * ways `rest` could read with them removed, shortest village name first;
+ * the caller keeps the first one that starts with a known road.
+ */
+export function withoutVillage(rest) {
+  const text = String(rest ?? '');
+  const candidates = [];
+  for (let length = 1; length <= 4; length += 1) {
+    if (/^[村里]$/u.test(text[length] ?? '')) {
+      candidates.push(text.slice(length + 1).replace(/^\s*\d+\s*鄰/u, '').trimStart());
+    }
+  }
+  const noNeighbourhood = text.replace(/^\s*\d+\s*鄰/u, '').trimStart();
+  if (noNeighbourhood !== text) candidates.push(noNeighbourhood);
+  return candidates;
+}
+
+/**
+ * Clean the house-number part after the road: a leftover 村 or 鄰 goes,
+ * Chinese numerals become digits, "3F" becomes 3樓, "B1" becomes 地下1樓,
+ * brackets around a floor go, and trailing words go. With `bareNumberIsHouse`
+ * a number left without a unit gets 號.
+ */
+export function cleanAddressSuffix(value, { bareNumberIsHouse = false } = {}) {
+  const suffix = String(value ?? '')
     .normalize('NFKC')
+    // A village used as the road name (湖西) leaves its 村 in the suffix.
+    .replace(/^\s*[村里](?=\s*\d)/u, '')
+    .replace(/^\s*\d+\s*鄰\s*/u, '')
     .replace(/[()[\]]/gu, '')
-    .replace(new RegExp(`(${ZH_NUMERAL})(?=\\s*[巷弄號樓室])`, 'gu'), (number) =>
+    .replace(new RegExp(`(${ZH_NUMERAL})(?=\\s*[巷弄衖號樓室])`, 'gu'), (number) =>
       String(parseChineseNumber(number)),
     )
     .replace(new RegExp(`(之|地下)(${ZH_NUMERAL})`, 'gu'), (match, prefix, number) =>
       `${prefix}${parseChineseNumber(number)}`,
     )
     .replace(/[Bb]\s*(\d+)\s*(?:[Ff]|樓)?(?![\dA-Za-z])/gu, '地下$1樓')
-    .replace(/(\d+)\s*[Ff](?![A-Za-z])/gu, '$1樓');
+    .replace(/(\d+)\s*[Ff](?![A-Za-z])/gu, '$1樓')
+    // Words after the last numbered unit describe the place (櫃位, 辦公室),
+    // except a lettered room such as A室.
+    .replace(/(\d\s*[號樓室])(\D+)$/u, (match, unit, tail) =>
+      /^\s*[A-Za-z]+\s*室$/u.test(tail) ? match : unit,
+    );
+  // In finished text a bare trailing number is the house number (莊敬路168);
+  // while someone is still typing it may be the start of a longer one.
+  return bareNumberIsHouse && /\d\s*$/u.test(suffix) && !/[號樓室]/u.test(suffix)
+    ? `${suffix}號`
+    : suffix;
 }

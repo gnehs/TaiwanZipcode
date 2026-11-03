@@ -168,11 +168,18 @@ static int read_metadata(GeaArchive *archive) {
   return 1;
 }
 
-static int find_database(const GeaArchive *archive, GeaFile *database) {
+typedef struct {
+  GeaFile *items;
+  size_t count;
+  size_t capacity;
+} GeaFileList;
+
+// Every file in archive order. The payload is one solid stream, so a file can
+// only be decoded after all the files stored before it.
+static int collect_files(const GeaArchive *archive, GeaFileList *files) {
   uint64_t position = 0;
   uint64_t data_offset = 0;
-  char current_folder[sizeof(database->folder)] = "";
-  unsigned matches = 0;
+  char current_folder[sizeof(((GeaFile *)0)->folder)] = "";
 
   while (position < archive->info_size) {
     if (!checked_range(position, GEA_FILE_FIXED_SIZE, archive->info_size)) return 0;
@@ -204,14 +211,17 @@ static int find_database(const GeaArchive *archive, GeaFile *database) {
     if (!checked_range(data_offset, file.compressed_size, archive->summary_size)) return 0;
     data_offset += file.compressed_size;
 
-    if (ascii_equal(file.name, "rall1.dbf") && ascii_equal(file.folder, "DBF")) {
-      *database = file;
-      matches++;
+    if (files->count == files->capacity) {
+      size_t capacity = files->capacity ? files->capacity * 2 : 1024;
+      GeaFile *items = realloc(files->items, capacity * sizeof(GeaFile));
+      if (!items) return 0;
+      files->items = items;
+      files->capacity = capacity;
     }
+    files->items[files->count++] = file;
   }
 
-  return position == archive->info_size && data_offset == archive->summary_size &&
-         matches == 1;
+  return position == archive->info_size && data_offset == archive->summary_size;
 }
 
 static int logical_copy(const GeaArchive *archive, uint64_t offset,
@@ -251,7 +261,8 @@ static uint32_t crc_update(uint32_t crc, const uint8_t *data, size_t size) {
   return crc;
 }
 
-static int validate_dbf(FILE *output, uint64_t expected_size) {
+static int validate_dbf(FILE *output, uint64_t expected_size,
+                        uint32_t minimum_records) {
   uint8_t header[32];
   if (fflush(output) != 0 || fseek(output, 0, SEEK_SET) != 0 ||
       fread(header, 1, sizeof(header), output) != sizeof(header)) return 0;
@@ -259,38 +270,50 @@ static int validate_dbf(FILE *output, uint64_t expected_size) {
   uint16_t header_size = read_u16(header + 8);
   uint16_t record_size = read_u16(header + 10);
   uint64_t minimum_size = (uint64_t)header_size + (uint64_t)records * record_size;
-  return header[0] == 0x30 && records >= MINIMUM_DBF_RECORDS &&
+  return header[0] == 0x30 && records >= minimum_records &&
          header_size >= 33 && record_size > 0 && expected_size >= minimum_size &&
          expected_size <= minimum_size + 1;
 }
 
-static int extract_database(const GeaArchive *archive, const GeaFile *database,
-                            const char *destination) {
+// The decoder window carried from one file to the next.
+typedef struct {
+  uint8_t *output;
+  uint32_t used;
+} SolidWindow;
+
+// Decode one file, continuing the solid window. With no destination the
+// output is only checked against its CRC, which keeps the window in step.
+static int decode_file(const GeaArchive *archive, const GeaFile *database,
+                       const char *destination, uint32_t minimum_records,
+                       SolidWindow *window) {
   if (database->flags & GEA_FILE_PROTECT || database->compressed_size > SIZE_MAX ||
       database->size > SIZE_MAX) return 0;
 
   uint8_t *compressed = malloc((size_t)database->compressed_size + 64U);
-  uint8_t *output = calloc(1, (size_t)archive->block_size + archive->solid_size + 64U);
-  char *temporary = malloc(strlen(destination) + 5U);
-  if (!compressed || !output || !temporary) {
-    free(compressed); free(output); free(temporary); return 0;
+  uint8_t *output = window->output;
+  char *temporary = destination ? malloc(strlen(destination) + 5U) : NULL;
+  if (!compressed || (destination && !temporary)) {
+    free(compressed); free(temporary); return 0;
   }
-  sprintf(temporary, "%s.tmp", destination);
+  if (destination) sprintf(temporary, "%s.tmp", destination);
 
   if (!logical_copy(archive, database->data_offset, compressed,
                     database->compressed_size)) {
-    free(compressed); free(output); free(temporary); return 0;
+    free(compressed); free(temporary); return 0;
   }
 
-  FILE *file = fopen(temporary, "w+b");
-  if (!file) {
-    fprintf(stderr, "Cannot create %s: %s\n", temporary, strerror(errno));
-    free(compressed); free(output); free(temporary); return 0;
+  FILE *file = NULL;
+  if (destination) {
+    file = fopen(temporary, "w+b");
+    if (!file) {
+      fprintf(stderr, "Cannot create %s: %s\n", temporary, strerror(errno));
+      free(compressed); free(temporary); return 0;
+    }
   }
 
   uint64_t input_position = 0;
   uint64_t remaining = database->size;
-  uint32_t output_used = 0;
+  uint32_t output_used = window->used;
   uint32_t crc = 0xffffffffU;
   int success = 1;
 
@@ -345,7 +368,7 @@ static int extract_database(const GeaArchive *archive, const GeaFile *database,
       success = 0; break;
     }
 
-    if (fwrite(output + solid_offset, 1, output_size, file) != output_size) {
+    if (file && fwrite(output + solid_offset, 1, output_size, file) != output_size) {
       success = 0; break;
     }
     crc = crc_update(crc, output + solid_offset, output_size);
@@ -353,16 +376,15 @@ static int extract_database(const GeaArchive *archive, const GeaFile *database,
     remaining -= output_size;
   }
 
-  if (input_position != database->compressed_size || crc != database->crc ||
-      !validate_dbf(file, database->size)) success = 0;
-  if (fclose(file) != 0) success = 0;
-
-  if (success) {
-    if (rename(temporary, destination) != 0) success = 0;
+  window->used = output_used;
+  if (input_position != database->compressed_size || crc != database->crc) success = 0;
+  if (file) {
+    if (success && !validate_dbf(file, database->size, minimum_records)) success = 0;
+    if (fclose(file) != 0) success = 0;
+    if (success && rename(temporary, destination) != 0) success = 0;
+    if (!success) remove(temporary);
   }
-  if (!success) remove(temporary);
   free(temporary);
-  free(output);
   free(compressed);
   return success;
 }
@@ -382,33 +404,81 @@ static uint8_t *read_file(const char *filename, uint64_t *size) {
   return data;
 }
 
+// Extract the named files from the installer's DBF folder into a directory.
+// rall1.dbf must hold the full zipcode table; the other tables only need a
+// valid DBF header.
 int main(int argc, char **argv) {
-  if (argc != 3) {
-    fprintf(stderr, "Usage: %s <installer.exe> <rall1.dbf>\n", argv[0]);
+  if (argc < 4) {
+    fprintf(stderr, "Usage: %s <installer.exe> <output-dir> <name.dbf>...\n", argv[0]);
     return 2;
   }
+  const char *output_dir = argv[2];
+  int wanted_count = argc - 3;
+  char **wanted = argv + 3;
 
   uint64_t input_size = 0;
   uint8_t *input = read_file(argv[1], &input_size);
   GeaArchive archive = {0};
-  GeaFile database = {0};
+  GeaFileList files = {0};
   int success = input && locate_archive(input, input_size, &archive) &&
-                read_metadata(&archive) && find_database(&archive, &database);
-
+                read_metadata(&archive) && collect_files(&archive, &files);
   if (!success) {
-    fprintf(stderr, "Could not find a supported GEA v2 DBF payload in %s\n", argv[1]);
-  } else {
-    printf("Found %s/%s (%llu bytes, %llu compressed)\n", database.folder,
-           database.name, (unsigned long long)database.size,
-           (unsigned long long)database.compressed_size);
-    success = extract_database(&archive, &database, argv[2]);
-    if (!success) {
-      fprintf(stderr, "GEA extraction or DBF validation failed\n");
-    } else {
-      printf("Extracted and validated %s\n", argv[2]);
+    fprintf(stderr, "Could not read a supported GEA v2 payload in %s\n", argv[1]);
+  }
+
+  // Each wanted name must appear exactly once in the DBF folder.
+  size_t last = 0;
+  for (int index = 0; success && index < wanted_count; index++) {
+    unsigned matches = 0;
+    for (size_t file = 0; file < files.count; file++) {
+      if (ascii_equal(files.items[file].folder, "DBF") &&
+          ascii_equal(files.items[file].name, wanted[index])) {
+        matches++;
+        if (file > last) last = file;
+      }
+    }
+    if (matches != 1) {
+      fprintf(stderr, "Expected one DBF/%s, found %u\n", wanted[index], matches);
+      success = 0;
     }
   }
 
+  SolidWindow window = {0};
+  if (success) {
+    window.output = calloc(1, (size_t)archive.block_size + archive.solid_size + 64U);
+    if (!window.output) success = 0;
+  }
+
+  for (size_t file = 0; success && file <= last; file++) {
+    const GeaFile *entry = &files.items[file];
+    if (entry->size == 0) continue;
+    const char *name = NULL;
+    for (int index = 0; index < wanted_count; index++) {
+      if (ascii_equal(entry->folder, "DBF") && ascii_equal(entry->name, wanted[index])) {
+        name = wanted[index];
+      }
+    }
+
+    char *destination = NULL;
+    if (name) {
+      destination = malloc(strlen(output_dir) + strlen(name) + 2U);
+      if (!destination) { success = 0; break; }
+      sprintf(destination, "%s/%s", output_dir, name);
+    }
+    uint32_t minimum = name && ascii_equal(name, "rall1.dbf") ? MINIMUM_DBF_RECORDS : 1U;
+    if (!decode_file(&archive, entry, destination, minimum, &window)) {
+      fprintf(stderr, "GEA extraction or validation failed at %s/%s\n",
+              entry->folder, entry->name);
+      success = 0;
+    } else if (name) {
+      printf("Extracted and validated %s (%llu bytes)\n", destination,
+             (unsigned long long)entry->size);
+    }
+    free(destination);
+  }
+
+  free(window.output);
+  free(files.items);
   free(archive.owned_metadata);
   free(input);
   return success ? 0 : 1;

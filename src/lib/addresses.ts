@@ -1,8 +1,5 @@
 import zipcodeData from "@/assets/zipcode.json"
-import {
-  cleanAddressSuffix,
-  cleanAddressText,
-} from "@/utils/addressCleanup.js"
+import { createAddressResolver } from "@/utils/addressResolver.js"
 import { hasUnconvertedAddressParts } from "@/utils/addressConversion.js"
 import {
   findLongestAddressPrefix,
@@ -47,7 +44,7 @@ export type AddressIndex = {
   addresses: string[]
   scopesByAddress: Record<string, ZipcodeScope[]>
   englishByAddress: Record<string, EnglishPlace>
-  areas: Set<string>
+  places: { city: string; area: string; road: string }[]
 }
 
 // The fields most address forms ask for, so each can be pasted on its own.
@@ -80,13 +77,13 @@ export type ParsedAddress = {
 function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
   const scopesByAddress: Record<string, ZipcodeScope[]> = {}
   const englishByAddress: Record<string, EnglishPlace> = {}
-  const areas = new Set<string>()
+  const places: AddressIndex["places"] = []
 
   for (const [cityName, city] of Object.entries(database)) {
     for (const [areaName, area] of Object.entries(city.areas)) {
-      areas.add(`${cityName}${areaName}`)
       for (const [roadName, road] of Object.entries(area.roads)) {
         const address = `${cityName}${areaName}${roadName}`
+        places.push({ city: cityName, area: areaName, road: roadName })
         scopesByAddress[address] = road.scopes
         englishByAddress[address] = {
           road: road.en,
@@ -101,7 +98,7 @@ function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
     addresses: Object.keys(scopesByAddress),
     scopesByAddress,
     englishByAddress,
-    areas,
+    places,
   }
 }
 
@@ -165,13 +162,13 @@ export function lookupAddress(query: string): AddressLookup {
         .filter(Boolean),
     ),
   ]
+  // Without a matching rule, every rule of a road may still share the first
+  // three digits; show those rather than nothing.
   const displayedZipcode = resolvedScope?.zipcode
     ? String(resolvedScope.zipcode)
-    : addressSuffix.trim()
-      ? ""
-      : baseZipcodePrefixes.length === 1
-        ? baseZipcodePrefixes[0]
-        : ""
+    : baseZipcodePrefixes.length === 1
+      ? baseZipcodePrefixes[0]
+      : ""
   const matchedRuleBasis =
     resolvedScope && addressSuffix.trim()
       ? getZipcodeScopeMatchBasis(resolvedScope, addressSuffix)?.text || ""
@@ -189,17 +186,52 @@ export function lookupAddress(query: string): AddressLookup {
   }
 }
 
-const hasArea = (name: string) => addressIndex.areas.has(name)
+let resolveAddressText = createAddressResolver(
+  addressIndex.places,
+  lookupAddress,
+)
 
-// Typed or pasted text often uses spellings the database does not: rewrite
-// those first, then tidy the house number once the road is known.
-export function lookupCleanedAddress(text: string): AddressLookup {
-  const lookup = lookupAddress(cleanAddressText(text, hasArea))
-  if (!lookup.road) return lookup
-  const suffix = cleanAddressSuffix(lookup.addressSuffix)
-  return suffix === lookup.addressSuffix
-    ? lookup
-    : lookupAddress(`${lookup.road}${suffix}`)
+// The postal service's correction tables only help text that does not read
+// as written, so they load after the page instead of with it. Lookups made
+// before then simply go without them; subscribers re-run once they arrive.
+let correctionsVersion = 0
+let correctionsRequest: Promise<void> | null = null
+const correctionListeners = new Set<() => void>()
+
+export function loadCorrections() {
+  correctionsRequest ??= import("@/assets/corrections.json").then(
+    ({ default: corrections }) => {
+      resolveAddressText = createAddressResolver(
+        addressIndex.places,
+        lookupAddress,
+        corrections,
+      )
+      correctionsVersion += 1
+      for (const listener of correctionListeners) listener()
+    },
+  )
+  return correctionsRequest
+}
+
+export function subscribeCorrections(listener: () => void) {
+  correctionListeners.add(listener)
+  return () => {
+    correctionListeners.delete(listener)
+  }
+}
+
+export function getCorrectionsVersion() {
+  return correctionsVersion
+}
+
+// Typed or pasted text often uses spellings, places or extra words the
+// database does not; resolve those before reading the zipcode. Pass
+// `bareNumberIsHouse` for finished text such as a pasted list.
+export function lookupCleanedAddress(
+  text: string,
+  options: { bareNumberIsHouse?: boolean } = {},
+): AddressLookup {
+  return resolveAddressText(text, options) as AddressLookup
 }
 
 export function formatScopeRule(scope: string) {
@@ -234,8 +266,10 @@ export function formatAddress(
   if (/[一二三四五六七八九十]/u.test(addressSuffix)) {
     warns.push("請不要輸入中文數字")
   }
-  if (/衖/u.test(addressSuffix)) {
-    warns.push("不支援「衖」三分支編址")
+  // 衖 only narrows below 弄; it is kept in Chinese but has no English unit.
+  const subAlley = addressSuffix.normalize("NFKC").match(/(\d+)\s*衖/u)?.[1]
+  if (subAlley) {
+    warns.push("英文地址未包含「衖」")
   }
   if (/(.+?)巷/u.test(addressSuffix) && !/(\d+)巷/u.test(addressSuffix)) {
     warns.push("不支援在此介面輸入中文巷弄名稱")
@@ -268,6 +302,7 @@ export function formatAddress(
     zh += `${form.aly}弄`
     streetParts.unshift(`${form.aly} Aly`)
   }
+  if (subAlley) zh += `${subAlley}衖`
   if (form.no) {
     zh += `${form.no}號`
     if (form.noDash) {
