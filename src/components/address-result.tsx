@@ -73,7 +73,7 @@ function StatusPill({ status }: { status: keyof typeof STATUS }) {
 }
 
 const FOOTER_BUTTON =
-  "h-12 rounded-none px-4 font-semibold text-primary-foreground hover:bg-white/10 hover:text-primary-foreground has-data-[icon=inline-start]:pl-4 aria-expanded:bg-white/10 aria-expanded:text-primary-foreground"
+  "h-13 rounded-none px-4 font-semibold text-primary-foreground hover:bg-white/10 hover:text-primary-foreground has-data-[icon=inline-start]:pl-4 aria-expanded:bg-white/10 aria-expanded:text-primary-foreground"
 
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
@@ -271,7 +271,7 @@ export function AddressResult({
           <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1 py-3 pl-(--card-spacing) sm:flex">
             {metaItems}
           </div>
-          <div className="ml-auto flex">
+          <div className="flex flex-1 items-center justify-between sm:flex-none">
             <Popover>
               <PopoverTrigger
                 render={
@@ -329,14 +329,14 @@ export function AddressResult({
                 </ul>
               </PopoverContent>
             </Popover>
-            <span className="w-px bg-white/25" aria-hidden="true" />
+            {/* Sits in the card's corner: 18px pill radius + 8px inset = 26px card radius. */}
             <CopyButton
               text={isComplete ? displayedZipcode : ""}
               label="複製郵遞區號"
               visibleLabel="複製"
               disabled={!isComplete}
-              variant="ghost"
-              className={FOOTER_BUTTON}
+              variant="outline"
+              className="my-2 mr-2 h-9 min-h-9 px-4 font-semibold text-paper-ink [--control-bottom:oklch(0.9_0.012_50)] [--control-top:var(--paper)] hover:text-paper-ink"
             />
           </div>
         </div>

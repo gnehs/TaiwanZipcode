@@ -58,38 +58,6 @@ function IconSwap({
   )
 }
 
-const SWAP_LAYER =
-  "col-start-1 row-start-1 transition-[opacity,translate] duration-150 ease-out motion-reduce:translate-y-0"
-
-// Both states share one grid cell, so the button keeps the wider width and the
-// change is a crossfade instead of a jump. Transitions retarget on rapid clicks.
-function Swap({
-  swapped,
-  from,
-  to,
-}: {
-  swapped: boolean
-  from: React.ReactNode
-  to: React.ReactNode
-}) {
-  return (
-    <span className="grid justify-items-center">
-      <span
-        className={cn(SWAP_LAYER, swapped && "-translate-y-1.5 opacity-0")}
-        aria-hidden={swapped}
-      >
-        {from}
-      </span>
-      <span
-        className={cn(SWAP_LAYER, !swapped && "translate-y-1.5 opacity-0")}
-        aria-hidden={!swapped}
-      >
-        {to}
-      </span>
-    </span>
-  )
-}
-
 export function CopyButton({
   text,
   label,
@@ -144,13 +112,9 @@ export function CopyButton({
           from={<CopyIcon />}
           to={<CheckIcon />}
         />
-        {iconOnly ? null : (
-          <Swap
-            swapped={status === "copied"}
-            from={visibleLabel}
-            to="已複製"
-          />
-        )}
+        {/* The label stays put; the icon carries the feedback and the status
+            region below announces it, so the button never changes width. */}
+        {iconOnly ? null : visibleLabel}
       </Button>
       <span
         role="status"
