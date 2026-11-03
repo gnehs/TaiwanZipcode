@@ -19,6 +19,29 @@ const nonEmptyFields = ["CITY", "AREA", "ROAD", "ZIPCODE", "SCOOP"];
 const minimumRecords = 10_000;
 const minimumCities = 20;
 
+// Every name that fills its fixed-width DBF column, mapped to the full name.
+// Truncated ones follow the post office's own address converter. A new name
+// at full width stops the update until it is checked and added here.
+const fullWidthNames = {
+  ECITY: {
+    "New Taipei City": "New Taipei City",
+    "Changhua County": "Changhua County",
+    "Pingtung County": "Pingtung County",
+    "Lienchiang Coun": "Lienchiang County",
+  },
+  AREA: {
+    阿里山鄉: "阿里山鄉",
+    那瑪夏區: "那瑪夏區",
+    三地門鄉: "三地門鄉",
+    太麻里鄉: "太麻里鄉",
+    釣魚臺列: "釣魚臺",
+  },
+  EAREA: {},
+};
+// Placeholder cities the converter does not list. Their records repeat ones
+// filed under 宜蘭縣 and 高雄市旗津區, without English names.
+const placeholderCities = new Set(["釣魚臺", "南海諸"]);
+
 if (!fs.existsSync(databasePath)) {
   throw new Error(`Database file not found: ${databasePath}`);
 }
@@ -74,8 +97,61 @@ if (cityNames.size < minimumCities) {
   );
 }
 
+// DBF field descriptors are 32 bytes each, from offset 32 until 0x0d.
+function readFieldWidths(buffer) {
+  const widths = {};
+  for (let offset = 32; buffer[offset] !== 0x0d; offset += 32) {
+    const name = buffer.toString("latin1", offset, offset + 11).replace(/\0.*$/s, "");
+    widths[name] = buffer[offset + 16];
+  }
+  return widths;
+}
+
+// Byte length in Big5 (code page 950), the DBF's encoding.
+function big5Length(value) {
+  let length = 0;
+  for (const char of value) {
+    length += char.codePointAt(0) > 0x7f ? 2 : 1;
+  }
+  return length;
+}
+
+function normalizeEnglish(value) {
+  return String(value ?? "")
+    .normalize("NFKC")
+    .replace(/\s*,\s*/g, ", ")
+    .replace(/\s+/g, " ")
+    .replace(/[,\s]+$/, "")
+    .trim();
+}
+
+const fieldWidths = readFieldWidths(fs.readFileSync(databasePath));
+const records = parsedData.filter((item) => !placeholderCities.has(item.CITY));
+const listedZipcodes = new Set(records.map((item) => String(item.ZIPCODE).trim()));
+for (const item of parsedData) {
+  if (placeholderCities.has(item.CITY) && !listedZipcodes.has(String(item.ZIPCODE).trim())) {
+    throw new Error(`Placeholder city ${item.CITY} holds unlisted ZIPCODE ${item.ZIPCODE}`);
+  }
+}
+
+for (const item of records) {
+  for (const [field, names] of Object.entries(fullWidthNames)) {
+    const value = String(item[field] ?? "").trim();
+    if (big5Length(value) < fieldWidths[field]) {
+      continue;
+    }
+    if (!Object.hasOwn(names, value)) {
+      throw new Error(`${field} "${value}" fills its ${fieldWidths[field]}-byte column and may be truncated`);
+    }
+    item[field] = names[value];
+  }
+  for (const field of ["ECITY", "EAREA", "EROAD"]) {
+    item[field] = normalizeEnglish(item[field]);
+  }
+}
+
 const result = {};
-parsedData.forEach((item) => {
+records.forEach((item) => {
   if (!result[item.CITY]) {
     result[item.CITY] = {
       en: item.ECITY,
@@ -109,5 +185,5 @@ if (serializedResult.length < 1_000_000) {
 
 fs.writeFileSync(resultPath, serializedResult);
 console.log(
-  `${parsedData.length} items from ${cityNames.size} cities saved to ${resultPath}`,
+  `${records.length} items from ${Object.keys(result).length} cities saved to ${resultPath}`,
 );
