@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import { AddressResult } from "@/components/address-result"
 import { AddressSearch } from "@/components/address-search"
+import { FeatureCards } from "@/components/feature-cards"
 import { RecentLookups } from "@/components/recent-lookups"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
@@ -149,9 +150,12 @@ export default function App() {
             scopes={scopes}
           />
         ) : (
-          <RecentLookups
-            onSelect={(lookup) => setQuery(`${lookup.road}${lookup.suffix}`)}
-          />
+          <>
+            <RecentLookups
+              onSelect={(lookup) => setQuery(`${lookup.road}${lookup.suffix}`)}
+            />
+            <FeatureCards />
+          </>
         )}
       </main>
       <SiteFooter />
