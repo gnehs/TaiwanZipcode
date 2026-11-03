@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import { AddressResult } from "@/components/address-result"
 import { AddressSearch } from "@/components/address-search"
+import { RecentLookups } from "@/components/recent-lookups"
 import { SiteFooter } from "@/components/site-footer"
 import {
   addressIndex,
@@ -9,6 +10,7 @@ import {
   type ZipcodeScope,
 } from "@/lib/addresses"
 import { readHashQuery, writeHashState } from "@/lib/hash-state"
+import { rememberLookup } from "@/lib/recent-lookups"
 import {
   getZipcodeScopeMatchBasis,
   resolveZipcodeScopes,
@@ -71,6 +73,21 @@ export default function App() {
   }, [road, addressSuffix, resolvedScope?.zipcode])
 
   useEffect(() => {
+    if (!road || displayedZipcode.length !== 6) return
+    // Wait for typing to settle so partial house numbers are not remembered.
+    const timer = window.setTimeout(
+      () =>
+        rememberLookup({
+          road,
+          suffix: addressSuffix.trim(),
+          zipcode: displayedZipcode,
+        }),
+      1000,
+    )
+    return () => window.clearTimeout(timer)
+  }, [road, addressSuffix, displayedZipcode])
+
+  useEffect(() => {
     const syncFromHash = () => setQuery(readHashQuery())
     window.addEventListener("hashchange", syncFromHash)
     return () => window.removeEventListener("hashchange", syncFromHash)
@@ -87,8 +104,8 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-svh bg-muted/30">
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 pt-6 sm:px-6 sm:pt-12">
+    <div className="min-h-svh bg-background">
+      <main className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 pt-6 sm:px-6 sm:pt-14">
         <AddressSearch
           query={query}
           road={road}
@@ -108,7 +125,11 @@ export default function App() {
             scopeResolution={scopeResolution}
             scopes={scopes}
           />
-        ) : null}
+        ) : (
+          <RecentLookups
+            onSelect={(lookup) => setQuery(`${lookup.road}${lookup.suffix}`)}
+          />
+        )}
         <SiteFooter />
       </main>
     </div>

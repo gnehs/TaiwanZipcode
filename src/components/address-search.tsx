@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { SearchIcon, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Combobox,
   ComboboxContent,
@@ -98,67 +99,35 @@ export function AddressSearch({
   }
 
   return (
-    <section className="flex flex-col gap-6" aria-labelledby="search-title">
-      <header className="flex flex-col gap-2 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-          <span className="text-lg font-semibold" aria-hidden="true">
+    <Card role="search" aria-labelledby="search-title">
+      <CardContent className="flex flex-col gap-6">
+      <header className="flex items-center gap-3.5">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklch,var(--primary),white_14%),var(--primary))] text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.28),0_0_0_1px_color-mix(in_oklch,var(--primary),black_18%)]">
+          <span className="text-sm font-semibold tracking-tight" aria-hidden="true">
             3+3
           </span>
         </div>
-        <h1
-          id="search-title"
-          tabIndex={-1}
-          className="text-2xl font-semibold tracking-tight sm:text-3xl"
-        >
-          台灣 3+3 郵遞區號查詢
-        </h1>
-        <p className="text-sm text-muted-foreground sm:text-base">
-          即時查詢完整郵遞區號，無需驗證碼。
-        </p>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h1
+            id="search-title"
+            className="text-lg font-semibold tracking-tight sm:text-xl"
+          >
+            台灣 3+3 郵遞區號查詢
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            即時查詢完整郵遞區號，無需驗證碼。
+          </p>
+        </div>
       </header>
-
-      <ol
-        className="grid grid-cols-3 gap-2 rounded-xl border bg-card p-3 text-xs sm:gap-3 sm:p-4 sm:text-sm"
-        aria-label="查詢步驟"
-      >
-        <li className="flex min-w-0 items-center gap-1.5 sm:items-start sm:gap-3">
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[0.7rem] font-semibold text-primary-foreground sm:size-6 sm:text-xs">
-            1
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate font-medium">選擇道路</span>
-            <span className="hidden text-xs text-muted-foreground sm:block">
-              輸入或選擇道路
-            </span>
-          </span>
-        </li>
-        <li className="flex min-w-0 items-center gap-1.5 sm:items-start sm:gap-3">
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[0.7rem] font-semibold text-primary-foreground sm:size-6 sm:text-xs">
-            2
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate font-medium">接著輸入門牌</span>
-            <span className="hidden text-xs text-muted-foreground sm:block">
-              在同一欄輸入巷、弄、號與樓層
-            </span>
-          </span>
-        </li>
-        <li className="flex min-w-0 items-center gap-1.5 sm:items-start sm:gap-3">
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[0.7rem] font-semibold text-primary-foreground sm:size-6 sm:text-xs">
-            3
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate font-medium">複製區號</span>
-            <span className="hidden text-xs text-muted-foreground sm:block">
-              確認完整六碼後複製
-            </span>
-          </span>
-        </li>
-      </ol>
 
       <FieldGroup>
         <Field data-invalid={isUnmatched || undefined}>
-          <FieldLabel htmlFor="address-search">地址</FieldLabel>
+          <FieldLabel
+            htmlFor="address-search"
+            className="text-xs tracking-wide text-muted-foreground"
+          >
+            輸入地址
+          </FieldLabel>
           <Combobox
             items={addressIndex.addresses}
             filteredItems={suggestions}
@@ -194,7 +163,7 @@ export function AddressSearch({
                 ref={inputRef}
                 id="address-search"
                 name="address"
-                className="h-12 w-full bg-background"
+                className="h-14 w-full text-base [&_input]:text-base"
                 placeholder="例如：臺北市中山區中山北路一段100號3樓…"
                 aria-describedby="address-search-help"
                 aria-invalid={isUnmatched || undefined}
@@ -243,7 +212,7 @@ export function AddressSearch({
                   <ComboboxItem
                     key={address}
                     value={address}
-                    className="min-h-11 whitespace-normal break-words"
+                    className="min-h-11 px-3 whitespace-normal break-words"
                   >
                     <span className="min-w-0 whitespace-normal break-words">
                       {address}
@@ -260,13 +229,14 @@ export function AddressSearch({
             className="flex flex-wrap items-center gap-2"
             hidden={Boolean(road)}
           >
-            <span className="text-xs text-muted-foreground">試試道路：</span>
+            <span className="text-xs text-muted-foreground">試試</span>
             {ROAD_KEYWORD_EXAMPLES.map((keyword) => (
               <Button
                 key={keyword}
                 type="button"
                 size="sm"
                 variant="outline"
+                className="h-8 px-3"
                 onClick={() => updateQuery(keyword, true)}
               >
                 {keyword}
@@ -275,6 +245,7 @@ export function AddressSearch({
           </div>
         </Field>
       </FieldGroup>
-    </section>
+      </CardContent>
+    </Card>
   )
 }

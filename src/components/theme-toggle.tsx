@@ -45,7 +45,7 @@ export function ThemeToggle() {
           <ToggleGroupItem
             key={value}
             value={value}
-            className="min-h-11 flex-1 px-3 sm:flex-none"
+            className="min-h-10 flex-1 rounded-full px-3.5 sm:flex-none"
           >
             <Icon data-icon="inline-start" aria-hidden="true" />
             {label}

@@ -2,17 +2,22 @@ import { useEffect, useState } from "react"
 import { CheckIcon, CopyIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 export function CopyButton({
   text,
   label,
+  visibleLabel = label,
   disabled = false,
   variant = "outline",
+  className,
 }: {
   text: string
   label: string
+  visibleLabel?: string
   disabled?: boolean
   variant?: "default" | "outline"
+  className?: string
 }) {
   const [feedback, setFeedback] = useState<{
     text: string
@@ -37,11 +42,11 @@ export function CopyButton({
   }
 
   return (
-    <div className="flex flex-col items-start gap-1">
+    <div className="flex flex-col items-end gap-1">
       <Button
         type="button"
         variant={variant}
-        className="min-h-11"
+        className={cn("min-h-11 px-4", className)}
         onClick={copy}
         disabled={disabled || !text || status === "pending"}
         aria-label={label}
@@ -55,7 +60,7 @@ export function CopyButton({
           ? "已複製"
           : status === "pending"
             ? "複製中…"
-            : label}
+            : visibleLabel}
       </Button>
       <span
         role="status"
