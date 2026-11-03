@@ -19,9 +19,9 @@ export function RecentLookups({
   if (!lookups.length) return null
 
   return (
-    <Card aria-labelledby="recent-title" role="region" className="enter-rise">
+    <Card aria-labelledby="recent-title" role="region" className="enter-rise sm:[--card-spacing:--spacing(5)]">
       <CardContent className="flex flex-col">
-        <div className="flex items-center justify-between gap-3 pb-2">
+        <div className="flex items-center justify-between -mt-0.5 gap-3 pb-2">
           <h2 id="recent-title" className="text-base font-semibold">
             最近查詢
           </h2>
@@ -34,7 +34,7 @@ export function RecentLookups({
             全部清除
           </Button>
         </div>
-        <ul className="-mx-3 flex flex-col">
+        <ul className="-mx-3 -mb-3 flex flex-col">
           {lookups.map((lookup, index) => (
             <li
               key={`${lookup.road}${lookup.suffix}`}
