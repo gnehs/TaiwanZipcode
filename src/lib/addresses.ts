@@ -29,15 +29,32 @@ type City = {
 
 type ZipcodeDatabase = Record<string, City>
 
+type EnglishPlace = {
+  road: string
+  district: string
+  city: string
+}
+
 export type AddressIndex = {
   addresses: string[]
   scopesByAddress: Record<string, ZipcodeScope[]>
-  englishByAddress: Record<string, string>
+  englishByAddress: Record<string, EnglishPlace>
+}
+
+// The fields most address forms ask for, so each can be pasted on its own.
+export type EnglishAddressFields = {
+  line1: string
+  line2: string
+  district: string
+  city: string
+  zipcode: string
+  country: string
 }
 
 export type ParsedAddress = {
   zh: string
   en: string
+  enFields: EnglishAddressFields | null
   form: {
     ln: number | null
     aly: number | null
@@ -53,19 +70,18 @@ export type ParsedAddress = {
 
 function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
   const scopesByAddress: Record<string, ZipcodeScope[]> = {}
-  const englishByAddress: Record<string, string> = {}
+  const englishByAddress: Record<string, EnglishPlace> = {}
 
   for (const [cityName, city] of Object.entries(database)) {
     for (const [areaName, area] of Object.entries(city.areas)) {
       for (const [roadName, road] of Object.entries(area.roads)) {
         const address = `${cityName}${areaName}${roadName}`
         scopesByAddress[address] = road.scopes
-        englishByAddress[address] = [
-          road.en,
-          area.en,
-          city.en,
-          "Taiwan (R.O.C.)",
-        ].join(", ")
+        englishByAddress[address] = {
+          road: road.en,
+          district: area.en,
+          city: city.en,
+        }
       }
     }
   }
@@ -115,10 +131,10 @@ export function formatAddress(
     basement: false,
     room: null,
   }
-  const englishBase = addressIndex.englishByAddress[baseAddress]
+  const place = addressIndex.englishByAddress[baseAddress]
 
-  if (!baseAddress || !englishBase) {
-    return { en: "", zh: "", form: emptyForm, warns: [] }
+  if (!baseAddress || !place) {
+    return { en: "", zh: "", enFields: null, form: emptyForm, warns: [] }
   }
 
   const warns: string[] = []
@@ -147,51 +163,65 @@ export function formatAddress(
   }
 
   let zh = baseAddress
-  const englishParts = englishBase.split(", ").reverse()
-  // Postal format places the zipcode after the city: "Taipei City 104001".
-  if (zipcode) englishParts[1] = `${englishParts[1]} ${zipcode}`
+  // English runs from the smallest unit up: "No. 10, 25 Ln, Xinyi Rd.".
+  const streetParts: string[] = [place.road]
+  const unitParts: string[] = []
 
   if (form.ln) {
     zh += `${form.ln}巷`
-    englishParts.push(`${form.ln} Ln`)
+    streetParts.unshift(`${form.ln} Ln`)
   }
   if (form.aly) {
     zh += `${form.aly}弄`
-    englishParts.push(`${form.aly} Aly`)
+    streetParts.unshift(`${form.aly} Aly`)
   }
   if (form.no) {
     zh += `${form.no}號`
     if (form.noDash) {
       zh += `之${form.noDash}`
-      englishParts.push(`No. ${form.no}-${form.noDash}`)
+      streetParts.unshift(`No. ${form.no}-${form.noDash}`)
     } else {
-      englishParts.push(`No. ${form.no}`)
+      streetParts.unshift(`No. ${form.no}`)
     }
   }
   if (form.floor) {
     zh += `${form.basement ? "地下" : ""}${form.floor}樓`
     if (form.floorDash) {
       zh += `之${form.floorDash}`
-      englishParts.push(
+      unitParts.unshift(
         `${form.basement ? "B" : ""}${form.floor}F-${form.floorDash}`,
       )
     } else {
-      englishParts.push(`${form.basement ? "B" : ""}${form.floor}F`)
+      unitParts.unshift(`${form.basement ? "B" : ""}${form.floor}F`)
     }
   }
   if (form.room) {
     zh += `${form.room}室`
-    englishParts.push(`${form.room} Room`)
+    unitParts.unshift(`${form.room} Room`)
   }
 
   if (hasUnconvertedAddressParts(addressSuffix, zh.slice(baseAddress.length))) {
     warns.push("部分門牌內容未能轉換成英文")
   }
 
-  return {
-    zh,
-    en: englishParts.reverse().join(", "),
-    form,
-    warns,
+  const enFields: EnglishAddressFields = {
+    line1: streetParts.join(", "),
+    line2: unitParts.join(", "),
+    district: place.district,
+    city: place.city,
+    zipcode,
+    country: "Taiwan (R.O.C.)",
   }
+  // Postal format places the zipcode after the city: "Taipei City 104001".
+  const en = [
+    enFields.line2,
+    enFields.line1,
+    enFields.district,
+    zipcode ? `${place.city} ${zipcode}` : place.city,
+    enFields.country,
+  ]
+    .filter(Boolean)
+    .join(", ")
+
+  return { zh, en, enFields, form, warns }
 }

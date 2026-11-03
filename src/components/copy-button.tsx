@@ -24,6 +24,7 @@ export function CopyButton({
     status: "pending" | "copied" | "failed"
   } | null>(null)
   const status = feedback?.text === text ? feedback.status : null
+  const iconOnly = !visibleLabel
 
   useEffect(() => {
     if (feedback?.status !== "copied") return
@@ -47,7 +48,9 @@ export function CopyButton({
         type="button"
         variant={variant}
         className={cn(
-          "min-h-11 px-4 has-data-[icon=inline-start]:pl-3.5",
+          iconOnly
+            ? "size-10 p-0"
+            : "min-h-11 px-4 has-data-[icon=inline-start]:pl-3.5",
           className,
         )}
         onClick={copy}
@@ -59,11 +62,13 @@ export function CopyButton({
         ) : (
           <CopyIcon data-icon="inline-start" aria-hidden="true" />
         )}
-        {status === "copied"
-          ? "已複製"
-          : status === "pending"
-            ? "複製中…"
-            : visibleLabel}
+        {iconOnly
+          ? null
+          : status === "copied"
+            ? "已複製"
+            : status === "pending"
+              ? "複製中…"
+              : visibleLabel}
       </Button>
       <span
         role="status"

@@ -115,6 +115,21 @@ export function AddressResult({
         : !resolvedScope && scopeResolution.status === "incomplete"
           ? "還需要更完整的門牌資訊。請確認已填寫「號」，並補上適用的附號或樓層。"
           : ""
+  const isStreetUnusable =
+    isSuffixIncomplete || parsedAddress.warns.length > 0
+  const fields = parsedAddress.enFields
+  const englishFields = fields
+    ? [
+        { label: "Address Line 1", value: fields.line1, disabled: isStreetUnusable },
+        ...(fields.line2
+          ? [{ label: "Address Line 2", value: fields.line2, disabled: isStreetUnusable }]
+          : []),
+        { label: "District", value: fields.district, disabled: false },
+        { label: "City", value: fields.city, disabled: false },
+        { label: "ZIP Code", value: fields.zipcode, disabled: !isComplete },
+        { label: "Country", value: fields.country, disabled: false },
+      ]
+    : []
   const zipcodeLabel = isComplete
     ? `郵遞區號 ${displayedZipcode}`
     : displayedZipcode
@@ -302,9 +317,39 @@ export function AddressResult({
                   text={parsedAddress.en}
                   label="複製英文地址"
                   visibleLabel="複製"
-                  disabled={isSuffixIncomplete || parsedAddress.warns.length > 0}
+                  disabled={isStreetUnusable}
                 />
               </div>
+              {englishFields.length ? (
+                <dl className="flex flex-col divide-y rounded-2xl bg-muted px-4">
+                  {englishFields.map((field) => (
+                    <div
+                      key={field.label}
+                      className="flex items-center gap-3 py-1.5"
+                    >
+                      <dt className="w-28 shrink-0 text-xs text-muted-foreground">
+                        {field.label}
+                      </dt>
+                      <dd
+                        lang="en"
+                        className={cn(
+                          "min-w-0 flex-1 break-words select-all",
+                          field.value ? undefined : "text-muted-foreground",
+                        )}
+                      >
+                        {field.value || "—"}
+                      </dd>
+                      <CopyButton
+                        text={field.value}
+                        label={`複製 ${field.label}`}
+                        visibleLabel=""
+                        variant="outline"
+                        disabled={field.disabled}
+                      />
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
               {parsedAddress.warns.length ? (
                 <p
                   className={cn(
