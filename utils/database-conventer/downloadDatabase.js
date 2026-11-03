@@ -56,7 +56,7 @@ async function discoverInstallerVolumes() {
 
     const filename = decodeURIComponent(path.posix.basename(url.pathname));
     const match = filename.match(
-      /^(Zip33Usetup_(V?\d+)(?:_\d+)?\.part)(\d+)(\.rar)$/i,
+      /^(Zip33U?setup_(V?\d+)(?:_\d+)?\.part)(\d+)(\.rar)$/i,
     );
     if (!match) continue;
 

@@ -125,7 +125,7 @@ dword  STDCALL lzge_decode( pbyte in, pbyte out, dword size, pslzge lzge )
    }
 //   fgeauser( GUProcess, size, 0 );
 //   if ( huf.bit ) huf.ptr++;
-   result = huf.ptr - in + 1;//out;
+   result = huf.ptr - in + ( huf.bit != 7 );
 
    huf_destroy( &huf );
 

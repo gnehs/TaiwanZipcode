@@ -4,7 +4,7 @@
 
 ## 現行取得方式
 
-1. `downloadDatabase.js` 讀取[中華郵政下載頁](https://www.post.gov.tw/post/internet/Download/index.jsp?ID=220306)，找出最新、分卷連續的 `Zip33Usetup_*.partN.rar`。
+1. `downloadDatabase.js` 讀取[中華郵政下載頁](https://www.post.gov.tw/post/internet/Download/index.jsp?ID=220306)，找出最新、分卷連續的 `Zip33Setup_*.partN.rar`（舊名 `Zip33Usetup_*`）。
 2. 逐卷從 `post.gov.tw/post/download/` 下載並驗證 RAR 檔頭，再以 `unar` 組合出安裝程式。
 3. `gea-extract` 解析安裝程式內嵌的 Gentee GEA 封裝，直接解出 `DBF/rall1.dbf`；不執行安裝程式，也不需要 Windows 或 Wine。
 4. `index.js` 驗證 DBF 的欄位與資料量，轉成 `result/zipcode.json`。
