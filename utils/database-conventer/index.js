@@ -19,28 +19,11 @@ const nonEmptyFields = ["CITY", "AREA", "ROAD", "ZIPCODE", "SCOOP"];
 const minimumRecords = 10_000;
 const minimumCities = 20;
 
-// Every name that fills its fixed-width DBF column, mapped to the full name.
-// Truncated ones follow the post office's own address converter. A new name
-// at full width stops the update until it is checked and added here.
-const fullWidthNames = {
-  ECITY: {
-    "New Taipei City": "New Taipei City",
-    "Changhua County": "Changhua County",
-    "Pingtung County": "Pingtung County",
-    "Lienchiang Coun": "Lienchiang County",
-  },
-  AREA: {
-    阿里山鄉: "阿里山鄉",
-    那瑪夏區: "那瑪夏區",
-    三地門鄉: "三地門鄉",
-    太麻里鄉: "太麻里鄉",
-    釣魚臺列: "釣魚臺",
-  },
-  EAREA: {},
-};
-// Placeholder cities the converter does not list. Their records repeat ones
-// filed under 宜蘭縣 and 高雄市旗津區, without English names.
-const placeholderCities = new Set(["釣魚臺", "南海諸"]);
+// English suffix for each Chinese administrative suffix. The DBF's
+// fixed-width columns cut long names off ("Lienchiang Coun"), so the suffix
+// is completed from the Chinese name.
+const citySuffixes = { 縣: "County", 市: "City" };
+const areaSuffixes = { 區: "Dist.", 鄉: "Township", 鎮: "Township", 市: "City" };
 
 if (!fs.existsSync(databasePath)) {
   throw new Error(`Database file not found: ${databasePath}`);
@@ -97,25 +80,6 @@ if (cityNames.size < minimumCities) {
   );
 }
 
-// DBF field descriptors are 32 bytes each, from offset 32 until 0x0d.
-function readFieldWidths(buffer) {
-  const widths = {};
-  for (let offset = 32; buffer[offset] !== 0x0d; offset += 32) {
-    const name = buffer.toString("latin1", offset, offset + 11).replace(/\0.*$/s, "");
-    widths[name] = buffer[offset + 16];
-  }
-  return widths;
-}
-
-// Byte length in Big5 (code page 950), the DBF's encoding.
-function big5Length(value) {
-  let length = 0;
-  for (const char of value) {
-    length += char.codePointAt(0) > 0x7f ? 2 : 1;
-  }
-  return length;
-}
-
 function normalizeEnglish(value) {
   return String(value ?? "")
     .normalize("NFKC")
@@ -125,28 +89,45 @@ function normalizeEnglish(value) {
     .trim();
 }
 
-const fieldWidths = readFieldWidths(fs.readFileSync(databasePath));
-const records = parsedData.filter((item) => !placeholderCities.has(item.CITY));
+function completeSuffix(value, suffix, field) {
+  if (value === "" || value.endsWith(` ${suffix}`)) {
+    return value;
+  }
+  for (let length = suffix.length - 1; length > 0; length -= 1) {
+    if (value.endsWith(` ${suffix.slice(0, length)}`)) {
+      return value + suffix.slice(length);
+    }
+  }
+  throw new Error(`${field} "${value}" does not end in "${suffix}"`);
+}
+
+// Records whose CITY is not a 縣 or 市, such as 釣魚臺 and 南海諸 (南海諸島),
+// repeat records filed under a real city and carry no English names.
+const isListedCity = (item) => Object.hasOwn(citySuffixes, item.CITY.at(-1));
+const records = parsedData.filter(isListedCity);
 const listedZipcodes = new Set(records.map((item) => String(item.ZIPCODE).trim()));
 for (const item of parsedData) {
-  if (placeholderCities.has(item.CITY) && !listedZipcodes.has(String(item.ZIPCODE).trim())) {
-    throw new Error(`Placeholder city ${item.CITY} holds unlisted ZIPCODE ${item.ZIPCODE}`);
+  if (!isListedCity(item) && !listedZipcodes.has(String(item.ZIPCODE).trim())) {
+    throw new Error(`Unlisted city ${item.CITY} holds unique ZIPCODE ${item.ZIPCODE}`);
   }
 }
 
 for (const item of records) {
-  for (const [field, names] of Object.entries(fullWidthNames)) {
-    const value = String(item[field] ?? "").trim();
-    if (big5Length(value) < fieldWidths[field]) {
-      continue;
+  // An AREA cut short of its suffix, such as 釣魚臺列 for 釣魚臺列嶼, is
+  // completed from the ROAD that spells it out.
+  if (!Object.hasOwn(areaSuffixes, item.AREA.at(-1))) {
+    const road = String(item.ROAD).trim();
+    if (!road.startsWith(item.AREA)) {
+      throw new Error(`AREA "${item.AREA}" has no administrative suffix to complete it`);
     }
-    if (!Object.hasOwn(names, value)) {
-      throw new Error(`${field} "${value}" fills its ${fieldWidths[field]}-byte column and may be truncated`);
-    }
-    item[field] = names[value];
+    item.AREA = road;
   }
   for (const field of ["ECITY", "EAREA", "EROAD"]) {
     item[field] = normalizeEnglish(item[field]);
+  }
+  item.ECITY = completeSuffix(item.ECITY, citySuffixes[item.CITY.at(-1)], "ECITY");
+  if (Object.hasOwn(areaSuffixes, item.AREA.at(-1))) {
+    item.EAREA = completeSuffix(item.EAREA, areaSuffixes[item.AREA.at(-1)], "EAREA");
   }
 }
 
