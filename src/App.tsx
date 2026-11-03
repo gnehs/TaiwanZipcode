@@ -12,6 +12,7 @@ import {
   type ZipcodeScope,
 } from "@/lib/addresses"
 import { readHashQuery, writeHashState } from "@/lib/hash-state"
+import { cn } from "@/lib/utils"
 import { rememberLookup } from "@/lib/recent-lookups"
 import {
   getZipcodeScopeMatchBasis,
@@ -110,8 +111,15 @@ export default function App() {
       <div className="absolute top-3 right-3 sm:top-5 sm:right-5">
         <ThemeToggle />
       </div>
-      <main className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col gap-3 px-4 pt-14 sm:px-6 sm:pt-[16vh]">
+      <main
+        className={cn(
+          "relative mx-auto flex w-full max-w-2xl flex-1 flex-col gap-3 px-4 transition-[padding] duration-500 ease-out motion-reduce:transition-none sm:px-6",
+          // The search rises once a result appears below it.
+          road ? "pt-4 sm:pt-8" : "pt-14 sm:pt-[16vh]",
+        )}
+      >
         <SiteHeader
+          compact={Boolean(road)}
           onHome={() => {
             setQuery("")
             window.scrollTo({ top: 0 })
