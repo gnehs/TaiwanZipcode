@@ -102,7 +102,7 @@ export function CopyButton({
   label: string
   visibleLabel?: string
   disabled?: boolean
-  variant?: "default" | "outline"
+  variant?: "default" | "outline" | "ghost"
   className?: string
 }) {
   const [feedback, setFeedback] = useState<{

@@ -72,6 +72,9 @@ function StatusPill({ status }: { status: keyof typeof STATUS }) {
   )
 }
 
+const FOOTER_BUTTON =
+  "h-12 rounded-none px-4 font-semibold text-primary-foreground hover:bg-white/10 hover:text-primary-foreground has-data-[icon=inline-start]:pl-4 aria-expanded:bg-white/10 aria-expanded:text-primary-foreground"
+
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <span className="inline-flex min-w-0 items-baseline gap-2">
@@ -181,6 +184,14 @@ export function AddressResult({
       : !hasSuffix && baseZipcodePrefixes.length === 1
         ? "補上門牌後確認後三碼"
         : "確認完整門牌後顯示"
+  const metaItems = (
+    <>
+      <MetaItem label="規則" value={ruleSummary} />
+      {matchedRuleBasis && isComplete ? (
+        <MetaItem label="依據" value={matchedRuleBasis} />
+      ) : null}
+    </>
+  )
 
   return (
     <section className="flex flex-col gap-3" aria-label="查詢結果">
@@ -219,11 +230,8 @@ export function AddressResult({
             <ZipcodeCells digits={displayedZipcode} />
           </div>
 
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            <MetaItem label="規則" value={ruleSummary} />
-            {matchedRuleBasis && isComplete ? (
-              <MetaItem label="依據" value={matchedRuleBasis} />
-            ) : null}
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 sm:hidden">
+            {metaItems}
           </div>
 
           <div
@@ -257,21 +265,24 @@ export function AddressResult({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-start justify-between gap-3">
+        </CardContent>
+        {/* Footer: the rule summary on the left (wider screens), actions on the right. */}
+        <div className="relative -mb-(--card-spacing) flex border-t border-white/25">
+          <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1 py-3 pl-(--card-spacing) sm:flex">
+            {metaItems}
+          </div>
+          <div className="ml-auto flex">
             <Popover>
               <PopoverTrigger
                 render={
-                  <Button
-                    variant="ghost"
-                    className="min-h-11 bg-white/15 px-4 text-primary-foreground shadow-[inset_0_0_0_1px_rgb(255_255_255/0.18)] hover:bg-white/25 hover:text-primary-foreground has-data-[icon=inline-start]:pl-3.5 aria-expanded:bg-white/25 aria-expanded:text-primary-foreground"
-                  />
+                  <Button variant="ghost" className={FOOTER_BUTTON} />
                 }
               >
                 <ListIcon data-icon="inline-start" aria-hidden="true" />
-                {scopes.length} 筆道路規則
+                {scopes.length} 筆規則
               </PopoverTrigger>
               <PopoverContent
-                align="start"
+                align="end"
                 className="max-h-96 w-80 max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto overscroll-contain rounded-2xl p-4 sm:w-[26rem]"
               >
                 <PopoverHeader>
@@ -318,15 +329,17 @@ export function AddressResult({
                 </ul>
               </PopoverContent>
             </Popover>
+            <span className="w-px bg-white/25" aria-hidden="true" />
             <CopyButton
               text={isComplete ? displayedZipcode : ""}
               label="複製郵遞區號"
+              visibleLabel="複製"
               disabled={!isComplete}
-              variant="outline"
-              className="font-semibold text-paper-ink [--control-bottom:oklch(0.9_0.012_50)] [--control-top:var(--paper)] hover:text-paper-ink"
+              variant="ghost"
+              className={FOOTER_BUTTON}
             />
           </div>
-        </CardContent>
+        </div>
       </Card>
 
       <Card
