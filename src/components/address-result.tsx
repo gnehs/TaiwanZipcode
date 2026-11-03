@@ -297,7 +297,7 @@ export function AddressResult({
                     return (
                       <li
                         key={`${rule.zipcode}-${rule.scope}-${index}`}
-                        className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 py-2.5 text-sm"
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 py-2.5 text-sm"
                       >
                         <span
                           className={cn(
@@ -312,17 +312,17 @@ export function AddressResult({
                             <span className="font-medium">{rule.department}</span>
                           ) : null}
                           <span>{formatScopeRule(rule.scope)}</span>
-                          {isCurrent ? (
-                            <span
-                              className={cn(
-                                "w-fit rounded-full px-2 py-0.5 text-xs font-medium",
-                                TONE_CLASSES.success,
-                              )}
-                            >
-                              目前符合
-                            </span>
-                          ) : null}
                         </div>
+                        {isCurrent ? (
+                          <span
+                            className={cn(
+                              "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                              TONE_CLASSES.success,
+                            )}
+                          >
+                            符合
+                          </span>
+                        ) : null}
                       </li>
                     )
                   })}
