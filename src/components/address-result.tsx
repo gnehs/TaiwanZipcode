@@ -15,16 +15,11 @@ import {
 import {
   formatAddress,
   formatScopeRule,
+  type ScopeResolution,
   type ZipcodeScope,
 } from "@/lib/addresses"
 import { cn } from "@/lib/utils"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
-
-type ScopeResolution = {
-  status: "empty" | "incomplete" | "unmatched" | "ambiguous" | "matched"
-  matches: ZipcodeScope[]
-  pending?: ZipcodeScope[]
-}
 
 type AddressResultProps = {
   address: string

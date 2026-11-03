@@ -1,5 +1,11 @@
 import { addressIndex } from "@/lib/addresses"
 
+export const BATCH_HASH = "#batch"
+
+export function isBatchHash(hash = window.location.hash) {
+  return hash === BATCH_HASH
+}
+
 export function readHashQuery(hash = window.location.hash): string {
   const rawHash = hash.replace(/^#/, "")
   let address = ""

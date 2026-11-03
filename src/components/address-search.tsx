@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import { SearchIcon, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,7 @@ type AddressSearchProps = {
   isUnmatched: boolean
   inputRef: React.RefObject<HTMLInputElement | null>
   onQueryChange: (value: string) => void
+  onPopupOpenChange: (open: boolean) => void
 }
 
 function HighlightedAddress({
@@ -66,6 +67,7 @@ export function AddressSearch({
   isUnmatched,
   inputRef,
   onQueryChange,
+  onPopupOpenChange,
 }: AddressSearchProps) {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
   // Examples only help first-time visitors; returning ones get their history.
@@ -83,10 +85,14 @@ export function AddressSearch({
     [query],
   )
   // Once the road is recognized, only offer suggestions that would change it.
-  const suggestions = searchResult.prefixMatch
+  // The road may come from the cleaned text ("1段" → 一段), which the raw
+  // search does not see, so a house number after it also ends the list.
+  const hasHouseNumber = Boolean(road) && /^\s*(?:\d|地下)/u.test(addressSuffix)
+  const suggestions = searchResult.prefixMatch || hasHouseNumber
     ? []
     : searchResult.matches.filter((address) => address !== road)
   const isPopupOpen = isSuggestionsOpen && suggestions.length > 0
+  useEffect(() => onPopupOpenChange(isPopupOpen), [isPopupOpen, onPopupOpenChange])
   // Only a dead end is shown on screen; the other hints are for screen readers.
   const hasNoMatch =
     !road && query.trim().length >= MIN_QUERY_LENGTH && !suggestions.length

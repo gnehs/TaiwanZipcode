@@ -1,10 +1,18 @@
 import zipcodeData from "@/assets/zipcode.json"
+import {
+  cleanAddressSuffix,
+  cleanAddressText,
+} from "@/utils/addressCleanup.js"
 import { hasUnconvertedAddressParts } from "@/utils/addressConversion.js"
 import {
   findLongestAddressPrefix,
   searchAddressList,
 } from "@/utils/addressSearch.js"
-import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
+import {
+  getZipcodeScopeMatchBasis,
+  parseAddressSuffix,
+  resolveZipcodeScopes,
+} from "@/utils/zipcodeScopeMatcher.js"
 
 export type ZipcodeScope = {
   zipcode: number
@@ -39,6 +47,7 @@ export type AddressIndex = {
   addresses: string[]
   scopesByAddress: Record<string, ZipcodeScope[]>
   englishByAddress: Record<string, EnglishPlace>
+  areas: Set<string>
 }
 
 // The fields most address forms ask for, so each can be pasted on its own.
@@ -71,9 +80,11 @@ export type ParsedAddress = {
 function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
   const scopesByAddress: Record<string, ZipcodeScope[]> = {}
   const englishByAddress: Record<string, EnglishPlace> = {}
+  const areas = new Set<string>()
 
   for (const [cityName, city] of Object.entries(database)) {
     for (const [areaName, area] of Object.entries(city.areas)) {
+      areas.add(`${cityName}${areaName}`)
       for (const [roadName, road] of Object.entries(area.roads)) {
         const address = `${cityName}${areaName}${roadName}`
         scopesByAddress[address] = road.scopes
@@ -90,6 +101,7 @@ function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
     addresses: Object.keys(scopesByAddress),
     scopesByAddress,
     englishByAddress,
+    areas,
   }
 }
 
@@ -107,6 +119,87 @@ export function findAddressPrefix(
   query: string,
 ): { address: string; suffix: string } | null {
   return findLongestAddressPrefix(query, addressIndex.addresses)
+}
+
+export type ScopeResolution = {
+  status: "empty" | "incomplete" | "unmatched" | "ambiguous" | "matched"
+  matches: ZipcodeScope[]
+  pending?: ZipcodeScope[]
+}
+
+export type AddressLookup = {
+  road: string
+  addressSuffix: string
+  scopes: ZipcodeScope[]
+  scopeResolution: ScopeResolution
+  resolvedScope: ZipcodeScope | null
+  baseZipcodePrefixes: string[]
+  displayedZipcode: string
+  matchedRuleBasis: string
+}
+
+const EMPTY_SCOPES: ZipcodeScope[] = []
+
+// The single input is the source of truth; the road and house number are
+// read from it on every keystroke.
+export function lookupAddress(query: string): AddressLookup {
+  const prefix = findAddressPrefix(query)
+  const road = prefix?.address ?? ""
+  const addressSuffix = prefix?.suffix ?? ""
+  const scopes = addressIndex.scopesByAddress[road] || EMPTY_SCOPES
+  const scopeResolution: ScopeResolution = !road
+    ? { status: "empty", matches: [], pending: [] }
+    : (resolveZipcodeScopes(scopes, addressSuffix) as ScopeResolution)
+  // A road with a single rule has only one zipcode, so it needs no house
+  // number unless the one given falls outside that rule.
+  const resolvedScope =
+    scopeResolution.status === "matched"
+      ? scopeResolution.matches[0] || null
+      : scopes.length === 1 && scopeResolution.status !== "unmatched"
+        ? scopes[0]
+        : null
+  const baseZipcodePrefixes = [
+    ...new Set(
+      scopes
+        .map((scope) => String(scope.zipcode || "").slice(0, 3))
+        .filter(Boolean),
+    ),
+  ]
+  const displayedZipcode = resolvedScope?.zipcode
+    ? String(resolvedScope.zipcode)
+    : addressSuffix.trim()
+      ? ""
+      : baseZipcodePrefixes.length === 1
+        ? baseZipcodePrefixes[0]
+        : ""
+  const matchedRuleBasis =
+    resolvedScope && addressSuffix.trim()
+      ? getZipcodeScopeMatchBasis(resolvedScope, addressSuffix)?.text || ""
+      : ""
+
+  return {
+    road,
+    addressSuffix,
+    scopes,
+    scopeResolution,
+    resolvedScope,
+    baseZipcodePrefixes,
+    displayedZipcode,
+    matchedRuleBasis,
+  }
+}
+
+const hasArea = (name: string) => addressIndex.areas.has(name)
+
+// Typed or pasted text often uses spellings the database does not: rewrite
+// those first, then tidy the house number once the road is known.
+export function lookupCleanedAddress(text: string): AddressLookup {
+  const lookup = lookupAddress(cleanAddressText(text, hasArea))
+  if (!lookup.road) return lookup
+  const suffix = cleanAddressSuffix(lookup.addressSuffix)
+  return suffix === lookup.addressSuffix
+    ? lookup
+    : lookupAddress(`${lookup.road}${suffix}`)
 }
 
 export function formatScopeRule(scope: string) {

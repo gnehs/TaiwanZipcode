@@ -258,3 +258,32 @@
     linear-gradient(#000 0 0) border-box;
   mask-composite: exclude;
 }
+
+/* The batch spreadsheet takes its colours from the theme instead of its own
+   white-and-blue defaults, and sits flush inside its card. */
+.batch-grid {
+  --dsg-border-color: var(--border);
+  --dsg-selection-border-color: var(--primary);
+  --dsg-selection-border-radius: 3px;
+  --dsg-selection-background-color: color-mix(in oklab, var(--primary) 8%, transparent);
+  --dsg-selection-disabled-border-color: var(--primary);
+  --dsg-selection-disabled-background-color: color-mix(in oklab, var(--primary) 8%, transparent);
+  --dsg-header-text-color: var(--muted-foreground);
+  --dsg-header-active-text-color: var(--foreground);
+  --dsg-cell-background-color: var(--card);
+  --dsg-cell-disabled-background-color: var(--card);
+  --dsg-scroll-shadow-color: oklch(0 0 0 / 0.12);
+
+  & .dsg-container {
+    border: 0;
+    color: var(--card-foreground);
+    background: var(--card);
+  }
+  & .dsg-input {
+    color: inherit;
+    font-size: 0.875rem;
+  }
+  & .dsg-cell-gutter {
+    font-variant-numeric: tabular-nums;
+  }
+}

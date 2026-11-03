@@ -17,6 +17,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.37.0",
     "react": "19.2.8",
+    "react-datasheet-grid": "^4.11.6",
     "react-dom": "19.2.8",
     "shadcn": "^4.19.0",
     "tailwind-merge": "^3.6.0",
@@ -31,5 +32,11 @@
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "vite": "8.2.2"
+  },
+  "overrides": {
+    "react-resize-detector": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
   }
 }
