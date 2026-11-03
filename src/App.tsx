@@ -45,10 +45,14 @@ export default function App() {
         : (resolveZipcodeScopes(scopes, addressSuffix) as ScopeResolution),
     [road, addressSuffix, scopes],
   )
+  // A road with a single rule has only one zipcode, so it needs no house
+  // number unless the one given falls outside that rule.
   const resolvedScope =
     scopeResolution.status === "matched"
       ? scopeResolution.matches[0] || null
-      : null
+      : scopes.length === 1 && scopeResolution.status !== "unmatched"
+        ? scopes[0]
+        : null
   const baseZipcodePrefixes = useMemo(
     () => [
       ...new Set(
@@ -59,11 +63,11 @@ export default function App() {
     ],
     [scopes],
   )
-  const displayedZipcode = addressSuffix.trim()
-    ? resolvedScope?.zipcode
-      ? String(resolvedScope.zipcode)
-      : ""
-    : baseZipcodePrefixes.length === 1
+  const displayedZipcode = resolvedScope?.zipcode
+    ? String(resolvedScope.zipcode)
+    : addressSuffix.trim()
+      ? ""
+      : baseZipcodePrefixes.length === 1
       ? baseZipcodePrefixes[0]
       : ""
   const matchedRuleBasis =

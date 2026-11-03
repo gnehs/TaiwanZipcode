@@ -137,6 +137,7 @@ export function AddressResult({
   const hasSuffix = Boolean(addressSuffix.trim())
   const isSuffixIncomplete =
     hasSuffix && !parseAddressSuffix(addressSuffix).complete
+  const isHouseIncomplete = !hasSuffix || isSuffixIncomplete
   const isComplete = displayedZipcode.length === 6
   const fullZipcode = isComplete ? displayedZipcode : ""
   const parsedAddress = formatAddress(address, addressSuffix, fullZipcode)
@@ -361,6 +362,9 @@ export function AddressResult({
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <h3 className="text-xs text-muted-foreground">中文地址</h3>
                 <p className="break-words select-all">{chineseAddress}</p>
+                {isHouseIncomplete ? (
+                  <p className="text-xs text-warning">門牌不完整</p>
+                ) : null}
               </div>
               <CopyButton
                 text={chineseAddress}
