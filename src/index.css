@@ -140,11 +140,13 @@
     --control-top: oklch(0.29 0.003 265);
     --control-bottom: oklch(0.235 0.003 265);
     /* Dark edges come from the light ring and top highlight; black shadows only fall below. */
-    --surface-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08), 0 0 0 1px oklch(1 0 0 / 0.07), 0 8px 24px -8px oklch(0 0 0 / 0.6);
-    --control-edge-top: oklch(1 0 0 / 0.16);
-    --control-edge-bottom: oklch(1 0 0 / 0.07);
-    --control-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.04), inset 0 0 8px oklch(1 0 0 / 0.04), 0 3px 8px -3px oklch(0 0 0 / 0.6);
-    --popover-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05), 0 0 0 1px oklch(1 0 0 / 0.1), 0 16px 36px -8px oklch(0 0 0 / 0.7);
+    /* Ring and top highlight share the same inner pixel, so the edge stays one hairline. */
+    --surface-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05), inset 0 0 0 1px oklch(1 0 0 / 0.07), 0 8px 24px -8px oklch(0 0 0 / 0.6);
+    --control-edge-top: oklch(1 0 0 / 0.12);
+    --control-edge-bottom: oklch(1 0 0 / 0.05);
+    /* No inner rim here: on dark it stacks with the edge into a thick band. */
+    --control-shadow: 0 3px 8px -3px oklch(0 0 0 / 0.6);
+    --popover-shadow: inset 0 1px 0 oklch(1 0 0 / 0.04), inset 0 0 0 1px oklch(1 0 0 / 0.1), 0 16px 36px -8px oklch(0 0 0 / 0.7);
     --primary-shadow: inset 0 0 14px oklch(1 0 0 / 0.16), 0 0 0 1px oklch(0.52 0.19 36), 0 2px 3px oklch(0 0 0 / 0.5), 0 10px 22px -8px oklch(0.6 0.18 40 / 0.35);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
