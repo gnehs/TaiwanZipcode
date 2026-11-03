@@ -5,6 +5,7 @@ import { AddressSearch } from "@/components/address-search"
 import { RecentLookups } from "@/components/recent-lookups"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   addressIndex,
   findAddressPrefix,
@@ -105,8 +106,11 @@ export default function App() {
   }, [])
 
   return (
-    <div className="relative min-h-svh bg-background">
-      <main className="relative mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 pt-6 sm:px-6 sm:pt-14">
+    <div className="relative flex min-h-svh flex-col bg-background">
+      <div className="absolute top-3 right-3 sm:top-5 sm:right-5">
+        <ThemeToggle />
+      </div>
+      <main className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col gap-3 px-4 pt-14 sm:px-6 sm:pt-[16vh]">
         <SiteHeader
           onHome={() => {
             setQuery("")
@@ -137,8 +141,8 @@ export default function App() {
             onSelect={(lookup) => setQuery(`${lookup.road}${lookup.suffix}`)}
           />
         )}
-        <SiteFooter />
       </main>
+      <SiteFooter />
     </div>
   )
 }

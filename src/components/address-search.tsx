@@ -238,17 +238,16 @@ export function AddressSearch({
             {helperText}
           </FieldDescription>
           <div
-            className="flex flex-wrap items-center gap-2 px-2"
+            className="flex flex-wrap items-center justify-center gap-2 pt-1"
             hidden={Boolean(road) || hasHistory}
           >
-            <span className="text-xs text-muted-foreground">試試</span>
             {ROAD_KEYWORD_EXAMPLES.map((keyword) => (
               <Button
                 key={keyword}
                 type="button"
                 size="sm"
-                variant="outline"
-                className="h-8 px-3"
+                variant="secondary"
+                className="h-8 px-3.5 text-muted-foreground hover:text-foreground"
                 onClick={() => updateQuery(keyword, true)}
               >
                 {keyword}

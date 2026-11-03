@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 
 export function SiteFooter() {
   return (
-    <footer className="flex flex-col gap-4 py-8 text-center text-xs text-muted-foreground">
+    <footer className="mx-auto flex w-full max-w-2xl flex-col gap-1 px-4 pt-16 pb-6 text-center text-xs text-muted-foreground sm:px-6">
       <p>
         Developed by{" "}
         <a
