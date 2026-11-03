@@ -1,11 +1,9 @@
 import { buttonVariants } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 
 export function SiteFooter() {
   return (
     <footer className="flex flex-col gap-4 py-8 text-center text-xs text-muted-foreground">
-      <ThemeToggle />
       <p>
         Developed by{" "}
         <a

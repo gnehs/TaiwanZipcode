@@ -1,7 +1,7 @@
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
 import { useSyncExternalStore } from "react"
 
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Button } from "@/components/ui/button"
 import {
   getTheme,
   setTheme,
@@ -9,49 +9,29 @@ import {
   type Theme,
 } from "@/lib/theme"
 
-const THEME_OPTIONS = [
-  { value: "light", label: "亮色", icon: SunIcon },
-  { value: "dark", label: "暗色", icon: MoonIcon },
-  { value: "system", label: "跟隨系統", icon: MonitorIcon },
-] as const satisfies ReadonlyArray<{
-  value: Theme
-  label: string
-  icon: typeof SunIcon
-}>
+// Each press moves to the next theme, wrapping around.
+const THEME_CYCLE: Record<Theme, { label: string; icon: typeof SunIcon; next: Theme }> = {
+  system: { label: "跟隨系統", icon: MonitorIcon, next: "light" },
+  light: { label: "亮色", icon: SunIcon, next: "dark" },
+  dark: { label: "暗色", icon: MoonIcon, next: "system" },
+}
 
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribeTheme, getTheme)
-
-  function handleThemeChange(values: string[]) {
-    const nextTheme = values[0]
-    if (nextTheme === "light" || nextTheme === "dark" || nextTheme === "system") {
-      setTheme(nextTheme)
-    }
-  }
+  const { label, icon: Icon, next } = THEME_CYCLE[theme]
+  const nextLabel = THEME_CYCLE[next].label
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <span className="text-xs font-medium text-muted-foreground">主題</span>
-      <ToggleGroup
-        value={[theme]}
-        onValueChange={handleThemeChange}
-        variant="outline"
-        size="lg"
-        spacing={1}
-        aria-label="主題"
-        className="w-full max-w-md justify-center"
-      >
-        {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
-          <ToggleGroupItem
-            key={value}
-            value={value}
-            className="min-h-10 flex-1 rounded-full px-3.5 sm:flex-none"
-          >
-            <Icon data-icon="inline-start" aria-hidden="true" />
-            {label}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
-    </div>
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-lg"
+      className="size-11 text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control"
+      onClick={() => setTheme(next)}
+      aria-label={`主題：${label}，切換為${nextLabel}`}
+      title={`主題：${label}`}
+    >
+      <Icon className="size-[1.125rem]" aria-hidden="true" />
+    </Button>
   )
 }

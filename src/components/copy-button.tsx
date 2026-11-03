@@ -46,7 +46,10 @@ export function CopyButton({
       <Button
         type="button"
         variant={variant}
-        className={cn("min-h-11 px-4", className)}
+        className={cn(
+          "min-h-11 px-4 has-data-[icon=inline-start]:pl-3.5",
+          className,
+        )}
         onClick={copy}
         disabled={disabled || !text || status === "pending"}
         aria-label={label}

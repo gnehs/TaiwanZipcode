@@ -2,7 +2,6 @@ import { useMemo, useState } from "react"
 import { SearchIcon, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import {
   Combobox,
   ComboboxContent,
@@ -81,6 +80,9 @@ export function AddressSearch({
     ? []
     : searchResult.matches.filter((address) => address !== road)
   const isPopupOpen = isSuggestionsOpen && suggestions.length > 0
+  // Only a dead end is shown on screen; the other hints are for screen readers.
+  const hasNoMatch =
+    !road && query.trim().length >= MIN_QUERY_LENGTH && !suggestions.length
   const helperText = (() => {
     const trimmedQuery = query.trim()
     if (road) {
@@ -121,33 +123,10 @@ export function AddressSearch({
   }
 
   return (
-    <Card role="search" aria-labelledby="search-title">
-      <CardContent className="flex flex-col gap-6">
-      <header className="flex items-center gap-3.5">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklch,var(--primary),white_14%),var(--primary))] text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.28),0_0_0_1px_color-mix(in_oklch,var(--primary),black_18%)]">
-          <span className="text-sm font-semibold tracking-tight" aria-hidden="true">
-            3+3
-          </span>
-        </div>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <h1
-            id="search-title"
-            className="text-lg font-semibold tracking-tight sm:text-xl"
-          >
-            台灣 3+3 郵遞區號查詢
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            即時查詢完整郵遞區號，無需驗證碼。
-          </p>
-        </div>
-      </header>
-
+    <section role="search" aria-label="地址查詢">
       <FieldGroup>
         <Field data-invalid={isUnmatched || undefined}>
-          <FieldLabel
-            htmlFor="address-search"
-            className="text-xs tracking-wide text-muted-foreground"
-          >
+          <FieldLabel htmlFor="address-search" className="sr-only">
             輸入地址
           </FieldLabel>
           <Combobox
@@ -185,7 +164,7 @@ export function AddressSearch({
                 ref={inputRef}
                 id="address-search"
                 name="address"
-                className="h-14 w-full text-base [&_input]:text-base"
+                className="h-14 w-full rounded-full border-0 bg-card pr-2 pl-3 text-base shadow-surface [&_input]:text-base"
                 placeholder="例如：臺北市中山區中山北路一段100號3樓…"
                 aria-describedby="address-search-help"
                 aria-invalid={isUnmatched || undefined}
@@ -244,11 +223,15 @@ export function AddressSearch({
               </ComboboxList>
             </ComboboxContent>
           </Combobox>
-          <FieldDescription id="address-search-help" aria-live="polite">
+          <FieldDescription
+            id="address-search-help"
+            aria-live="polite"
+            className={hasNoMatch ? "px-4" : "sr-only"}
+          >
             {helperText}
           </FieldDescription>
           <div
-            className="flex flex-wrap items-center gap-2"
+            className="flex flex-wrap items-center gap-2 px-2"
             hidden={Boolean(road)}
           >
             <span className="text-xs text-muted-foreground">試試</span>
@@ -267,7 +250,6 @@ export function AddressSearch({
           </div>
         </Field>
       </FieldGroup>
-      </CardContent>
-    </Card>
+    </section>
   )
 }

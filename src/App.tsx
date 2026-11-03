@@ -4,6 +4,7 @@ import { AddressResult } from "@/components/address-result"
 import { AddressSearch } from "@/components/address-search"
 import { RecentLookups } from "@/components/recent-lookups"
 import { SiteFooter } from "@/components/site-footer"
+import { SiteHeader } from "@/components/site-header"
 import {
   addressIndex,
   findAddressPrefix,
@@ -106,6 +107,7 @@ export default function App() {
   return (
     <div className="min-h-svh bg-background">
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 pt-6 sm:px-6 sm:pt-14">
+        <SiteHeader />
         <AddressSearch
           query={query}
           road={road}

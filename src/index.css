@@ -27,6 +27,10 @@
     --color-border: var(--border);
     --color-destructive: var(--destructive);
     --color-success: var(--success);
+    --shadow-surface: var(--surface-shadow);
+    --shadow-control: var(--control-shadow);
+    --shadow-popover: var(--popover-shadow);
+    --shadow-primary: var(--primary-shadow);
     --color-warning: var(--warning);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
@@ -72,12 +76,17 @@
     --border: oklch(0.92 0.004 265);
     --input: oklch(0.91 0.004 265);
     --ring: oklch(0.6 0.19 40);
+    /* Borders are drawn as translucent 1px shadows so they blend with any background. */
+    --surface-shadow: 0 0 0 1px oklch(0.2 0.02 265 / 0.07), 0 1px 2px oklch(0.2 0.02 265 / 0.05), 0 6px 20px -6px oklch(0.2 0.02 265 / 0.08);
+    --control-shadow: 0 0 0 1px oklch(0.2 0.02 265 / 0.09), 0 1px 2px oklch(0.2 0.02 265 / 0.06);
+    --popover-shadow: 0 0 0 1px oklch(0.2 0.02 265 / 0.08), 0 4px 8px -2px oklch(0.2 0.02 265 / 0.06), 0 16px 36px -8px oklch(0.2 0.02 265 / 0.16);
+    --primary-shadow: inset 0 1px 0 oklch(1 0 0 / 0.22), 0 0 0 1px oklch(0.45 0.15 38 / 0.9), 0 1px 2px oklch(0.45 0.15 38 / 0.3), 0 4px 10px -4px oklch(0.55 0.18 40 / 0.45);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --radius: 0.875rem;
+    --radius: 0.625rem;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
@@ -109,6 +118,10 @@
     --border: oklch(0.3 0.004 265);
     --input: oklch(0.32 0.004 265);
     --ring: oklch(0.66 0.18 42);
+    --surface-shadow: inset 0 1px 0 oklch(1 0 0 / 0.04), 0 0 0 1px oklch(1 0 0 / 0.08), 0 1px 2px oklch(0 0 0 / 0.5), 0 8px 24px -8px oklch(0 0 0 / 0.6);
+    --control-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05), 0 0 0 1px oklch(1 0 0 / 0.1), 0 1px 2px oklch(0 0 0 / 0.5);
+    --popover-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05), 0 0 0 1px oklch(1 0 0 / 0.1), 0 16px 36px -8px oklch(0 0 0 / 0.7);
+    --primary-shadow: inset 0 1px 0 oklch(1 0 0 / 0.25), 0 0 0 1px oklch(0.5 0.16 38), 0 1px 2px oklch(0 0 0 / 0.5), 0 4px 12px -4px oklch(0.6 0.18 40 / 0.35);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);

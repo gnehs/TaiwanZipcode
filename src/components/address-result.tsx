@@ -1,10 +1,4 @@
-import {
-  Building2Icon,
-  CircleAlertIcon,
-  InfoIcon,
-  ListIcon,
-  type LucideIcon,
-} from "lucide-react"
+import { CircleAlertIcon, InfoIcon, ListIcon } from "lucide-react"
 
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
@@ -72,29 +66,6 @@ function StatusPill({ status }: { status: keyof typeof STATUS }) {
     >
       <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
       {label}
-    </span>
-  )
-}
-
-function IconTile({
-  icon: Icon,
-  text,
-  color,
-}: {
-  icon?: LucideIcon
-  text?: string
-  color: string
-}) {
-  return (
-    <span
-      className="flex size-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold"
-      style={{
-        color: `var(${color})`,
-        backgroundColor: `color-mix(in oklab, var(${color}) 13%, var(--card))`,
-      }}
-      aria-hidden="true"
-    >
-      {Icon ? <Icon className="size-[1.125rem]" /> : text}
     </span>
   )
 }
@@ -228,7 +199,12 @@ export function AddressResult({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <Popover>
               <PopoverTrigger
-                render={<Button variant="secondary" className="min-h-11 px-4" />}
+                render={
+                  <Button
+                    variant="secondary"
+                    className="min-h-11 px-4 has-data-[icon=inline-start]:pl-3.5"
+                  />
+                }
               >
                 <ListIcon data-icon="inline-start" aria-hidden="true" />
                 {scopes.length} 筆道路規則
@@ -293,18 +269,10 @@ export function AddressResult({
 
       <Card>
         <CardContent className="flex flex-col">
-          <div className="flex flex-col gap-0.5 pb-4">
-            <h2 className="text-base font-semibold">地址資訊</h2>
-            <p className="text-sm text-muted-foreground">
-              {isComplete
-                ? "已附上郵遞區號，可直接貼到寄件資料。"
-                : "確認內容後，可分別複製中文地址或英文地址。"}
-            </p>
-          </div>
+          <h2 className="pb-2 text-base font-semibold">地址資訊</h2>
           <ul className="flex flex-col divide-y">
             {resolvedScope?.department && isComplete ? (
               <li className="flex items-center gap-3.5 py-4">
-                <IconTile icon={Building2Icon} color="--warning" />
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-xs text-muted-foreground">大宗戶</span>
                   <span className="break-words">{resolvedScope.department}</span>
@@ -312,7 +280,6 @@ export function AddressResult({
               </li>
             ) : null}
             <li className="flex items-center gap-3.5 py-4">
-              <IconTile text="中" color="--primary" />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <h3 className="text-xs text-muted-foreground">中文地址</h3>
                 <p className="break-words select-all">{chineseAddress}</p>
@@ -325,7 +292,6 @@ export function AddressResult({
             </li>
             <li className="flex flex-col gap-3 py-4 last:pb-0">
               <div className="flex items-center gap-3.5">
-                <IconTile text="EN" color="--success" />
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <h3 className="text-xs text-muted-foreground">英文地址</h3>
                   <p lang="en" className="break-words select-all">
@@ -353,7 +319,7 @@ export function AddressResult({
                   {parsedAddress.warns.join("；")}。請修正後再複製英文地址。
                 </p>
               ) : (
-                <p className="pl-[3.375rem] text-xs text-muted-foreground" role="status">
+                <p className="text-xs text-muted-foreground" role="status">
                   {isSuffixIncomplete
                     ? "門牌尚未辨識完整，補齊後即可複製英文地址。"
                     : "依已辨識的內容轉換，使用前請與中文地址核對。"}
