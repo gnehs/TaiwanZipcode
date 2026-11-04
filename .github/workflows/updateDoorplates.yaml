@@ -1,0 +1,50 @@
+name: Update doorplates
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 1 * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update-doorplates:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+      - name: Download county doorplates
+        run: node download.mjs
+        working-directory: ./utils/doorplate-converter
+      - name: Build district files
+        run: node build.mjs
+        working-directory: ./utils/doorplate-converter
+      - name: Copy result
+        run: |
+          set -euo pipefail
+          rm -rf ./public/doorplates
+          cp -R ./utils/doorplate-converter/result/doorplates ./public/doorplates
+      - name: Run tests
+        run: node --test
+      - name: Commit changes
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- public/doorplates
+          if git diff --cached --quiet; then
+            echo "The doorplates are already up to date"
+            exit 0
+          fi
+          git commit -m "chore(data): update doorplates"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

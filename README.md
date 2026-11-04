@@ -37,6 +37,11 @@ npm run build
 [資料庫轉換器](utils/database-conventer/README.md)及
 [資料來源說明](utils/database-conventer/DATA_SOURCE.md)。
 
+## 門牌資料
+
+門牌是否存在與巷弄號提示，使用各縣市在政府資料開放平臺公開的門牌位置資料，
+目前涵蓋 9 個縣市。下載與轉換方式見[門牌資料轉換器](utils/doorplate-converter/README.md)。
+
 ## 自動更新
 
 [Update database Action](.github/workflows/updateDatabase.yaml) 每月 1 日 00:00 UTC

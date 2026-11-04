@@ -35,3 +35,7 @@ utils/database-conventer/sys
 .tmpwine
 .tanstack
 .wrangler
+
+# doorplate-converter
+utils/doorplate-converter/temp
+utils/doorplate-converter/result
