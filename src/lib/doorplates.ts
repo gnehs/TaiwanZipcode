@@ -31,7 +31,10 @@ async function loadRoad(road: string) {
   return (await file)[road.slice(district.length)] ?? null
 }
 
-/** The road's lanes, alleys and house numbers, or null until loaded or without data. */
+/**
+ * The road's lanes, alleys and house numbers (null without data), and
+ * whether they are still loading.
+ */
 export function useRoadDoorplates(road: string) {
   const [loaded, setLoaded] = useState<{
     road: string
@@ -49,5 +52,9 @@ export function useRoadDoorplates(road: string) {
       live = false
     }
   }, [road])
-  return loaded?.road === road ? loaded.doorplates : null
+  const isCurrent = loaded?.road === road
+  return {
+    doorplates: isCurrent ? loaded.doorplates : null,
+    isLoading: Boolean(road) && !isCurrent,
+  }
 }

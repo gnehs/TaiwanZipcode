@@ -301,7 +301,7 @@ export function AddressResult({
   const isUnmatched = scopeResolution.status === "unmatched"
   const chineseAddress = `${fullZipcode}${address}${addressSuffix.trim()}`
   const slug = addressSlug(address, addressSuffix)
-  const doorplates = useRoadDoorplates(address)
+  const { doorplates } = useRoadDoorplates(address)
   const status = isComplete
     ? findDoor(doorplates, addressSuffix) === "missing"
       ? "noDoor"

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
-import { SearchIcon, XIcon } from "lucide-react"
+import { LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -111,7 +111,7 @@ export function AddressSearch({
   // offered with the units that can follow. Once the house number is
   // complete, the address itself is the one choice, so picking it puts the
   // list away.
-  const doorplates = useRoadDoorplates(road)
+  const { doorplates, isLoading: areDoorplatesLoading } = useRoadDoorplates(road)
   const hasRoadSuggestions = roadSuggestions.length > 0
   const { completions, areDoors } = useMemo(() => {
     if (!road) return { completions: [], areDoors: false }
@@ -321,6 +321,16 @@ export function AddressSearch({
                   </ComboboxItem>
                 )}
               </ComboboxList>
+              {areDoorplatesLoading ? (
+                // Delayed so a cached or quick load never flashes it.
+                <span
+                  role="status"
+                  aria-label="正在載入門牌"
+                  className="pointer-events-none absolute right-2 bottom-2 flex size-9 animate-in items-center justify-center rounded-full bg-popover text-muted-foreground shadow-popover delay-200 duration-200 fill-mode-both fade-in-0 zoom-in-90"
+                >
+                  <LoaderCircleIcon className="size-4 animate-spin" aria-hidden="true" />
+                </span>
+              ) : null}
             </ComboboxContent>
           </Combobox>
           <FieldDescription
