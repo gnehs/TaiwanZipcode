@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router"
+
 import { cn } from "@/lib/utils"
 
 export function SiteHeader({
@@ -5,14 +7,14 @@ export function SiteHeader({
   onHome,
 }: {
   compact: boolean
-  onHome: () => void
+  onHome?: () => void
 }) {
   const transition =
     "duration-500 ease-out motion-reduce:transition-none"
   return (
     <header className="flex justify-center pb-3">
-      <a
-        href="/"
+      <Link
+        to="/"
         className={cn(
           // Named for the mode switch, so the logo and title scale as one.
           "flex flex-col items-center rounded-3xl p-2 outline-none transition-[gap] [view-transition-name:site-header] focus-visible:ring-3 focus-visible:ring-ring/50",
@@ -21,7 +23,7 @@ export function SiteHeader({
         )}
         onClick={(event) => {
           // Let modified clicks open a new tab; a plain click resets in place.
-          if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
+          if (!onHome || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
           event.preventDefault()
           onHome()
         }}
@@ -44,7 +46,7 @@ export function SiteHeader({
         >
           台灣 3+3 郵遞區號查詢
         </h1>
-      </a>
+      </Link>
     </header>
   )
 }

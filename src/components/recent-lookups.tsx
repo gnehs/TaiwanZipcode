@@ -1,21 +1,21 @@
 import { useSyncExternalStore } from "react"
+import { Link } from "@tanstack/react-router"
 import { Trash2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { addressParams } from "@/lib/address-path"
 import {
   clearRecentLookups,
   getRecentLookups,
   subscribeRecentLookups,
-  type RecentLookup,
 } from "@/lib/recent-lookups"
 
-export function RecentLookups({
-  onSelect,
-}: {
-  onSelect: (lookup: RecentLookup) => void
-}) {
+export function RecentLookups() {
   const lookups = useSyncExternalStore(subscribeRecentLookups, getRecentLookups)
+    .map((lookup) => ({ ...lookup, params: addressParams(lookup.road, lookup.suffix) }))
+    // A road the database has since dropped has no page to link to.
+    .filter((lookup) => lookup.params)
   if (!lookups.length) return null
 
   return (
@@ -41,10 +41,10 @@ export function RecentLookups({
               className="enter-rise"
               style={{ "--enter-delay": `${60 + index * 40}ms` } as React.CSSProperties}
             >
-              <button
-                type="button"
+              <Link
+                to="/$city/$area/$road/{-$suffix}"
+                params={lookup.params!}
                 className="flex w-full items-baseline gap-4 rounded-2xl px-3 py-3 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
-                onClick={() => onSelect(lookup)}
               >
                 <span className="min-w-0 flex-1 truncate">
                   {lookup.road}
@@ -53,7 +53,7 @@ export function RecentLookups({
                 <span className="shrink-0 font-mono text-[0.8125rem] text-muted-foreground tabular-nums">
                   {lookup.zipcode}
                 </span>
-              </button>
+              </Link>
             </li>
           ))}
         </ul>

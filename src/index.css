@@ -288,11 +288,11 @@
   }
 }
 
-/* Layout changes animate as view transitions (see lib/view-transition.ts).
-   The layout's own transitions would animate the new page inside its
-   snapshot, so they pause meanwhile. */
-:root[data-view-transition] main,
-:root[data-view-transition] main * {
+/* Layout changes animate as view transitions, picked by type (see
+   lib/view-transition.ts and main.tsx). The layout's own transitions would
+   animate the new page inside its snapshot, so they pause meanwhile. */
+:root:active-view-transition main,
+:root:active-view-transition main * {
   transition: none !important;
 }
 ::view-transition-group(*) {
@@ -317,11 +317,11 @@
   transform-origin: top center;
   animation: page-arrive 360ms cubic-bezier(0.32, 0.72, 0, 1) 120ms both;
 }
-:root[data-view-transition="to-batch"] {
+:root:active-view-transition-type(to-batch) {
   --page-leave-scale: 1.04;
   --page-arrive-scale: 0.96;
 }
-:root[data-view-transition="to-single"] {
+:root:active-view-transition-type(to-single) {
   --page-leave-scale: 0.96;
   --page-arrive-scale: 1.04;
 }
@@ -344,10 +344,10 @@
 /* Dismissing the batch guide shrinks it away from its top edge while the
    grid below moves up, and reopening it does the reverse. The two only
    become layers for this change, so a mode switch still zooms the page whole. */
-:root[data-view-transition="guide"] .batch-guide {
+:root:active-view-transition-type(guide) .batch-guide {
   view-transition-name: batch-guide;
 }
-:root[data-view-transition="guide"] .batch-sheet {
+:root:active-view-transition-type(guide) .batch-sheet {
   view-transition-name: batch-sheet;
 }
 ::view-transition-old(batch-guide) {
