@@ -189,27 +189,37 @@ function OgImage({ screen, photo }: { screen: PhoneScreen; photo?: string }) {
         style={{
           position: "absolute",
           left: 96,
-          top: 170,
+          top: 186,
           display: "flex",
           flexDirection: "column",
-          fontSize: 60,
+          fontSize: 80,
           fontWeight: 700,
-          lineHeight: 1.18,
+          lineHeight: 1.22,
           textShadow: "0 2px 24px rgb(0 0 0 / 0.4)",
           letterSpacing: "-0.01em",
         }}
       >
-        <div style={{ color: "white", fontSize: 88, lineHeight: 1.1, marginBottom: 6 }}>閃電地址</div>
-        <div style={{ color: "oklch(0.86 0.13 75)" }}>填表不卡關，</div>
+        <div style={{ color: "white" }}>填表不卡關，</div>
         <div style={{ color: "oklch(0.86 0.13 75)" }}>地址閃電查。</div>
       </div>
 
-      <img
-        src={ICON}
-        width={76}
-        height={76}
-        style={{ position: "absolute", left: 92, bottom: 72, filter: "drop-shadow(0 8px 16px oklch(0.6 0.15 55 / 0.3))" }}
-      />
+      <div
+        style={{
+          position: "absolute",
+          left: 88,
+          bottom: 68,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          color: "white",
+          fontSize: 30,
+          fontWeight: 700,
+          textShadow: "0 1px 12px rgb(0 0 0 / 0.4)",
+        }}
+      >
+        <img src={ICON} width={60} height={60} style={{ filter: "drop-shadow(0 6px 12px rgb(0 0 0 / 0.35))" }} />
+        閃電地址
+      </div>
 
       <div
         style={{
