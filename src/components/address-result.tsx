@@ -26,7 +26,9 @@ import {
   type ZipcodeScope,
 } from "@/lib/addresses"
 import { addressSlug, shareUrl } from "@/lib/address-path"
+import { useRoadDoorplates } from "@/lib/doorplates"
 import { cn } from "@/lib/utils"
+import { findDoor } from "@/utils/doorplates.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type AddressResultProps = {
@@ -60,6 +62,7 @@ const STATUS = {
   pending: { label: "尚未確認", ink: "text-[oklch(0.52_0.12_70)]" },
   awaiting: { label: "待補門牌", ink: "text-paper-ink" },
   unmatched: { label: "找不到範圍", ink: "text-[oklch(0.52_0.2_25)]" },
+  noDoor: { label: "查無此門牌", ink: "text-[oklch(0.52_0.12_70)]" },
 } as const
 
 function StatusPill({ status }: { status: keyof typeof STATUS }) {
@@ -298,8 +301,11 @@ export function AddressResult({
   const isUnmatched = scopeResolution.status === "unmatched"
   const chineseAddress = `${fullZipcode}${address}${addressSuffix.trim()}`
   const slug = addressSlug(address, addressSuffix)
+  const doorplates = useRoadDoorplates(address)
   const status = isComplete
-    ? null
+    ? findDoor(doorplates, addressSuffix) === "missing"
+      ? "noDoor"
+      : null
     : isUnmatched
       ? "unmatched"
       : hasSuffix

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import { SearchIcon, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/field"
 import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group"
 import { addressIndex, searchAddresses } from "@/lib/addresses"
+import { useRoadDoorplates } from "@/lib/doorplates"
 import {
   getRecentLookups,
   subscribeRecentLookups,
@@ -29,6 +30,7 @@ import {
   getMatchRanges,
   getUnitCompletions,
 } from "@/utils/addressSearch.js"
+import { suggestDoors } from "@/utils/doorplates.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type AddressSearchProps = {
@@ -78,6 +80,8 @@ export function AddressSearch({
   onPopupOpenChange,
 }: AddressSearchProps) {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
+  // A picked lane or alley keeps the list open for its house numbers.
+  const keepOpenAfterPick = useRef(false)
   // Examples only help first-time visitors; returning ones get their history.
   const hasHistory =
     useSyncExternalStore(subscribeRecentLookups, getRecentLookups).length > 0
@@ -102,17 +106,29 @@ export function AddressSearch({
   const roadSuggestions = searchResult.prefixMatch || hasHouseNumber
     ? []
     : searchResult.matches.filter((address) => address !== road)
-  // A number typed after the road is offered with the units that can follow.
-  // Once the house number is complete, the address itself is the one choice,
-  // so picking it puts the list away.
-  const completions = useMemo(() => {
-    if (!road) return []
+  // Where the county lists the road's doors, the lanes, alleys and houses
+  // that exist are offered; elsewhere a number typed after the road is
+  // offered with the units that can follow. Once the house number is
+  // complete, the address itself is the one choice, so picking it puts the
+  // list away.
+  const doorplates = useRoadDoorplates(road)
+  const hasRoadSuggestions = roadSuggestions.length > 0
+  const { completions, areDoors } = useMemo(() => {
+    if (!road) return { completions: [], areDoors: false }
+    const doors = suggestDoors(doorplates, query, addressSuffix)
+    // A bare road still lists the longer roads it is the start of.
+    if (doors.length && (addressSuffix.trim() || !hasRoadSuggestions))
+      return { completions: doors, areDoors: true }
     const units = getUnitCompletions(query)
-    if (units.length) return units
-    return hasHouseNumber && parseAddressSuffix(addressSuffix).complete
-      ? [query.trimEnd()]
-      : []
-  }, [road, query, hasHouseNumber, addressSuffix])
+    if (units.length) return { completions: units, areDoors: false }
+    return {
+      completions:
+        hasHouseNumber && parseAddressSuffix(addressSuffix).complete
+          ? [query.trimEnd()]
+          : [],
+      areDoors: false,
+    }
+  }, [road, query, hasHouseNumber, addressSuffix, doorplates, hasRoadSuggestions])
   const suggestions = completions.length ? completions : roadSuggestions
   const isPopupOpen = isSuggestionsOpen && suggestions.length > 0
   useEffect(() => onPopupOpenChange(isPopupOpen), [isPopupOpen, onPopupOpenChange])
@@ -163,7 +179,11 @@ export function AddressSearch({
   }
 
   function selectAddress(address: string) {
-    updateQuery(filledText(address), false)
+    const text = filledText(address)
+    // A listed lane or alley has listed houses, so the list stays open for them.
+    const needsHouse = areDoors && /[巷弄]$/u.test(text)
+    keepOpenAfterPick.current = needsHouse
+    updateQuery(text, needsHouse)
   }
 
   return (
@@ -179,7 +199,11 @@ export function AddressSearch({
             filter={null}
             value={null}
             open={isPopupOpen}
-            onOpenChange={(open) => {
+            onOpenChange={(open, details) => {
+              if (!open && details.reason === "item-press" && keepOpenAfterPick.current) {
+                keepOpenAfterPick.current = false
+                return
+              }
               setIsSuggestionsOpen(open)
               // Closing the list (Escape, a click away) returns to what was typed.
               if (!open) setInlineValue(null)
