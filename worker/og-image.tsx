@@ -47,6 +47,11 @@ const PLUS_GRID = `data:image/svg+xml,${encodeURIComponent(
   ).join("")}</svg>`,
 )}`
 
+// Soft light speckles over the background, like the app's grain on orange.
+const GRAIN = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><filter id="g"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/><feComponentTransfer><feFuncA type="discrete" tableValues="0 0 0 0 0 0 0.25 0.4 0.55 0.7"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#g)"/></svg>`,
+)}`
+
 // Fetched on the first request (Workers allow no I/O at startup) and kept for
 // the isolate; a render downloads only the subsets its text uses.
 let fonts: ReturnType<typeof googleFonts> | undefined
@@ -143,7 +148,16 @@ function StatusBar() {
   )
 }
 
-function OgImage({ screen }: { screen: PhoneScreen }) {
+const BAND = [
+  "radial-gradient(70% 90% at 0% 0%, oklch(0.64 0.2 46) 0%, transparent 70%)",
+  "radial-gradient(60% 70% at 85% 10%, oklch(0.82 0.17 80) 0%, transparent 70%)",
+  "radial-gradient(80% 60% at 70% 100%, oklch(0.97 0.03 70) 0%, transparent 70%)",
+  "linear-gradient(to bottom, oklch(0.7 0.18 54) 0%, oklch(0.8 0.14 68) 58%, oklch(0.97 0.02 75) 100%)",
+].join(", ")
+
+const FILL = { position: "absolute", inset: 0 } as const
+
+function OgImage({ screen, photo }: { screen: PhoneScreen; photo?: string }) {
   return (
     <div
       style={{
@@ -152,30 +166,42 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
         width: "100%",
         height: "100%",
         fontFamily: "Geist, Noto Sans TC",
-        backgroundImage: [
-          "radial-gradient(70% 90% at 0% 0%, oklch(0.64 0.2 46) 0%, transparent 70%)",
-          "radial-gradient(60% 70% at 85% 10%, oklch(0.82 0.17 80) 0%, transparent 70%)",
-          "radial-gradient(80% 60% at 70% 100%, oklch(0.97 0.03 70) 0%, transparent 70%)",
-          "linear-gradient(to bottom, oklch(0.7 0.18 54) 0%, oklch(0.8 0.14 68) 58%, oklch(0.97 0.02 75) 100%)",
-        ].join(", "),
+        backgroundImage: BAND,
       }}
     >
+      {photo ? (
+        <>
+          {/* The city's photo in its own colours, softened a little and
+              shaded on the title's side and along the bottom so the white
+              title reads. Scaled up so the blur's soft edges fall outside. */}
+          <img
+            src={photo}
+            width={1200}
+            height={630}
+            style={{ ...FILL, objectFit: "cover", filter: "blur(2px) saturate(1.05)", transform: "scale(1.02)" }}
+          />
+          <div style={{ ...FILL, backgroundImage: "linear-gradient(to right, rgb(14 10 6 / 0.78), rgb(14 10 6 / 0.35) 55%, rgb(14 10 6 / 0.05))" }} />
+          <div style={{ ...FILL, backgroundImage: "linear-gradient(to top, rgb(14 10 6 / 0.45), transparent 45%)" }} />
+        </>
+      ) : null}
+      <img src={GRAIN} width={1200} height={630} style={{ ...FILL, opacity: 0.22 }} />
       <div
         style={{
           position: "absolute",
           left: 96,
-          top: 196,
+          top: 170,
           display: "flex",
           flexDirection: "column",
           fontSize: 60,
           fontWeight: 700,
           lineHeight: 1.18,
+          textShadow: "0 2px 24px rgb(0 0 0 / 0.4)",
           letterSpacing: "-0.01em",
         }}
       >
-        <div style={{ color: "white" }}>閃電地址</div>
-        <div style={{ color: "rgba(255, 255, 255, 0.62)" }}>即時、快速、</div>
-        <div style={{ color: "rgba(255, 255, 255, 0.62)" }}>無需驗證碼。</div>
+        <div style={{ color: "white", fontSize: 88, lineHeight: 1.1, marginBottom: 6 }}>閃電地址</div>
+        <div style={{ color: "oklch(0.86 0.13 75)" }}>填表不卡關，</div>
+        <div style={{ color: "oklch(0.86 0.13 75)" }}>地址閃電查。</div>
       </div>
 
       <img
@@ -261,8 +287,8 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
   )
 }
 
-export async function ogImageResponse(lookup: AddressLookup) {
-  return new ImageResponse(<OgImage screen={phoneScreen(lookup)} />, {
+export async function ogImageResponse(lookup: AddressLookup, photo?: string) {
+  return new ImageResponse(<OgImage screen={phoneScreen(lookup)} photo={photo} />, {
     width: 1200,
     height: 630,
     format: "jpeg",
