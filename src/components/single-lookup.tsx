@@ -12,6 +12,7 @@ import {
   subscribeCorrections,
 } from "@/lib/addresses"
 import { addressParams, queryFromParams } from "@/lib/address-path"
+import { addressMeta } from "@/lib/page-meta"
 import { rememberLookup } from "@/lib/recent-lookups"
 import { cn } from "@/lib/utils"
 
@@ -72,6 +73,11 @@ export function SingleLookup() {
         : { to: "/", replace: true, resetScroll: false },
     )
   }, [targetQuery])
+
+  const title = addressMeta(lookup).title
+  useEffect(() => {
+    document.title = title
+  }, [title])
 
   useEffect(() => {
     if (!road || displayedZipcode.length !== 6) return

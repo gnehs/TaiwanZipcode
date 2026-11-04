@@ -34,3 +34,4 @@ utils/database-conventer/app
 utils/database-conventer/sys
 .tmpwine
 .tanstack
+.wrangler

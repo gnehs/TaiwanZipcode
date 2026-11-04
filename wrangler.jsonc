@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "taiwan-zipcode",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-11-04",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    // Every page runs the Worker for its metadata; files (any path with a
+    // dot) are served directly.
+    "run_worker_first": ["/*", "!/*.*"]
+  },
+  "routes": [{ "pattern": "zipcode.gnehs.net", "custom_domain": true }],
+  "observability": { "enabled": true }
+}

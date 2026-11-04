@@ -25,6 +25,12 @@ export function addressParams(
   return { ...place, suffix: suffix.trim() || undefined }
 }
 
+// The same encoding the router uses for path params.
+export function addressPath({ city, area, road, suffix }: AddressParams) {
+  const parts = suffix ? [city, area, road, suffix] : [city, area, road]
+  return `/${parts.map(encodeURIComponent).join("/")}`
+}
+
 export function queryFromParams(params: Partial<AddressParams>): string {
   const road = `${params.city ?? ""}${params.area ?? ""}${params.road ?? ""}`
   return placeByAddress.has(road) ? `${road}${params.suffix ?? ""}` : ""

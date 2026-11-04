@@ -146,8 +146,10 @@ const EMPTY_SCOPES: ZipcodeScope[] = []
 // read from it on every keystroke.
 export function lookupAddress(query: string): AddressLookup {
   const prefix = findAddressPrefix(query)
-  const road = prefix?.address ?? ""
-  const addressSuffix = prefix?.suffix ?? ""
+  return lookupRoad(prefix?.address ?? "", prefix?.suffix ?? "")
+}
+
+export function lookupRoad(road: string, addressSuffix: string): AddressLookup {
   const scopes = addressIndex.scopesByAddress[road] || EMPTY_SCOPES
   const scopeResolution: ScopeResolution = !road
     ? { status: "empty", matches: [], pending: [] }
