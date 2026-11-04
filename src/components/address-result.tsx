@@ -1,5 +1,5 @@
 import { Fragment } from "react"
-import { CircleAlertIcon, InfoIcon, ListIcon, PlusIcon } from "lucide-react"
+import { CircleAlertIcon, InfoIcon, LinkIcon, ListIcon, PlusIcon } from "lucide-react"
 
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ import {
   type ScopeResolution,
   type ZipcodeScope,
 } from "@/lib/addresses"
+import { addressSlug, shareUrl } from "@/lib/address-path"
 import { cn } from "@/lib/utils"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
@@ -138,6 +139,7 @@ export function AddressResult({
   const parsedAddress = formatAddress(address, addressSuffix, fullZipcode)
   const isUnmatched = scopeResolution.status === "unmatched"
   const chineseAddress = `${fullZipcode}${address}${addressSuffix.trim()}`
+  const slug = addressSlug(address, addressSuffix)
   const status = isComplete
     ? null
     : isUnmatched
@@ -268,63 +270,75 @@ export function AddressResult({
             {metaItems}
           </div>
           <div className="flex flex-1 items-center justify-between sm:flex-none">
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button variant="ghost" className={FOOTER_BUTTON} />
-                }
-              >
-                <ListIcon data-icon="inline-start" aria-hidden="true" />
-                {scopes.length} 筆規則
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                className="max-h-96 w-80 max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto overscroll-contain rounded-2xl p-4 sm:w-[26rem]"
-              >
-                <PopoverHeader>
-                  <PopoverTitle>此道路的郵遞區號規則</PopoverTitle>
-                  <PopoverDescription>
-                    依巷弄、門牌範圍與樓層判斷，符合的規則會標示出來。
-                  </PopoverDescription>
-                </PopoverHeader>
-                <ul className="flex flex-col divide-y">
-                  {scopes.map((rule, index) => {
-                    const isCurrent = isComplete && rule === resolvedScope
-                    return (
-                      <li
-                        key={`${rule.zipcode}-${rule.scope}-${index}`}
-                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 py-2.5 text-sm"
-                      >
-                        <span
-                          className={cn(
-                            "font-mono text-[0.8125rem]",
-                            isCurrent ? "text-primary" : "text-muted-foreground",
-                          )}
+            <div className="flex">
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button variant="ghost" className={FOOTER_BUTTON} />
+                  }
+                >
+                  <ListIcon data-icon="inline-start" aria-hidden="true" />
+                  {scopes.length} 筆規則
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="max-h-96 w-80 max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto overscroll-contain rounded-2xl p-4 sm:w-[26rem]"
+                >
+                  <PopoverHeader>
+                    <PopoverTitle>此道路的郵遞區號規則</PopoverTitle>
+                    <PopoverDescription>
+                      依巷弄、門牌範圍與樓層判斷，符合的規則會標示出來。
+                    </PopoverDescription>
+                  </PopoverHeader>
+                  <ul className="flex flex-col divide-y">
+                    {scopes.map((rule, index) => {
+                      const isCurrent = isComplete && rule === resolvedScope
+                      return (
+                        <li
+                          key={`${rule.zipcode}-${rule.scope}-${index}`}
+                          className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 py-2.5 text-sm"
                         >
-                          {rule.zipcode}
-                        </span>
-                        <div className="flex min-w-0 flex-col gap-1 break-words">
-                          {rule.department ? (
-                            <span className="font-medium">{rule.department}</span>
-                          ) : null}
-                          <span>{formatScopeRule(rule.scope)}</span>
-                        </div>
-                        {isCurrent ? (
                           <span
                             className={cn(
-                              "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                              TONE_CLASSES.success,
+                              "font-mono text-[0.8125rem]",
+                              isCurrent ? "text-primary" : "text-muted-foreground",
                             )}
                           >
-                            符合
+                            {rule.zipcode}
                           </span>
-                        ) : null}
-                      </li>
-                    )
-                  })}
-                </ul>
-              </PopoverContent>
-            </Popover>
+                          <div className="flex min-w-0 flex-col gap-1 break-words">
+                            {rule.department ? (
+                              <span className="font-medium">{rule.department}</span>
+                            ) : null}
+                            <span>{formatScopeRule(rule.scope)}</span>
+                          </div>
+                          {isCurrent ? (
+                            <span
+                              className={cn(
+                                "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                                TONE_CLASSES.success,
+                              )}
+                            >
+                              符合
+                            </span>
+                          ) : null}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </PopoverContent>
+              </Popover>
+              {slug ? (
+                <CopyButton
+                  text={shareUrl(window.location.origin, slug)}
+                  label="複製分享連結"
+                  visibleLabel="分享"
+                  variant="ghost"
+                  icon={<LinkIcon />}
+                  className={FOOTER_BUTTON}
+                />
+              ) : null}
+            </div>
             {/* Sits in the card's corner: 18px pill radius + 8px inset = 26px card radius. */}
             <CopyButton
               text={isComplete ? displayedZipcode : ""}

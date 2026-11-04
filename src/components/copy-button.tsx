@@ -64,6 +64,7 @@ export function CopyButton({
   visibleLabel = label,
   disabled = false,
   variant = "outline",
+  icon = <CopyIcon />,
   className,
 }: {
   text: string
@@ -71,6 +72,7 @@ export function CopyButton({
   visibleLabel?: string
   disabled?: boolean
   variant?: "default" | "outline" | "ghost"
+  icon?: React.ReactNode
   className?: string
 }) {
   const [feedback, setFeedback] = useState<{
@@ -109,7 +111,7 @@ export function CopyButton({
       >
         <IconSwap
           swapped={status === "copied"}
-          from={<CopyIcon />}
+          from={icon}
           to={<CheckIcon />}
         />
         {/* The label stays put; the icon carries the feedback and the status

@@ -15,6 +15,13 @@ export function addressPath(slug: string) {
   return `/a/${encodeURIComponent(slug)}`
 }
 
+// For pasting into chats: Chinese stays readable, and only characters that
+// would end or break the link there (spaces, #, ?, %) are escaped.
+export function shareUrl(origin: string, slug: string) {
+  const path = slug.replace(/[^\p{L}\p{N}\-._~]/gu, encodeURIComponent)
+  return `${origin}/a/${path}`
+}
+
 // Some roads begin with another road's name, so the longest one is the road.
 export function parseAddressSlug(
   slug: string,
