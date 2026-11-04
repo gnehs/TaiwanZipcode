@@ -437,3 +437,18 @@
     transform: scale(0.96);
   }
 }
+
+/* The typing demos on the guide page blink their caret like a real input. */
+.guide-caret {
+  animation: guide-caret 1s steps(1) infinite;
+}
+@keyframes guide-caret {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-caret {
+    animation: none;
+  }
+}

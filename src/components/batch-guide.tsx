@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 
 const MOD_KEY = /Mac|iPhone|iPad/u.test(navigator.platform) ? "⌘" : "Ctrl+"
 
-const STEPS = [
+export const BATCH_STEPS = [
   {
     icon: ClipboardCopyIcon,
     title: "從 Excel 複製地址",
@@ -54,7 +54,7 @@ export function BatchGuide({ onDismiss }: { onDismiss: () => void }) {
         </Button>
       </div>
       <ol className="grid gap-4 px-(--card-spacing) sm:grid-cols-3">
-        {STEPS.map(({ icon: Icon, title, description }, index) => (
+        {BATCH_STEPS.map(({ icon: Icon, title, description }, index) => (
           <li key={title} className="flex items-center gap-3.5">
             <span className="relative flex size-10 shrink-0 items-center justify-center rounded-2xl bg-secondary">
               <Icon className="size-5 text-muted-foreground" aria-hidden="true" />

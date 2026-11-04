@@ -25,6 +25,12 @@ export const FAQ_META: PageMeta = {
   path: "/faq",
 }
 
+export const GUIDE_META: PageMeta = {
+  title: `使用說明｜${SITE_TITLE}`,
+  description: "只打路名、打錯字也查得到：閃電地址的查詢小撇步，以及一次查完整份名單的批次查詢。",
+  path: "/guide",
+}
+
 export const ABOUT_META: PageMeta = {
   title: `關於｜${SITE_TITLE}`,
   description: "閃電地址是免費的臺灣 3+3 郵遞區號查詢工具，資料每月同步中華郵政。",

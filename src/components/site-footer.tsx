@@ -47,12 +47,20 @@ export function SiteFooter() {
           <br className="sm:hidden" />
           正確資料請以中華郵政公告為準。
         </p>
-        <Link
-          to="/faq"
-          className="w-fit rounded-sm text-xs font-medium text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          常見問題
-        </Link>
+        <nav aria-label="說明" className="flex gap-4">
+          {[
+            { to: "/guide", label: "使用說明" },
+            { to: "/faq", label: "常見問題" },
+          ].map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className="w-fit rounded-sm text-xs font-medium text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
       </div>
       <div className="mt-8 flex items-center justify-between gap-4 border-t pt-6 sm:mt-10">
         {/* Phones split the credit over two lines so the controls keep their place beside it. */}

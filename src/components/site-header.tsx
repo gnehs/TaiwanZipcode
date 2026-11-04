@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { CircleHelpIcon, InfoIcon, MenuIcon } from "lucide-react"
+import { BookOpenIcon, CircleHelpIcon, InfoIcon, MenuIcon } from "lucide-react"
 
 import { ModeSwitch } from "@/components/mode-switch"
 import type { Page } from "@/components/page-shell"
@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils"
 
 const MENU_LINKS = [
+  { to: "/guide", label: "使用說明", icon: BookOpenIcon },
   { to: "/faq", label: "常見問題", icon: CircleHelpIcon },
   { to: "/about", label: "關於", icon: InfoIcon },
 ] as const

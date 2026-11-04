@@ -13,7 +13,7 @@ const MODES = [
 // a translate of 100% lands exactly on the other one. During a mode switch
 // the switch, pill and labels are view-transition layers in that order, so
 // the pill slides across under the labels.
-// Pages outside the two modes, like about, leave both unselected.
+// Pages outside the two modes, like about and the guide, leave both unselected.
 export function ModeSwitch({ page, onBand }: { page: Page; onBand: boolean }) {
   const isBatch = page === "batch"
   return (
@@ -31,7 +31,7 @@ export function ModeSwitch({ page, onBand }: { page: Page; onBand: boolean }) {
             "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full transition-[translate,background-color] duration-300 ease-out [view-transition-name:mode-pill] motion-reduce:transition-none",
             onBand ? "bg-card" : "bg-secondary",
             isBatch && "translate-x-full",
-            page === "about" && "opacity-0",
+            page !== "single" && !isBatch && "opacity-0",
           )}
         />
         {MODES.map((mode) => {
