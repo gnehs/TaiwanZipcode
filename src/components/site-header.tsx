@@ -2,21 +2,27 @@ import { Link } from "@tanstack/react-router"
 
 import { ModeSwitch } from "@/components/mode-switch"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { cn } from "@/lib/utils"
 
 // The outer columns share the leftover width, so the mode switch stays
 // centred however wide the logo is.
 export function SiteHeader({
   isBatch,
+  onBand,
   onHome,
 }: {
   isBatch: boolean
+  onBand: boolean
   onHome?: () => void
 }) {
   return (
-    <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 pt-3 sm:px-5 sm:pt-5">
+    <header className="relative z-10 grid [view-transition-name:site-bar] grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 pt-3 sm:px-5 sm:pt-5">
       <Link
         to="/"
-        className="flex items-center gap-2.5 justify-self-start rounded-xl p-1 pr-2 outline-none [view-transition-name:site-header] focus-visible:ring-3 focus-visible:ring-ring/50"
+        className={cn(
+          "flex items-center gap-2.5 justify-self-start rounded-xl p-1 pr-2 outline-none transition-colors duration-500 ease-out [view-transition-name:site-header] focus-visible:ring-3 focus-visible:ring-ring/50",
+          onBand && "text-white",
+        )}
         onClick={(event) => {
           // Let modified clicks open a new tab; a plain click resets in place.
           if (!onHome || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
@@ -34,9 +40,9 @@ export function SiteHeader({
           閃電地址
         </h1>
       </Link>
-      <ModeSwitch isBatch={isBatch} />
+      <ModeSwitch isBatch={isBatch} onBand={onBand} />
       <div className="justify-self-end">
-        <ThemeToggle />
+        <ThemeToggle onBand={onBand} />
       </div>
     </header>
   )

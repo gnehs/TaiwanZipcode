@@ -113,15 +113,42 @@ export function SingleLookup() {
         window.scrollTo({ top: 0 })
       }}
     >
-      <AddressSearch
-        query={query}
-        road={road}
-        addressSuffix={addressSuffix}
-        isUnmatched={scopeResolution.status === "unmatched"}
-        inputRef={searchInputRef}
-        onQueryChange={setQuery}
-        onPopupOpenChange={setIsSuggesting}
-      />
+      {/* The band runs edge to edge and up behind the header to the page top
+          (the header's height plus the page's top padding), and ends with
+          this block. It stays mounted so the search never loses focus. */}
+      <div
+        className={cn(
+          "relative transition-[padding] duration-500 ease-out motion-reduce:transition-none",
+          !road && "pb-16 sm:pb-18",
+        )}
+      >
+        <div
+          aria-hidden="true"
+          className={cn(
+            "hero-band pointer-events-none absolute inset-x-[calc(50%-50vw)] -top-[calc(3.5rem+--spacing(10))] bottom-0 -z-10 sm:-top-[calc(4rem+9vh)] overflow-hidden transition-opacity duration-500 ease-out motion-reduce:transition-none",
+            road && "opacity-0",
+          )}
+        >
+          <div className="plus-grid absolute inset-0 text-white/15" />
+        </div>
+        {road ? null : (
+          <h2 className="enter-rise pb-8 text-center text-[2.75rem] leading-[1.1] font-extrabold tracking-tight text-white [text-shadow:0_2px_20px_oklch(0.45_0.15_45/0.3)] sm:pb-10 sm:text-7xl">
+            填表不卡關
+            <br />
+            <span className="text-[oklch(0.99_0.04_90)]">地址閃電查</span>
+          </h2>
+        )}
+        <AddressSearch
+          onBand={!road}
+          query={query}
+          road={road}
+          addressSuffix={addressSuffix}
+          isUnmatched={scopeResolution.status === "unmatched"}
+          inputRef={searchInputRef}
+          onQueryChange={setQuery}
+          onPopupOpenChange={setIsSuggesting}
+        />
+      </div>
       {/* Fades back while suggestions are open so the list reads on its own. */}
       <div
         className={cn(

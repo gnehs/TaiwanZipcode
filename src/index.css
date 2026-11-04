@@ -75,6 +75,10 @@
     --primary-foreground: oklch(0.99 0.005 60);
     /* The lightning's gold; orange surfaces brighten toward it at the top. */
     --primary-gold: oklch(0.82 0.17 80);
+    /* The home page's orange band, glowing gold at the top right. */
+    --band:
+      radial-gradient(60% 80% at 85% 0%, oklch(0.82 0.17 80), transparent 70%),
+      linear-gradient(160deg, oklch(0.62 0.2 44), oklch(0.72 0.18 58));
     --secondary: oklch(0.95 0.003 60);
     --secondary-foreground: oklch(0.25 0.006 60);
     --muted: oklch(0.955 0.003 60);
@@ -120,29 +124,33 @@
 }
 
 .dark {
-    --background: oklch(0.13 0 0);
-    --foreground: oklch(0.96 0.003 265);
-    --card: oklch(0.22 0.003 265);
-    --card-foreground: oklch(0.96 0.003 265);
-    --popover: oklch(0.24 0.003 265);
-    --popover-foreground: oklch(0.96 0.003 265);
+    /* Warm charcoal, so the neutrals sit with the orange. */
+    --background: oklch(0.16 0.008 55);
+    --foreground: oklch(0.96 0.008 75);
+    --card: oklch(0.21 0.01 55);
+    --card-foreground: oklch(0.96 0.008 75);
+    --popover: oklch(0.23 0.01 55);
+    --popover-foreground: oklch(0.96 0.008 75);
     --primary: oklch(0.7 0.18 54);
     --primary-foreground: oklch(0.99 0.005 60);
     --primary-gold: oklch(0.8 0.16 78);
-    --secondary: oklch(0.28 0.003 265);
-    --secondary-foreground: oklch(0.96 0.003 265);
-    --muted: oklch(0.18 0.003 265);
-    --muted-foreground: oklch(0.66 0.008 265);
-    --accent: oklch(0.29 0.004 265);
-    --accent-foreground: oklch(0.96 0.003 265);
+    --band:
+      radial-gradient(60% 80% at 85% 0%, oklch(0.8 0.16 78), transparent 70%),
+      linear-gradient(160deg, oklch(0.6 0.19 44), oklch(0.68 0.18 58));
+    --secondary: oklch(0.27 0.012 55);
+    --secondary-foreground: oklch(0.96 0.008 75);
+    --muted: oklch(0.19 0.009 55);
+    --muted-foreground: oklch(0.7 0.015 65);
+    --accent: oklch(0.28 0.012 55);
+    --accent-foreground: oklch(0.96 0.008 75);
     --destructive: oklch(0.68 0.19 22);
     --success: oklch(0.74 0.15 155);
     --warning: oklch(0.8 0.14 80);
-    --border: oklch(0.3 0.004 265);
-    --input: oklch(0.32 0.004 265);
+    --border: oklch(0.3 0.012 55);
+    --input: oklch(0.32 0.012 55);
     --ring: oklch(0.7 0.18 54);
-    --control-top: oklch(0.29 0.003 265);
-    --control-bottom: oklch(0.235 0.003 265);
+    --control-top: oklch(0.28 0.012 55);
+    --control-bottom: oklch(0.23 0.01 55);
     /* Dark edges come from the light ring and top highlight; black shadows only fall below. */
     /* Ring and top highlight share the same inner pixel, so the edge stays one hairline. */
     --surface-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05), inset 0 0 0 1px oklch(1 0 0 / 0.07), 0 8px 24px -8px oklch(0 0 0 / 0.6);
@@ -238,6 +246,27 @@
   }
 }
 
+/* The light theme's surfaces, for the search that stays light on the
+   orange band in the dark theme too. */
+@utility light-scheme {
+  color-scheme: light;
+  --foreground: oklch(0.2 0.006 60);
+  --card: oklch(0.998 0.002 60);
+  --card-foreground: oklch(0.2 0.006 60);
+  --popover: oklch(0.995 0.001 60);
+  --popover-foreground: oklch(0.2 0.006 60);
+  --muted: oklch(0.955 0.003 60);
+  --muted-foreground: oklch(0.54 0.01 60);
+  --accent: oklch(0.94 0.004 60);
+  --accent-foreground: oklch(0.2 0.006 60);
+  --border: oklch(0.92 0.004 60);
+  --popover-shadow: 0 0 0 1px oklch(0.2 0.02 60 / 0.08), 0 4px 8px -2px oklch(0.2 0.02 60 / 0.06), 0 16px 36px -8px oklch(0.2 0.02 60 / 0.16);
+}
+
+@utility hero-band {
+  background: var(--band);
+}
+
 /* Soft light speckles, like a sprayed finish. Layer it over orange surfaces. */
 @utility grain {
   background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22180%22%20height%3D%22180%22%3E%3Cfilter%20id%3D%22g%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.6%22%20numOctaves%3D%222%22%20seed%3D%227%22%20stitchTiles%3D%22stitch%22/%3E%3CfeColorMatrix%20values%3D%220%200%200%200%201%20%200%200%200%200%201%20%200%200%200%200%201%20%200%200%200%201%200%22/%3E%3CfeComponentTransfer%3E%3CfeFuncA%20type%3D%22discrete%22%20tableValues%3D%220%200%200%200%200%200%200%200.22%200.36%200.5%22/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23g%29%22/%3E%3C/svg%3E");
@@ -306,6 +335,17 @@
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 260ms;
+}
+
+/* The home page's band overflows its layer up behind the top bar, so the
+   bar's layers stay on top of the pages. Equal z-indexes keep their order. */
+::view-transition-group(site-bar),
+::view-transition-group(site-header),
+::view-transition-group(mode-switch),
+::view-transition-group(mode-pill),
+::view-transition-group(mode-single),
+::view-transition-group(mode-batch) {
+  z-index: 1;
 }
 
 /* The pages zoom: toward batch the single page grows away and the batch

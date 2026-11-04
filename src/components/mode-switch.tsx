@@ -12,14 +12,21 @@ const MODES = [
 // a translate of 100% lands exactly on the other one. During a mode switch
 // the switch, pill and labels are view-transition layers in that order, so
 // the pill slides across under the labels.
-export function ModeSwitch({ isBatch }: { isBatch: boolean }) {
+export function ModeSwitch({ isBatch, onBand }: { isBatch: boolean; onBand: boolean }) {
   return (
     <nav aria-label="查詢模式">
-      <div className="relative grid grid-cols-2 rounded-full bg-card p-1 shadow-surface [view-transition-name:mode-switch]">
+      <div
+        className={cn(
+          "relative grid grid-cols-2 rounded-full p-1 transition-[background-color,box-shadow] duration-500 ease-out [view-transition-name:mode-switch]",
+          // On the band it looks the same in both themes.
+          onBand ? "bg-white/20 dark:light-scheme" : "bg-card shadow-surface",
+        )}
+      >
         <span
           aria-hidden="true"
           className={cn(
-            "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-secondary transition-transform duration-300 ease-out [view-transition-name:mode-pill] motion-reduce:transition-none",
+            "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full transition-[translate,background-color] duration-300 ease-out [view-transition-name:mode-pill] motion-reduce:transition-none",
+            onBand ? "bg-card" : "bg-secondary",
             isBatch && "translate-x-full",
           )}
         />
@@ -37,7 +44,9 @@ export function ModeSwitch({ isBatch }: { isBatch: boolean }) {
                   : "[view-transition-name:mode-single]",
                 isCurrent
                   ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
+                  : onBand
+                    ? "text-white"
+                    : "text-muted-foreground hover:text-foreground",
               )}
             >
               {mode.label}

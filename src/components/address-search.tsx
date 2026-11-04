@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import { SearchIcon, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import {
   Combobox,
   ComboboxContent,
@@ -31,6 +32,7 @@ import {
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type AddressSearchProps = {
+  onBand: boolean
   query: string
   road: string
   addressSuffix: string
@@ -66,6 +68,7 @@ const ROAD_KEYWORD_EXAMPLES = ["中山北路", "忠孝東路", "和平東路"]
 const MIN_QUERY_LENGTH = 2
 
 export function AddressSearch({
+  onBand,
   query,
   road,
   addressSuffix,
@@ -210,13 +213,23 @@ export function AddressSearch({
               selectAddress(address)
             }}
           >
-            <div ref={comboboxAnchor} className="w-full">
+            {/* On the band the search and its suggestions stay light in
+                the dark theme too. */}
+            <div
+              ref={comboboxAnchor}
+              className={cn("w-full", onBand && "dark:light-scheme")}
+            >
               <ComboboxInput
                 ref={inputRef}
                 id="address-search"
                 name="address"
-                className="h-14 w-full rounded-full border-0 bg-card pr-2 pl-3 text-base shadow-surface [&_input]:text-base"
-                placeholder="例如：臺北市中山區中山北路一段100號3樓…"
+                className={cn(
+                  "h-14 w-full rounded-full border-0 bg-card pr-2 pl-3 text-base text-foreground [&_input]:text-base",
+                  onBand
+                    ? "shadow-[0_20px_40px_-12px_oklch(0.4_0.15_45/0.45)] sm:h-16"
+                    : "shadow-surface",
+                )}
+                placeholder="例如：中山北路一段100號3樓"
                 aria-describedby="address-search-help"
                 aria-invalid={isUnmatched || undefined}
                 autoComplete="off"
@@ -257,7 +270,10 @@ export function AddressSearch({
                 ) : null}
               </ComboboxInput>
             </div>
-            <ComboboxContent anchor={comboboxAnchor}>
+            <ComboboxContent
+              anchor={comboboxAnchor}
+              className={cn(onBand && "dark:light-scheme")}
+            >
               <ComboboxEmpty>找不到符合的道路，請調整關鍵字</ComboboxEmpty>
               <ComboboxList>
                 {(address: string) => (
@@ -286,7 +302,7 @@ export function AddressSearch({
           <FieldDescription
             id="address-search-help"
             aria-live="polite"
-            className={hasNoMatch ? "px-4" : "sr-only"}
+            className={hasNoMatch ? cn("px-4", onBand && "text-white") : "sr-only"}
           >
             {helperText}
           </FieldDescription>
@@ -300,7 +316,12 @@ export function AddressSearch({
                 type="button"
                 size="sm"
                 variant="secondary"
-                className="h-8 px-3.5 text-muted-foreground hover:text-foreground"
+                className={cn(
+                  "h-8 px-3.5",
+                  onBand
+                    ? "bg-white/22 text-white hover:bg-white/32"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
                 onClick={() => updateQuery(keyword, true)}
               >
                 {keyword}

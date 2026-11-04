@@ -14,15 +14,17 @@ export function PageShell({
   onHome?: () => void
   children: ReactNode
 }) {
+  // The home page sits on the orange band until a result appears.
+  const onBand = !isBatch && !raised
   return (
     <>
-      <SiteHeader isBatch={isBatch} onHome={onHome} />
+      <SiteHeader isBatch={isBatch} onBand={onBand} onHome={onHome} />
       <main
         className={cn(
           "relative mx-auto flex w-full flex-1 flex-col gap-3 px-4 transition-[padding] duration-500 ease-out motion-reduce:transition-none sm:px-6",
           isBatch ? "max-w-6xl" : "max-w-2xl",
           // The search rises once a result appears below it.
-          raised ? "pt-6 sm:pt-8" : "pt-14 sm:pt-[16vh]",
+          raised ? "pt-6 sm:pt-8" : "pt-10 sm:pt-[9vh]",
         )}
       >
         {/* Each page is its own view-transition layer, so one can leave while

@@ -2,6 +2,7 @@ import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
 import { useSyncExternalStore } from "react"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,7 @@ const THEME_OPTIONS = [
   icon: typeof SunIcon
 }>
 
-export function ThemeToggle() {
+export function ThemeToggle({ onBand }: { onBand: boolean }) {
   const theme = useSyncExternalStore(subscribeTheme, getTheme)
   const current =
     THEME_OPTIONS.find((option) => option.value === theme) ?? THEME_OPTIONS[2]
@@ -38,7 +39,12 @@ export function ThemeToggle() {
           <Button
             variant="ghost"
             size="icon-lg"
-            className="size-11 text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control aria-expanded:bg-card aria-expanded:text-foreground aria-expanded:shadow-control"
+            className={cn(
+              "size-11",
+              onBand
+                ? "text-white hover:bg-white/20 hover:text-white aria-expanded:bg-white/20 aria-expanded:text-white dark:hover:bg-white/20"
+                : "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control aria-expanded:bg-card aria-expanded:text-foreground aria-expanded:shadow-control",
+            )}
             aria-label={`主題：${current.label}`}
           />
         }
