@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#F68D4E"/>
-      <stop offset="1" stop-color="#D4521C"/>
+      <stop offset="0" stop-color="#FDB833"/>
+      <stop offset="1" stop-color="#EE6A10"/>
     </linearGradient>
     <radialGradient id="sheen" cx="0.5" cy="0" r="0.85">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.3"/>
@@ -11,7 +11,7 @@
     <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.6"/>
       <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#5A1E04" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#6A3402" stop-opacity="0.25"/>
     </linearGradient>
     <linearGradient id="pattern-fade" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#FFFFFF"/>
@@ -19,7 +19,7 @@
     </linearGradient>
     <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#FFEDE3"/>
+      <stop offset="1" stop-color="#FFF1DA"/>
     </linearGradient>
     <pattern id="plus-grid" width="32" height="32" patternUnits="userSpaceOnUse" x="0" y="0">
       <path d="M16 11v10M11 16h10" stroke="#FFFFFF" stroke-opacity="0.16" stroke-width="2.5" stroke-linecap="round"/>
@@ -31,7 +31,7 @@
       <rect x="8" y="8" width="496" height="496" rx="112"/>
     </clipPath>
     <filter id="drop" x="-30%" y="-30%" width="160%" height="175%">
-      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#6E2406" flood-opacity="0.38"/>
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#7A3A02" flood-opacity="0.38"/>
     </filter>
   </defs>
 
@@ -41,15 +41,15 @@
     <rect width="512" height="512" fill="url(#sheen)"/>
   </g>
 
-  <rect x="238" y="300" width="36" height="112" rx="10" fill="#FBE0D0"/>
+  <rect x="238" y="300" width="36" height="112" rx="10" fill="#FDE7C4"/>
   <g filter="url(#drop)">
     <path d="M136 312V222a70 70 0 0 1 70-70h100a70 70 0 0 1 70 70v90a14 14 0 0 1-14 14H150a14 14 0 0 1-14-14Z" fill="url(#paper)"/>
   </g>
   <clipPath id="mailbox-body"><path d="M136 312V222a70 70 0 0 1 70-70h100a70 70 0 0 1 70 70v90a14 14 0 0 1-14 14H150a14 14 0 0 1-14-14Z"/></clipPath>
-  <path d="M206 152a70 70 0 0 1 70 70v104" fill="none" stroke="#F7C9AE" stroke-width="10" clip-path="url(#mailbox-body)"/>
-  <rect x="322" y="150" width="16" height="96" rx="8" fill="#E2652B"/>
-  <path d="M330 150h54a10 10 0 0 1 10 10v20a10 10 0 0 1-10 10h-54Z" fill="#E2652B"/>
-  <rect x="166" y="236" width="80" height="16" rx="8" fill="#F7C9AE"/>
+  <path d="M206 152a70 70 0 0 1 70 70v104" fill="none" stroke="#FAD49C" stroke-width="10" clip-path="url(#mailbox-body)"/>
+  <rect x="322" y="150" width="16" height="96" rx="8" fill="#F07818"/>
+  <path d="M330 150h54a10 10 0 0 1 10 10v20a10 10 0 0 1-10 10h-54Z" fill="#F07818"/>
+  <rect x="166" y="236" width="80" height="16" rx="8" fill="#FAD49C"/>
 
   <rect x="9.5" y="9.5" width="493" height="493" rx="110.5" fill="none" stroke="url(#rim)" stroke-width="3"/>
 </svg>

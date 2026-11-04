@@ -30,7 +30,8 @@ function phoneScreen(lookup: AddressLookup): PhoneScreen {
   }
 }
 
-const PRIMARY = "oklch(0.6 0.19 40)"
+const PRIMARY = "oklch(0.66 0.19 50)"
+const GOLD = "oklch(0.82 0.17 80)"
 const INK = "oklch(0.2 0.006 60)"
 const ICON = `data:image/svg+xml,${encodeURIComponent(iconSvg)}`
 // The card's "+" texture, fading toward the bottom like the app's plus-grid.
@@ -65,10 +66,10 @@ function ZipcodeCells({ digits }: { digits: string }) {
             borderRadius: 10,
             backgroundColor: "rgba(255, 255, 255, 0.16)",
             boxShadow:
-              "inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 4px 10px -4px oklch(0.35 0.13 38 / 0.35)",
+              "inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 4px 10px -4px oklch(0.4 0.13 48 / 0.35)",
             fontSize: 30,
             fontWeight: 600,
-            textShadow: "0 1px 2px oklch(0.35 0.13 38 / 0.35)",
+            textShadow: "0 1px 2px oklch(0.4 0.13 48 / 0.35)",
           }}
         >
           {digits[start + index] ?? ""}
@@ -152,10 +153,10 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
         height: "100%",
         fontFamily: "Geist, Noto Sans TC",
         backgroundImage: [
-          "radial-gradient(70% 90% at 0% 0%, oklch(0.6 0.2 38) 0%, transparent 70%)",
-          "radial-gradient(60% 70% at 85% 10%, oklch(0.72 0.16 50) 0%, transparent 70%)",
-          "radial-gradient(80% 60% at 70% 100%, oklch(0.97 0.03 40) 0%, transparent 70%)",
-          "linear-gradient(to bottom, oklch(0.66 0.18 42) 0%, oklch(0.76 0.13 48) 58%, oklch(0.97 0.02 60) 100%)",
+          "radial-gradient(70% 90% at 0% 0%, oklch(0.64 0.2 46) 0%, transparent 70%)",
+          "radial-gradient(60% 70% at 85% 10%, oklch(0.82 0.17 80) 0%, transparent 70%)",
+          "radial-gradient(80% 60% at 70% 100%, oklch(0.97 0.03 70) 0%, transparent 70%)",
+          "linear-gradient(to bottom, oklch(0.7 0.18 54) 0%, oklch(0.8 0.14 68) 58%, oklch(0.97 0.02 75) 100%)",
         ].join(", "),
       }}
     >
@@ -181,7 +182,7 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
         src={ICON}
         width={76}
         height={76}
-        style={{ position: "absolute", left: 92, bottom: 72, filter: "drop-shadow(0 8px 16px oklch(0.5 0.15 40 / 0.3))" }}
+        style={{ position: "absolute", left: 92, bottom: 72, filter: "drop-shadow(0 8px 16px oklch(0.6 0.15 55 / 0.3))" }}
       />
 
       <div
@@ -197,7 +198,7 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
           borderRadius: 56,
           border: "9px solid rgba(255, 255, 255, 0.92)",
           backgroundColor: "oklch(0.985 0.004 60)",
-          boxShadow: "0 0 0 1px oklch(0.5 0.1 40 / 0.12), 0 30px 60px -20px oklch(0.4 0.14 40 / 0.45)",
+          boxShadow: "0 0 0 1px oklch(0.5 0.1 50 / 0.12), 0 30px 60px -20px oklch(0.45 0.14 50 / 0.45)",
           overflow: "hidden",
         }}
       >
@@ -235,8 +236,8 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
             borderRadius: 22,
             overflow: "hidden",
             color: "white",
-            backgroundImage: `linear-gradient(to bottom, color-mix(in oklab, ${PRIMARY}, white 10%), color-mix(in oklab, ${PRIMARY}, black 6%))`,
-            boxShadow: "inset 0 0 14px rgba(255, 255, 255, 0.16), 0 0 0 1px oklch(0.52 0.19 36), 0 10px 20px -8px oklch(0.45 0.16 40 / 0.5)",
+            backgroundImage: `linear-gradient(to bottom, color-mix(in oklab, ${PRIMARY}, ${GOLD} 35%), color-mix(in oklab, ${PRIMARY}, black 4%))`,
+            boxShadow: "inset 0 0 14px rgba(255, 255, 255, 0.16), 0 0 0 1px oklch(0.58 0.18 46), 0 10px 20px -8px oklch(0.55 0.17 52 / 0.5)",
           }}
         >
           <img src={PLUS_GRID} width={308} height={220} style={{ position: "absolute", left: 0, top: 0 }} />

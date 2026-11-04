@@ -32,7 +32,7 @@ export function SiteHeader({
           src="/icon.svg"
           alt=""
           className={cn(
-            "shrink-0 transition-[width,height] [filter:drop-shadow(0_1px_1px_oklch(0.4_0.14_38/0.3))_drop-shadow(0_6px_14px_oklch(0.5_0.16_40/0.35))]",
+            "shrink-0 transition-[width,height] [filter:drop-shadow(0_1px_1px_oklch(0.45_0.14_48/0.3))_drop-shadow(0_6px_14px_oklch(0.6_0.16_55/0.35))]",
             transition,
             compact ? "size-11" : "size-16 sm:size-18",
           )}

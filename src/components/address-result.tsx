@@ -58,7 +58,7 @@ function StatusPill({ status }: { status: keyof typeof STATUS }) {
   return (
     <span
       className={cn(
-        "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-paper px-2.5 text-xs font-medium shadow-[0_2px_6px_-2px_oklch(0.35_0.13_38/0.4)] transition-colors duration-200 ease-out",
+        "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-paper px-2.5 text-xs font-medium shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] transition-colors duration-200 ease-out",
         ink,
       )}
     >
@@ -184,13 +184,13 @@ function ZipcodeCells({ digits }: { digits: string }) {
             {[0, 1, 2].map((index) => (
               <span
                 key={index}
-                className="flex h-12 w-9 items-center justify-center overflow-hidden rounded-lg bg-white/16 text-3xl font-semibold tabular-nums shadow-[inset_0_1px_0_oklch(1_0_0/0.35),inset_0_0_0_1px_oklch(1_0_0/0.18),0_4px_10px_-4px_oklch(0.35_0.13_38/0.35)] backdrop-blur-sm sm:h-18 sm:w-13 sm:rounded-xl sm:text-5xl"
+                className="flex h-12 w-9 items-center justify-center overflow-hidden rounded-lg bg-white/16 text-3xl font-semibold tabular-nums shadow-[inset_0_1px_0_oklch(1_0_0/0.35),inset_0_0_0_1px_oklch(1_0_0/0.18),0_4px_10px_-4px_oklch(0.4_0.13_48/0.35)] backdrop-blur-sm sm:h-18 sm:w-13 sm:rounded-xl sm:text-5xl"
               >
                 {digits[group * 3 + index] ? (
                   // Re-keyed per digit so a change replays the slide-in.
                   <span
                     key={digits[group * 3 + index]}
-                    className="digit-in text-shadow-[0_1px_2px_oklch(0.35_0.13_38/0.35)]"
+                    className="digit-in text-shadow-[0_1px_2px_oklch(0.4_0.13_48/0.35)]"
                     style={{ "--enter-delay": `${index * 30}ms` } as React.CSSProperties}
                   >
                     {digits[group * 3 + index]}
@@ -289,7 +289,7 @@ export function AddressResult({
 
   return (
     <section className="flex flex-col gap-3" aria-label="查詢結果">
-      <Card className="enter-rise relative bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary),white_10%),color-mix(in_oklab,var(--primary),black_6%))] text-primary-foreground shadow-primary">
+      <Card className="enter-rise relative bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary),var(--primary-gold)_35%),color-mix(in_oklab,var(--primary),black_4%))] text-primary-foreground shadow-primary">
         <div
           className="plus-grid pointer-events-none absolute inset-0 text-white/15"
           aria-hidden="true"

@@ -48,6 +48,7 @@
     --color-secondary: var(--secondary);
     --color-primary-foreground: var(--primary-foreground);
     --color-primary: var(--primary);
+    --color-primary-gold: var(--primary-gold);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
     --color-card-foreground: var(--card-foreground);
@@ -70,8 +71,10 @@
     --card-foreground: oklch(0.2 0.006 60);
     --popover: oklch(0.995 0.001 60);
     --popover-foreground: oklch(0.2 0.006 60);
-    --primary: oklch(0.6 0.19 40);
-    --primary-foreground: oklch(0.99 0.005 40);
+    --primary: oklch(0.66 0.19 50);
+    --primary-foreground: oklch(0.99 0.005 60);
+    /* The lightning's gold; orange surfaces brighten toward it at the top. */
+    --primary-gold: oklch(0.82 0.17 80);
     --secondary: oklch(0.95 0.003 60);
     --secondary-foreground: oklch(0.25 0.006 60);
     --muted: oklch(0.955 0.003 60);
@@ -83,10 +86,10 @@
     --warning: oklch(0.62 0.14 70);
     --border: oklch(0.92 0.004 60);
     --input: oklch(0.91 0.004 60);
-    --ring: oklch(0.6 0.19 40);
+    --ring: oklch(0.66 0.19 50);
     /* Cream "paper" from the icon; it sits on the orange card in both themes. */
-    --paper: oklch(0.995 0.004 50);
-    --paper-ink: oklch(0.646 0.222 41.116);
+    --paper: oklch(0.995 0.006 75);
+    --paper-ink: oklch(0.6 0.19 48);
     /* Borders are drawn as translucent 1px shadows so they blend with any background. */
     /* Outline buttons: lit from above, slightly darker at the bottom. */
     --control-top: oklch(0.995 0.002 60);
@@ -99,7 +102,7 @@
     --control-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.7), inset 0 0 6px oklch(1 0 0 / 0.5), 0 1px 2px oklch(0.2 0.02 60 / 0.06);
     --popover-shadow: 0 0 0 1px oklch(0.2 0.02 60 / 0.08), 0 4px 8px -2px oklch(0.2 0.02 60 / 0.06), 0 16px 36px -8px oklch(0.2 0.02 60 / 0.16);
     /* Offset inset shadows turn into crescents at rounded corners, so the rim itself is the `rim` utility. */
-    --primary-shadow: inset 0 0 14px oklch(1 0 0 / 0.16), 0 0 0 1px oklch(0.52 0.19 36), 0 2px 3px oklch(0.4 0.14 38 / 0.22), 0 10px 20px -8px oklch(0.45 0.16 40 / 0.5);
+    --primary-shadow: inset 0 0 14px oklch(1 0 0 / 0.16), 0 0 0 1px oklch(0.58 0.18 46), 0 2px 3px oklch(0.45 0.14 46 / 0.22), 0 10px 20px -8px oklch(0.55 0.17 52 / 0.5);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
@@ -123,8 +126,9 @@
     --card-foreground: oklch(0.96 0.003 265);
     --popover: oklch(0.24 0.003 265);
     --popover-foreground: oklch(0.96 0.003 265);
-    --primary: oklch(0.66 0.18 42);
-    --primary-foreground: oklch(0.99 0.005 40);
+    --primary: oklch(0.7 0.18 54);
+    --primary-foreground: oklch(0.99 0.005 60);
+    --primary-gold: oklch(0.8 0.16 78);
     --secondary: oklch(0.28 0.003 265);
     --secondary-foreground: oklch(0.96 0.003 265);
     --muted: oklch(0.18 0.003 265);
@@ -136,7 +140,7 @@
     --warning: oklch(0.8 0.14 80);
     --border: oklch(0.3 0.004 265);
     --input: oklch(0.32 0.004 265);
-    --ring: oklch(0.66 0.18 42);
+    --ring: oklch(0.7 0.18 54);
     --control-top: oklch(0.29 0.003 265);
     --control-bottom: oklch(0.235 0.003 265);
     /* Dark edges come from the light ring and top highlight; black shadows only fall below. */
@@ -147,7 +151,7 @@
     /* No inner rim here: on dark it stacks with the edge into a thick band. */
     --control-shadow: 0 3px 8px -3px oklch(0 0 0 / 0.6);
     --popover-shadow: inset 0 1px 0 oklch(1 0 0 / 0.04), inset 0 0 0 1px oklch(1 0 0 / 0.1), 0 16px 36px -8px oklch(0 0 0 / 0.7);
-    --primary-shadow: inset 0 0 14px oklch(1 0 0 / 0.16), 0 0 0 1px oklch(0.52 0.19 36), 0 2px 3px oklch(0 0 0 / 0.5), 0 10px 22px -8px oklch(0.6 0.18 40 / 0.35);
+    --primary-shadow: inset 0 0 14px oklch(1 0 0 / 0.16), 0 0 0 1px oklch(0.6 0.18 48), 0 2px 3px oklch(0 0 0 / 0.5), 0 10px 22px -8px oklch(0.68 0.17 56 / 0.35);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
