@@ -111,10 +111,10 @@ function StatusBar() {
           <rect x="9.8" y="2.5" width="3.3" height="9.5" rx="1.65" />
           <rect x="14.7" y="0" width="3.3" height="12" rx="1.65" />
         </svg>
-        <svg width="14" height="10" viewBox="0 0 17 12" fill="none" stroke={INK} stroke-width="2.2" stroke-linecap="round">
-          <path d="M1.4 4.6a10.2 10.2 0 0 1 14.2 0" />
-          <path d="M4.4 7.5a6 6 0 0 1 8.2 0" />
-          <circle cx="8.5" cy="10.3" r="1.6" fill={INK} stroke="none" />
+        <svg width="14" height="10" viewBox="0 0 17 12" fill="none" stroke={INK} stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1.61 3.85a10.3 10.3 0 0 1 13.78 0" stroke-width="2.4" />
+          <path d="M4.22 6.74a6.4 6.4 0 0 1 8.56 0" stroke-width="2.6" />
+          <path d="M8.5 11.5 6.24 9.24a3.2 3.2 0 0 1 4.52 0Z" fill={INK} stroke-width="1" />
         </svg>
         <div style={{ position: "relative", display: "flex" }}>
           <svg width="22" height="10" viewBox="0 0 29 13">
