@@ -12,7 +12,7 @@ on:
       - "index.html"
       - "worker/**"
       - "vite.config.ts"
-      - "sitemap.ts"
+      - "seo.ts"
       - "wrangler.jsonc"
       - "tsconfig*.json"
   workflow_dispatch:

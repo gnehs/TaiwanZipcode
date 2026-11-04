@@ -4,26 +4,7 @@ import {
   type AddressLookup,
 } from "@/lib/addresses"
 import { addressParams, addressPath, queryFromParams } from "@/lib/address-path"
-import { SITE_TITLE } from "@/lib/site"
-const SITE_DESCRIPTION = "即時、快速、無需驗證碼之郵遞區號線上查詢工具。"
-
-export type PageMeta = {
-  title: string
-  description: string
-  path: string
-}
-
-export const HOME_META: PageMeta = {
-  title: SITE_TITLE,
-  description: SITE_DESCRIPTION,
-  path: "/",
-}
-
-export const BATCH_META: PageMeta = {
-  title: `批次查詢｜${SITE_TITLE}`,
-  description: "一次貼上多筆地址，查出每筆的 3+3 郵遞區號與英文地址。",
-  path: "/batch",
-}
+import { HOME_META, SITE_TITLE, type PageMeta } from "@/lib/site"
 
 export function addressMeta(lookup: AddressLookup): PageMeta {
   const { road, addressSuffix, scopes, displayedZipcode } = lookup
@@ -51,10 +32,9 @@ export function addressMeta(lookup: AddressLookup): PageMeta {
   }
 }
 
-// null means no page lives at this path.
+// The Worker serves only address pages (see wrangler.jsonc); null means no
+// address lives at this path.
 export function metaForPath(pathname: string): PageMeta | null {
-  if (pathname === "/") return HOME_META
-  if (pathname === "/batch") return BATCH_META
   const segments = pathname.split("/").slice(1)
   if (segments.length < 3 || segments.length > 4) return null
   let params

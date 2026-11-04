@@ -6,7 +6,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
-import { sitemap } from "./sitemap.ts"
+import { seoFiles } from "./seo.ts"
 
 export default defineConfig({
   plugins: [
@@ -14,7 +14,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     cloudflare(),
-    sitemap(),
+    seoFiles(),
   ],
   server: {
     // The database tools' Wine prefix links z: to the filesystem root.

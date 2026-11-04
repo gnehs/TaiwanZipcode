@@ -13,5 +13,5 @@
     "strict": true,
     "allowJs": true
   },
-  "include": ["vite.config.ts", "sitemap.ts", "src/lib/site.ts"]
+  "include": ["vite.config.ts", "seo.ts", "src/lib/site.ts"]
 }
