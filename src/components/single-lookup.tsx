@@ -11,7 +11,7 @@ import {
   lookupCleanedAddress,
   subscribeCorrections,
 } from "@/lib/addresses"
-import { addressParams, queryFromParams } from "@/lib/address-path"
+import { addressSlug, parseAddressSlug } from "@/lib/address-path"
 import { addressMeta } from "@/lib/page-meta"
 import { rememberLookup } from "@/lib/recent-lookups"
 import { cn } from "@/lib/utils"
@@ -19,7 +19,8 @@ import { cn } from "@/lib/utils"
 export function SingleLookup() {
   const router = useRouter()
   const navigate = useNavigate()
-  const urlQuery = queryFromParams(useParams({ strict: false }))
+  const { address: urlAddress = "" } = useParams({ strict: false })
+  const urlQuery = parseAddressSlug(urlAddress) ? urlAddress : ""
   // The typed text stays the source of truth; the URL only names the road
   // and house number read from it, so a messy spelling is not rewritten.
   const [query, setQuery] = useState(urlQuery)
@@ -62,14 +63,13 @@ export function SingleLookup() {
     setQuery(urlQuery)
   }, [urlQuery])
 
-  const params = addressParams(road, addressSuffix)
-  const targetQuery = params ? queryFromParams(params) : ""
+  const targetQuery = addressSlug(road, addressSuffix) ?? ""
   useEffect(() => {
     if (targetQuery === urlQuery) return
     followUrl.current = false
     void navigate(
-      params
-        ? { to: "/$city/$area/$road/{-$suffix}", params, replace: true, resetScroll: false }
+      targetQuery
+        ? { to: "/a/$address", params: { address: targetQuery }, replace: true, resetScroll: false }
         : { to: "/", replace: true, resetScroll: false },
     )
   }, [targetQuery])

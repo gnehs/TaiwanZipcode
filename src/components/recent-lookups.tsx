@@ -4,7 +4,7 @@ import { Trash2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { addressParams } from "@/lib/address-path"
+import { addressSlug } from "@/lib/address-path"
 import {
   clearRecentLookups,
   getRecentLookups,
@@ -13,9 +13,9 @@ import {
 
 export function RecentLookups() {
   const lookups = useSyncExternalStore(subscribeRecentLookups, getRecentLookups)
-    .map((lookup) => ({ ...lookup, params: addressParams(lookup.road, lookup.suffix) }))
+    .map((lookup) => ({ ...lookup, address: addressSlug(lookup.road, lookup.suffix) }))
     // A road the database has since dropped has no page to link to.
-    .filter((lookup) => lookup.params)
+    .filter((lookup) => lookup.address)
   if (!lookups.length) return null
 
   return (
@@ -42,8 +42,8 @@ export function RecentLookups() {
               style={{ "--enter-delay": `${60 + index * 40}ms` } as React.CSSProperties}
             >
               <Link
-                to="/$city/$area/$road/{-$suffix}"
-                params={lookup.params!}
+                to="/a/$address"
+                params={{ address: lookup.address! }}
                 className="flex w-full items-baseline gap-4 rounded-2xl px-3 py-3 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <span className="min-w-0 flex-1 truncate">

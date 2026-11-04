@@ -8,9 +8,9 @@ export const Route = createFileRoute("/_single/")({
     if (location.hash.replace(/^#/, "") === "batch") {
       throw redirect({ to: "/batch", replace: true })
     }
-    const params = readLegacyHash(location.hash)
-    if (params) {
-      throw redirect({ to: "/$city/$area/$road/{-$suffix}", params, replace: true })
+    const address = readLegacyHash(location.hash)
+    if (address) {
+      throw redirect({ to: "/a/$address", params: { address }, replace: true })
     }
   },
 })

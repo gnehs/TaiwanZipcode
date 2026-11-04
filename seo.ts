@@ -37,7 +37,7 @@ export function seoFiles(): Plugin {
         for (const [city, { areas }] of Object.entries(database)) {
           for (const [area, { roads }] of Object.entries(areas)) {
             for (const road of Object.keys(roads)) {
-              paths.push(`/${[city, area, road].map(encodeURIComponent).join("/")}`)
+              paths.push(`/a/${encodeURIComponent(`${city}${area}${road}`)}`)
             }
           }
         }

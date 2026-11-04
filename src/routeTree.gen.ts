@@ -13,7 +13,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as SingleRouteImport } from "./routes/_single"
 import { Route as SingleIndexRouteImport } from "./routes/_single.index"
-import { Route as SingleCityAreaRoadChar123SuffixChar125RouteImport } from "./routes/_single.$city.$area.$road.{-$suffix}"
+import { Route as SingleAAddressRouteImport } from "./routes/_single.a.$address"
 
 const BatchLazyRouteImport = createFileRoute("/batch")()
 
@@ -31,41 +31,35 @@ const SingleIndexRoute = SingleIndexRouteImport.update({
   path: "/",
   getParentRoute: () => SingleRoute,
 } as any)
-const SingleCityAreaRoadChar123SuffixChar125Route =
-  SingleCityAreaRoadChar123SuffixChar125RouteImport.update({
-    id: "/$city/$area/$road/{-$suffix}",
-    path: "/$city/$area/$road/{-$suffix}",
-    getParentRoute: () => SingleRoute,
-  } as any)
+const SingleAAddressRoute = SingleAAddressRouteImport.update({
+  id: "/a/$address",
+  path: "/a/$address",
+  getParentRoute: () => SingleRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof SingleIndexRoute
   "/batch": typeof BatchLazyRoute
-  "/$city/$area/$road/{-$suffix}": typeof SingleCityAreaRoadChar123SuffixChar125Route
+  "/a/$address": typeof SingleAAddressRoute
 }
 export interface FileRoutesByTo {
   "/batch": typeof BatchLazyRoute
   "/": typeof SingleIndexRoute
-  "/$city/$area/$road/{-$suffix}": typeof SingleCityAreaRoadChar123SuffixChar125Route
+  "/a/$address": typeof SingleAAddressRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/_single": typeof SingleRouteWithChildren
   "/batch": typeof BatchLazyRoute
   "/_single/": typeof SingleIndexRoute
-  "/_single/$city/$area/$road/{-$suffix}": typeof SingleCityAreaRoadChar123SuffixChar125Route
+  "/_single/a/$address": typeof SingleAAddressRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/batch" | "/$city/$area/$road/{-$suffix}"
+  fullPaths: "/" | "/batch" | "/a/$address"
   fileRoutesByTo: FileRoutesByTo
-  to: "/batch" | "/" | "/$city/$area/$road/{-$suffix}"
-  id:
-    | "__root__"
-    | "/_single"
-    | "/batch"
-    | "/_single/"
-    | "/_single/$city/$area/$road/{-$suffix}"
+  to: "/batch" | "/" | "/a/$address"
+  id: "__root__" | "/_single" | "/batch" | "/_single/" | "/_single/a/$address"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -96,11 +90,11 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof SingleIndexRouteImport
       parentRoute: typeof SingleRoute
     }
-    "/_single/$city/$area/$road/{-$suffix}": {
-      id: "/_single/$city/$area/$road/{-$suffix}"
-      path: "/$city/$area/$road/{-$suffix}"
-      fullPath: "/$city/$area/$road/{-$suffix}"
-      preLoaderRoute: typeof SingleCityAreaRoadChar123SuffixChar125RouteImport
+    "/_single/a/$address": {
+      id: "/_single/a/$address"
+      path: "/a/$address"
+      fullPath: "/a/$address"
+      preLoaderRoute: typeof SingleAAddressRouteImport
       parentRoute: typeof SingleRoute
     }
   }
@@ -108,13 +102,12 @@ declare module "@tanstack/react-router" {
 
 interface SingleRouteChildren {
   SingleIndexRoute: typeof SingleIndexRoute
-  SingleCityAreaRoadChar123SuffixChar125Route: typeof SingleCityAreaRoadChar123SuffixChar125Route
+  SingleAAddressRoute: typeof SingleAAddressRoute
 }
 
 const SingleRouteChildren: SingleRouteChildren = {
   SingleIndexRoute: SingleIndexRoute,
-  SingleCityAreaRoadChar123SuffixChar125Route:
-    SingleCityAreaRoadChar123SuffixChar125Route,
+  SingleAAddressRoute: SingleAAddressRoute,
 }
 
 const SingleRouteWithChildren =
