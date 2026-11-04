@@ -15,7 +15,6 @@ concurrency:
 jobs:
   update-database:
     permissions:
-      actions: write
       contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -103,7 +102,6 @@ jobs:
       - name: Run tests
         run: npm test
       - name: Commit changes
-        id: commit
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -115,10 +113,3 @@ jobs:
           fi
           git commit -m "chore(data): update zipcode database"
           git push origin "HEAD:${GITHUB_REF_NAME}"
-          echo "updated=true" >> "$GITHUB_OUTPUT"
-      # Pushes made with GITHUB_TOKEN do not trigger the push-based deploy.
-      - name: Deploy
-        if: steps.commit.outputs.updated == 'true'
-        run: gh workflow run deploy.yml --ref "${GITHUB_REF_NAME}"
-        env:
-          GH_TOKEN: ${{ github.token }}
