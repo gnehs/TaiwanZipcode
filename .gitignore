@@ -27,6 +27,7 @@ dist-ssr
 utils/database-conventer/src/*.dbf
 utils/database-conventer/src/*.DBF
 utils/database-conventer/result/*.json
+utils/database-conventer/result/*.txt
 utils/database-conventer/temp
 utils/database-conventer/gea-extract
 utils/database-conventer/app

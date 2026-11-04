@@ -17,10 +17,12 @@ node downloadDatabase.js
   rall1.dbf uroad.dbf uroad1.dbf errword.dbf cityarea.dbf Inds.DBF
 node index.js
 node corrections.js
+node compact.js
 ```
 
-輸出位於 `./result/zipcode.json` 與 `./result/corrections.json`。GitHub Actions 會每月執行相同流程，資料有變更時才
-更新 `src/assets/zipcode.json` 與 `src/assets/corrections.json`。
+輸出位於 `./result/zipcode.txt` 與 `./result/corrections.json`（`zipcode.json` 是
+轉換過程的中間檔）。GitHub Actions 會每月執行相同流程，資料有變更時才
+更新 `src/assets/zipcode.txt` 與 `src/assets/corrections.json`。
 
 ### Ubuntu / Debian 相依套件
 

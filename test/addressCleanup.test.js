@@ -73,8 +73,8 @@ test('cleanAddressSuffix drops words after the last numbered unit', () => {
   assert.equal(cleanAddressSuffix('8號之1'), '8號之1');
 });
 
-test('cleanAddressSuffix completes a bare number only for finished text', () => {
-  assert.equal(cleanAddressSuffix('168', { bareNumberIsHouse: true }), '168號');
-  assert.equal(cleanAddressSuffix('5巷10', { bareNumberIsHouse: true }), '5巷10號');
-  assert.equal(cleanAddressSuffix('168'), '168');
+test('cleanAddressSuffix reads a bare trailing number as the house number', () => {
+  assert.equal(cleanAddressSuffix('168'), '168號');
+  assert.equal(cleanAddressSuffix('5巷10'), '5巷10號');
+  assert.equal(cleanAddressSuffix('5號3'), '5號3');
 });

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import zipcodeData from '../src/assets/zipcode.json' with { type: 'json' };
+import { zipcodeData } from './data.js';
 import {
   getZipcodeScopeMatchBasis,
   matchZipcodeScope,

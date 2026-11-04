@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import corrections from '../src/assets/corrections.json' with { type: 'json' };
-import zipcodeData from '../src/assets/zipcode.json' with { type: 'json' };
+import { corrections, zipcodeData } from './data.js';
 
 import { createAddressResolver } from '../src/utils/addressResolver.js';
 import { findLongestAddressPrefix } from '../src/utils/addressSearch.js';
@@ -29,8 +28,8 @@ const resolvers = {
   corrected: createAddressResolver(places, lookup, corrections),
 };
 
-function read(text, options, resolver = resolvers.plain) {
-  const { road, addressSuffix } = resolver(text, options);
+function read(text, resolver = resolvers.plain) {
+  const { road, addressSuffix } = resolver(text);
   const result = road ? resolveZipcodeScopes(scopesByAddress[road], addressSuffix) : null;
   return {
     road,
@@ -89,14 +88,13 @@ test('notes in brackets and words after the house number are dropped', () => {
   assert.equal(read('臺北市中正區丹陽街3號2樓辦公室').suffix, '3號2樓');
 });
 
-test('a missing road type and a bare house number are filled for finished text', () => {
-  assert.deepEqual(read('臺北市中正區丹陽3', { bareNumberIsHouse: true }), {
+test('a missing road type and a bare house number are filled', () => {
+  assert.deepEqual(read('臺北市中正區丹陽3'), {
     road: '臺北市中正區丹陽街',
     suffix: '3號',
     zipcode: 100026,
   });
-  // While typing, the number may still grow, so it stays as written.
-  assert.equal(read('臺北市中正區丹陽街3').suffix, '3');
+  assert.equal(read('臺北市中正區丹陽街3').suffix, '3號');
 });
 
 test('a third-level 衖 does not stop the zipcode match', () => {
@@ -107,7 +105,7 @@ test('a third-level 衖 does not stop the zipcode match', () => {
   );
 });
 
-const corrected = (text, options) => read(text, options, resolvers.corrected);
+const corrected = (text) => read(text, resolvers.corrected);
 
 test('a road listed as misspelt in its district is corrected there', () => {
   assert.equal(corrected('臺北市中正區秀山路5號').road, '臺北市中正區秀山街');

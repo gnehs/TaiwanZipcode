@@ -160,9 +160,19 @@ for (const row of readRows("Inds.DBF", ["NAME", "SNAME", "CITY", "AREA"])) {
 
 if (roadCount < 10_000) throw new Error(`Only ${roadCount} road corrections were kept`);
 
-import("../../src/utils/placeAliases.js").then((placeAliases) => {
+Promise.all([
+  import("../../src/utils/placeAliases.js"),
+  import("../../src/utils/zipcodeCodec.js"),
+]).then(([placeAliases, { decodeRoadCorrections, encodeRoadCorrections, roadListsOf }]) => {
   const { places, listedCount, expandedCount } = derivePlaces(placeAliases);
-  fs.writeFileSync(resultPath, `${JSON.stringify({ roads, words, places, parks })}\n`);
+  // Roads are stored as edits of real road names; see zipcodeCodec.js.
+  const roadLists = roadListsOf(zipcode);
+  const compactRoads = encodeRoadCorrections(roads, roadLists);
+  require("assert").deepStrictEqual(decodeRoadCorrections(compactRoads, roadLists), roads);
+  fs.writeFileSync(
+    resultPath,
+    `${JSON.stringify({ roads: compactRoads, words, places, parks })}\n`,
+  );
   console.log(
     `Wrote ${roadCount} road corrections, ${words.length} words, ` +
       `${listedCount} place names (${Object.keys(places.names).length} stored as is, ` +

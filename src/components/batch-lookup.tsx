@@ -89,7 +89,7 @@ const MAX_GRID_HEIGHT = 600
 function resolveRow(input: string): BatchResult {
   const text = input.trim()
   if (!text) return EMPTY_RESULT
-  const lookup = lookupCleanedAddress(text, { bareNumberIsHouse: true })
+  const lookup = lookupCleanedAddress(text)
   if (!lookup.road) {
     return { ...EMPTY_RESULT, tone: "destructive", status: "無法辨識道路" }
   }

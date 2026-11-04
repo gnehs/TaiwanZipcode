@@ -209,9 +209,9 @@ export function createAddressResolver(places, lookup, corrections = null) {
     if (road) yield `${road.city}${road.area}${road.road}${road.rest}`;
   }
 
-  function finish(result, options) {
+  function finish(result) {
     if (!result.road) return result;
-    const suffix = cleanAddressSuffix(result.addressSuffix, options);
+    const suffix = cleanAddressSuffix(result.addressSuffix);
     return suffix === result.addressSuffix ? result : lookup(`${result.road}${suffix}`);
   }
 
@@ -221,12 +221,8 @@ export function createAddressResolver(places, lookup, corrections = null) {
     return corrected;
   }
 
-  /**
-   * @param {string} input
-   * @param {{ bareNumberIsHouse?: boolean }} [options] set for finished text
-   *   (a pasted list), where `莊敬168` means house number 168.
-   */
-  return function resolve(input, options = {}) {
+  /** @param {string} input */
+  return function resolve(input) {
     const cleaned = cleanAddressText(input, hasArea);
     const corrected = correctWords(cleaned);
     const spellings = [...new Set([cleaned, corrected, collapseRepeatedUnits(corrected)])];
@@ -235,7 +231,7 @@ export function createAddressResolver(places, lookup, corrections = null) {
     let fallback = null;
     for (const spelling of spellings) {
       for (const reading of readings(spelling.replace(/\s+/gu, ''))) {
-        const result = finish(lookup(reading), options);
+        const result = finish(lookup(reading));
         if (!result.road) continue;
         if (isHouseSuffix(result.addressSuffix)) return result;
         fallback ??= result;

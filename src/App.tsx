@@ -1,8 +1,13 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
 
 import { AddressResult } from "@/components/address-result"
 import { AddressSearch } from "@/components/address-search"
-import { BatchLookup } from "@/components/batch-lookup"
 import { FeatureCards } from "@/components/feature-cards"
 import { ModeSwitch } from "@/components/mode-switch"
 import { RecentLookups } from "@/components/recent-lookups"
@@ -22,8 +27,25 @@ import { rememberLookup } from "@/lib/recent-lookups"
 
 // One shell stays mounted across both modes, so the header, width and mode
 // switch animate between them instead of jumping.
+type BatchLookupComponent = typeof import("@/components/batch-lookup").BatchLookup
+
+// The spreadsheet only serves batch lookups, so single-lookup visitors never
+// download it. It is rendered once loaded rather than through Suspense, which
+// would mount the grid inside a suspended tree.
+function useBatchLookup(isBatch: boolean) {
+  const [component, setComponent] = useState<BatchLookupComponent | null>(null)
+  useEffect(() => {
+    if (!isBatch || component) return
+    void import("@/components/batch-lookup").then((module) =>
+      setComponent(() => module.BatchLookup),
+    )
+  }, [isBatch, component])
+  return component
+}
+
 export default function App() {
   const [isBatch, setIsBatch] = useState(() => isBatchHash())
+  const BatchLookup = useBatchLookup(isBatch)
   const [query, setQuery] = useState(() => readHashQuery())
   const correctionsVersion = useSyncExternalStore(
     subscribeCorrections,
@@ -74,7 +96,7 @@ export default function App() {
         />
         <ModeSwitch isBatch={isBatch} />
         {isBatch ? (
-          <BatchLookup />
+          BatchLookup && <BatchLookup />
         ) : (
           <SinglePage query={query} lookup={lookup} onQueryChange={setQuery} />
         )}

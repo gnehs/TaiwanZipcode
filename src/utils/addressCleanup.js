@@ -117,10 +117,10 @@ export function withoutVillage(rest) {
 /**
  * Clean the house-number part after the road: a leftover 村 or 鄰 goes,
  * Chinese numerals become digits, "3F" becomes 3樓, "B1" becomes 地下1樓,
- * brackets around a floor go, and trailing words go. With `bareNumberIsHouse`
- * a number left without a unit gets 號.
+ * brackets around a floor go, trailing words go, and a number left without a
+ * unit gets 號 (莊敬路168).
  */
-export function cleanAddressSuffix(value, { bareNumberIsHouse = false } = {}) {
+export function cleanAddressSuffix(value) {
   const suffix = String(value ?? '')
     .normalize('NFKC')
     // A village used as the road name (湖西) leaves its 村 in the suffix.
@@ -140,9 +140,5 @@ export function cleanAddressSuffix(value, { bareNumberIsHouse = false } = {}) {
     .replace(/(\d\s*[號樓室])(\D+)$/u, (match, unit, tail) =>
       /^\s*[A-Za-z]+\s*室$/u.test(tail) ? match : unit,
     );
-  // In finished text a bare trailing number is the house number (莊敬路168);
-  // while someone is still typing it may be the start of a longer one.
-  return bareNumberIsHouse && /\d\s*$/u.test(suffix) && !/[號樓室]/u.test(suffix)
-    ? `${suffix}號`
-    : suffix;
+  return /\d\s*$/u.test(suffix) && !/[號樓室]/u.test(suffix) ? `${suffix}號` : suffix;
 }

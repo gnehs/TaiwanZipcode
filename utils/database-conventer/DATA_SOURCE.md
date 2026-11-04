@@ -9,6 +9,18 @@
 3. `gea-extract` 解析安裝程式內嵌的 Gentee GEA 封裝，解出 `DBF/` 下指定的資料表；不執行安裝程式，也不需要 Windows 或 Wine。
 4. `index.js` 驗證 `rall1.dbf` 的欄位與資料量，轉成 `result/zipcode.json`。
 5. `corrections.js` 讀取同一個安裝程式裡的對照表，轉成 `result/corrections.json`。
+6. `compact.js` 把 `zipcode.json` 轉成網站載入的 `result/zipcode.txt`。
+
+## 網站載入的格式
+
+兩份資料都會傳給每位使用者，所以存成可完整還原的精簡格式，編碼與解碼共用
+[`zipcodeCodec.js`](../../src/utils/zipcodeCodec.js)，轉檔時逐筆核對解碼結果：
+
+- `zipcode.txt`：每行一條道路，不重複欄位名稱；行政區共用的郵遞區號前三碼只存一次，
+  規則文字的對齊空白合為一格；英文路名省略可由中文推回的段號與 Rd./St.，同名道路
+  只存第一次。
+- `corrections.json` 的 `roads`：正確路名以該行政區的道路序號表示，錯誤寫法存成與
+  正確路名的差異（換掉、多出或少了哪個字）。
 
 ## 地址更正對照表
 
@@ -70,6 +82,7 @@ node downloadDatabase.js
   rall1.dbf uroad.dbf uroad1.dbf errword.dbf cityarea.dbf Inds.DBF
 node index.js
 node corrections.js
+node compact.js
 ```
 
 ## 實作來源與授權

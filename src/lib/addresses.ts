@@ -1,4 +1,4 @@
-import zipcodeData from "@/assets/zipcode.json"
+import zipcodeText from "@/assets/zipcode.txt?raw"
 import { createAddressResolver } from "@/utils/addressResolver.js"
 import { hasUnconvertedAddressParts } from "@/utils/addressConversion.js"
 import {
@@ -10,6 +10,11 @@ import {
   parseAddressSuffix,
   resolveZipcodeScopes,
 } from "@/utils/zipcodeScopeMatcher.js"
+import {
+  decodeRoadCorrections,
+  decodeZipcodeData,
+  roadListsOf,
+} from "@/utils/zipcodeCodec.js"
 
 export type ZipcodeScope = {
   zipcode: number
@@ -102,9 +107,9 @@ function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
   }
 }
 
-export const addressIndex = buildAddressIndex(
-  zipcodeData as unknown as ZipcodeDatabase,
-)
+const zipcodeData = decodeZipcodeData(zipcodeText) as ZipcodeDatabase
+
+export const addressIndex = buildAddressIndex(zipcodeData)
 
 export const ADDRESS_SEARCH_LIMIT = 30
 
@@ -204,7 +209,10 @@ export function loadCorrections() {
       resolveAddressText = createAddressResolver(
         addressIndex.places,
         lookupAddress,
-        corrections,
+        {
+          ...corrections,
+          roads: decodeRoadCorrections(corrections.roads, roadListsOf(zipcodeData)),
+        },
       )
       correctionsVersion += 1
       for (const listener of correctionListeners) listener()
@@ -225,13 +233,9 @@ export function getCorrectionsVersion() {
 }
 
 // Typed or pasted text often uses spellings, places or extra words the
-// database does not; resolve those before reading the zipcode. Pass
-// `bareNumberIsHouse` for finished text such as a pasted list.
-export function lookupCleanedAddress(
-  text: string,
-  options: { bareNumberIsHouse?: boolean } = {},
-): AddressLookup {
-  return resolveAddressText(text, options) as AddressLookup
+// database does not; resolve those before reading the zipcode.
+export function lookupCleanedAddress(text: string): AddressLookup {
+  return resolveAddressText(text) as AddressLookup
 }
 
 export function formatScopeRule(scope: string) {
