@@ -300,7 +300,7 @@ export function BatchLookup() {
             />
           </div>
         </div>
-        <div className="batch-grid border-t">
+        <div className="batch-grid">
           <DataSheetGrid<GridRow>
             value={rows}
             onChange={(next) => setInputs(padInputs(next.map((row) => row.input ?? "")))}

@@ -316,7 +316,9 @@
     color: inherit;
     font-size: 0.875rem;
   }
+  /* The card's edge already frames the grid's left side. */
   & .dsg-cell-gutter {
+    border-left: 0;
     font-variant-numeric: tabular-nums;
   }
 }
