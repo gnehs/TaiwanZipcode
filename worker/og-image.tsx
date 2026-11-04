@@ -155,9 +155,7 @@ const BAND = [
   "linear-gradient(to bottom, oklch(0.7 0.18 54) 0%, oklch(0.8 0.14 68) 58%, oklch(0.97 0.02 75) 100%)",
 ].join(", ")
 
-const FILL = { position: "absolute", inset: 0 } as const
-
-function OgImage({ screen, photo }: { screen: PhoneScreen; photo?: string }) {
+function OgImage({ screen }: { screen: PhoneScreen }) {
   return (
     <div
       style={{
@@ -169,55 +167,38 @@ function OgImage({ screen, photo }: { screen: PhoneScreen; photo?: string }) {
         backgroundImage: BAND,
       }}
     >
-      {photo ? (
-        <>
-          {/* The city's photo in its own colours, softened a little and
-              shaded on the title's side and along the bottom so the white
-              title reads. Scaled up so the blur's soft edges fall outside. */}
-          <img
-            src={photo}
-            width={1200}
-            height={630}
-            style={{ ...FILL, objectFit: "cover", filter: "blur(2px) saturate(1.05)", transform: "scale(1.02)" }}
-          />
-          <div style={{ ...FILL, backgroundImage: "linear-gradient(to right, rgb(14 10 6 / 0.78), rgb(14 10 6 / 0.35) 55%, rgb(14 10 6 / 0.05))" }} />
-          <div style={{ ...FILL, backgroundImage: "linear-gradient(to top, rgb(14 10 6 / 0.45), transparent 45%)" }} />
-        </>
-      ) : null}
-      <img src={GRAIN} width={1200} height={630} style={{ ...FILL, opacity: 0.22 }} />
+      <img src={GRAIN} width={1200} height={630} style={{ position: "absolute", inset: 0, opacity: 0.22 }} />
       <div
         style={{
           position: "absolute",
           left: 96,
-          top: 186,
+          top: 252,
           display: "flex",
           flexDirection: "column",
           fontSize: 80,
           fontWeight: 700,
           lineHeight: 1.22,
-          textShadow: "0 2px 24px rgb(0 0 0 / 0.4)",
           letterSpacing: "-0.01em",
         }}
       >
         <div style={{ color: "white" }}>填表不卡關，</div>
-        <div style={{ color: "oklch(0.86 0.13 75)" }}>地址閃電查。</div>
+        <div style={{ color: "rgba(255, 255, 255, 0.62)" }}>地址閃電查。</div>
       </div>
 
       <div
         style={{
           position: "absolute",
           left: 88,
-          bottom: 68,
+          top: 160,
           display: "flex",
           alignItems: "center",
           gap: 6,
           color: "white",
           fontSize: 30,
           fontWeight: 700,
-          textShadow: "0 1px 12px rgb(0 0 0 / 0.4)",
         }}
       >
-        <img src={ICON} width={60} height={60} style={{ filter: "drop-shadow(0 6px 12px rgb(0 0 0 / 0.35))" }} />
+        <img src={ICON} width={60} height={60} />
         閃電地址
       </div>
 
@@ -297,8 +278,8 @@ function OgImage({ screen, photo }: { screen: PhoneScreen; photo?: string }) {
   )
 }
 
-export async function ogImageResponse(lookup: AddressLookup, photo?: string) {
-  return new ImageResponse(<OgImage screen={phoneScreen(lookup)} photo={photo} />, {
+export async function ogImageResponse(lookup: AddressLookup) {
+  return new ImageResponse(<OgImage screen={phoneScreen(lookup)} />, {
     width: 1200,
     height: 630,
     format: "jpeg",
