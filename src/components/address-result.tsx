@@ -139,8 +139,9 @@ function RecipientPicker({
   )
 }
 
+// The copy button's pill, mirrored into the other corner, with no surface until hovered.
 const FOOTER_BUTTON =
-  "h-13 rounded-none px-4 font-semibold text-primary-foreground hover:bg-white/10 hover:text-primary-foreground has-data-[icon=inline-start]:pl-4 aria-expanded:bg-white/10 aria-expanded:text-primary-foreground"
+  "my-1.5 ml-1.5 font-semibold text-primary-foreground hover:bg-white/15 hover:text-primary-foreground dark:hover:bg-white/15 aria-expanded:bg-white/15 aria-expanded:text-primary-foreground"
 
 const META_VALUE = "min-w-0 font-mono text-[0.8125rem] break-words"
 
