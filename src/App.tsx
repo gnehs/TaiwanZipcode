@@ -5,6 +5,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react"
+import { flushSync } from "react-dom"
 
 import { AddressResult } from "@/components/address-result"
 import { AddressSearch } from "@/components/address-search"
@@ -25,26 +26,49 @@ import { isBatchHash, readHashQuery, writeHashState } from "@/lib/hash-state"
 import { cn } from "@/lib/utils"
 import { rememberLookup } from "@/lib/recent-lookups"
 
-// One shell stays mounted across both modes, so the header, width and mode
-// switch animate between them instead of jumping.
 type BatchLookupComponent = typeof import("@/components/batch-lookup").BatchLookup
 
 // The spreadsheet only serves batch lookups, so single-lookup visitors never
 // download it. It is rendered once loaded rather than through Suspense, which
 // would mount the grid inside a suspended tree.
+let loadedBatchLookup: BatchLookupComponent | null = null
+function loadBatchLookup() {
+  return import("@/components/batch-lookup").then((module) => {
+    loadedBatchLookup = module.BatchLookup
+    return module.BatchLookup
+  })
+}
+
 function useBatchLookup(isBatch: boolean) {
-  const [component, setComponent] = useState<BatchLookupComponent | null>(null)
+  const [component, setComponent] = useState(() => loadedBatchLookup)
   useEffect(() => {
     if (!isBatch || component) return
-    void import("@/components/batch-lookup").then((module) =>
-      setComponent(() => module.BatchLookup),
-    )
+    void loadBatchLookup().then((loaded) => setComponent(() => loaded))
   }, [isBatch, component])
-  return component
+  return component ?? loadedBatchLookup
+}
+
+// The two modes differ in width, spacing and content, so switching animates
+// snapshots: the old page zooms out of view and the new one zooms into
+// place, while the header and mode pill move between their places. Animating
+// the live layout instead reflowed the content every frame. The layout's own
+// transitions pause meanwhile (see index.css).
+function switchMode(toBatch: boolean, apply: () => void) {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  if (!document.startViewTransition || reduceMotion) {
+    apply()
+    return
+  }
+  const root = document.documentElement
+  root.dataset.modeSwitch = toBatch ? "to-batch" : "to-single"
+  const transition = document.startViewTransition(() => flushSync(apply))
+  void transition.finished.finally(() => delete root.dataset.modeSwitch)
 }
 
 export default function App() {
   const [isBatch, setIsBatch] = useState(() => isBatchHash())
+  const isBatchRef = useRef(isBatch)
+  isBatchRef.current = isBatch
   const BatchLookup = useBatchLookup(isBatch)
   const [query, setQuery] = useState(() => readHashQuery())
   const correctionsVersion = useSyncExternalStore(
@@ -62,10 +86,19 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const syncFromHash = () => {
+    const syncFromHash = async () => {
       const batch = isBatchHash()
-      setIsBatch(batch)
-      if (!batch) setQuery(readHashQuery())
+      if (batch === isBatchRef.current) {
+        if (!batch) setQuery(readHashQuery())
+        return
+      }
+      // The new page is captured as soon as the switch starts, so the
+      // spreadsheet must already be loaded or it would pop in afterwards.
+      if (batch) await loadBatchLookup()
+      switchMode(batch, () => {
+        setIsBatch(batch)
+        if (!batch) setQuery(readHashQuery())
+      })
     }
     window.addEventListener("hashchange", syncFromHash)
     return () => window.removeEventListener("hashchange", syncFromHash)
@@ -80,7 +113,7 @@ export default function App() {
       </div>
       <main
         className={cn(
-          "relative mx-auto flex w-full flex-1 flex-col gap-3 px-4 transition-[padding,max-width] duration-500 ease-out motion-reduce:transition-none sm:px-6",
+          "relative mx-auto flex w-full flex-1 flex-col gap-3 px-4 transition-[padding] duration-500 ease-out motion-reduce:transition-none sm:px-6",
           isBatch ? "max-w-6xl" : "max-w-2xl",
           // The search rises once a result appears below it.
           raised ? "pt-4 sm:pt-8" : "pt-14 sm:pt-[16vh]",
@@ -95,10 +128,16 @@ export default function App() {
           }}
         />
         <ModeSwitch isBatch={isBatch} />
+        {/* Each page is its own view-transition layer, so one can leave while
+            the other arrives. */}
         {isBatch ? (
-          BatchLookup && <BatchLookup />
+          <div className="flex flex-col gap-3 [view-transition-name:page-batch]">
+            {BatchLookup && <BatchLookup />}
+          </div>
         ) : (
-          <SinglePage query={query} lookup={lookup} onQueryChange={setQuery} />
+          <div className="flex flex-col gap-3 [view-transition-name:page-single]">
+            <SinglePage query={query} lookup={lookup} onQueryChange={setQuery} />
+          </div>
         )}
       </main>
       <SiteFooter />

@@ -14,7 +14,8 @@ export function SiteHeader({
       <a
         href="/"
         className={cn(
-          "flex flex-col items-center rounded-3xl p-2 outline-none transition-[gap] focus-visible:ring-3 focus-visible:ring-ring/50",
+          // Named for the mode switch, so the logo and title scale as one.
+          "flex flex-col items-center rounded-3xl p-2 outline-none transition-[gap] [view-transition-name:site-header] focus-visible:ring-3 focus-visible:ring-ring/50",
           transition,
           compact ? "gap-2" : "gap-4",
         )}

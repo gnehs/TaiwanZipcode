@@ -287,3 +287,56 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* Switching between single and batch lookup cross-fades page snapshots (see
+   switchMode in App.tsx). The layout's own transitions would animate the new
+   page inside its snapshot, so they pause for the switch. */
+:root[data-mode-switch] main,
+:root[data-mode-switch] main * {
+  transition: none !important;
+}
+::view-transition-group(*) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 260ms;
+}
+
+/* The pages zoom: toward batch the single page grows away and the batch
+   page grows into place, and the reverse on the way back. Both scale from
+   their top edge, where the content starts. */
+::view-transition-old(page-single),
+::view-transition-old(page-batch) {
+  transform-origin: top center;
+  animation: page-leave 180ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(page-single),
+::view-transition-new(page-batch) {
+  transform-origin: top center;
+  animation: page-arrive 360ms cubic-bezier(0.32, 0.72, 0, 1) 120ms both;
+}
+:root[data-mode-switch="to-batch"] {
+  --page-leave-scale: 1.04;
+  --page-arrive-scale: 0.96;
+}
+:root[data-mode-switch="to-single"] {
+  --page-leave-scale: 0.96;
+  --page-arrive-scale: 1.04;
+}
+
+@keyframes page-leave {
+  to {
+    opacity: 0;
+    transform: scale(var(--page-leave-scale));
+  }
+}
+
+@keyframes page-arrive {
+  from {
+    opacity: 0;
+    transform: scale(var(--page-arrive-scale));
+  }
+}
+
