@@ -196,7 +196,7 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
           padding: "14px 18px",
           borderRadius: 56,
           border: "9px solid rgba(255, 255, 255, 0.92)",
-          backgroundColor: "oklch(0.985 0.004 60)",
+          backgroundColor: "oklch(0.915 0.003 265)",
           boxShadow: "0 0 0 1px oklch(0.5 0.1 40 / 0.12), 0 30px 60px -20px oklch(0.4 0.14 40 / 0.45)",
           overflow: "hidden",
         }}
