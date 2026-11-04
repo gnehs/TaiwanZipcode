@@ -11,6 +11,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "strict": true,
+    "jsx": "react-jsx",
     "types": ["./worker-configuration.d.ts", "vite/client"],
     "paths": {
       "@/*": ["./src/*"]

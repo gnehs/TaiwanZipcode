@@ -34,7 +34,7 @@ export function addressMeta(lookup: AddressLookup): PageMeta {
 
 // The Worker serves only address pages (see wrangler.jsonc); null means no
 // address lives at this path.
-export function metaForPath(pathname: string): PageMeta | null {
+export function lookupForPath(pathname: string): AddressLookup | null {
   const segments = pathname.split("/").slice(1)
   if (segments.length < 3 || segments.length > 4) return null
   let params
@@ -46,6 +46,6 @@ export function metaForPath(pathname: string): PageMeta | null {
   }
   // The path names the road exactly, so no search through every road.
   return queryFromParams(params)
-    ? addressMeta(lookupRoad(`${params.city}${params.area}${params.road}`, params.suffix))
+    ? lookupRoad(`${params.city}${params.area}${params.road}`, params.suffix)
     : null
 }

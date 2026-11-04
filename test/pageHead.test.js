@@ -42,3 +42,12 @@ test('writePageHead escapes text and keeps replacement patterns literal', () => 
   assert.match(html, /<title>&quot;&lt;b&gt;\$1 &amp; \$&amp;<\/title>/);
   assert.equal(contentOf(html, 'property="og:title"'), '&quot;&lt;b&gt;$1 &amp; $&amp;');
 });
+
+test('writePageHead points og:image at the page image and keeps the site image without one', () => {
+  const image = 'https://zipcode.gnehs.net/og/%E8%87%BA%E5%8C%97%E5%B8%82';
+  const html = writePageHead(indexHtml, { ...page, image });
+  for (const tag of ['property="og:image"', 'property="twitter:image"']) {
+    assert.equal(contentOf(html, tag), image);
+    assert.equal(contentOf(writePageHead(indexHtml, page), tag), contentOf(indexHtml, tag));
+  }
+});

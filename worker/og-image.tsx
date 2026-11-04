@@ -1,0 +1,267 @@
+import { googleFonts } from "takumi-js/helpers"
+import { ImageResponse } from "takumi-js/response"
+
+import iconSvg from "../public/icon.svg?raw"
+import { formatAddress, type AddressLookup } from "@/lib/addresses"
+
+// What the phone in the image shows: the app's result card for one address.
+type PhoneScreen = {
+  query: string
+  place: string
+  house: string
+  digits: string
+  rows: { label: string; value: string }[]
+}
+
+function phoneScreen(lookup: AddressLookup): PhoneScreen {
+  const { road, addressSuffix, displayedZipcode } = lookup
+  const house = addressSuffix.trim()
+  const fullZipcode = displayedZipcode.length === 6 ? displayedZipcode : ""
+  const { en } = formatAddress(road, house, fullZipcode)
+  return {
+    query: `${road}${house}`,
+    place: road,
+    house,
+    digits: displayedZipcode,
+    rows: [
+      { label: "中文地址", value: `${fullZipcode} ${road}${house}`.trim() },
+      ...(en ? [{ label: "英文地址", value: en }] : []),
+    ],
+  }
+}
+
+const PRIMARY = "oklch(0.6 0.19 40)"
+const INK = "oklch(0.2 0.006 265)"
+const ICON = `data:image/svg+xml,${encodeURIComponent(iconSvg)}`
+// The card's "+" texture, fading toward the bottom like the app's plus-grid.
+// Each row carries its own opacity, since the renderer ignores SVG masks.
+const PLUS_GRID = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="308" height="220">${Array.from(
+    { length: 10 },
+    (_, row) =>
+      `<path stroke="white" stroke-opacity="${(0.15 * (1 - row / 10)).toFixed(3)}" stroke-width="1.6" stroke-linecap="round" d="${Array.from(
+        { length: 14 },
+        (_, column) => `M${column * 22 + 11} ${row * 22 + 7.5}v7M${column * 22 + 7.5} ${row * 22 + 11}h7`,
+      ).join("")}"/>`,
+  ).join("")}</svg>`,
+)}`
+
+// Fetched on the first request (Workers allow no I/O at startup) and kept for
+// the isolate; a render downloads only the subsets its text uses.
+let fonts: ReturnType<typeof googleFonts> | undefined
+
+function ZipcodeCells({ digits }: { digits: string }) {
+  const group = (start: number) => (
+    <div style={{ display: "flex", gap: 5 }}>
+      {[0, 1, 2].map((index) => (
+        <div
+          key={index}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 36,
+            height: 50,
+            borderRadius: 10,
+            backgroundColor: "rgba(255, 255, 255, 0.16)",
+            boxShadow:
+              "inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 4px 10px -4px oklch(0.35 0.13 38 / 0.35)",
+            fontSize: 30,
+            fontWeight: 600,
+            textShadow: "0 1px 2px oklch(0.35 0.13 38 / 0.35)",
+          }}
+        >
+          {digits[start + index] ?? ""}
+        </div>
+      ))}
+    </div>
+  )
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 16 }}>
+      {group(0)}
+      <div style={{ fontSize: 20, fontWeight: 700 }}>+</div>
+      {group(3)}
+    </div>
+  )
+}
+
+function StatusBar() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        height: 34,
+        fontSize: 15,
+        fontWeight: 600,
+        color: INK,
+      }}
+    >
+      <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>9:41</div>
+      <div style={{ width: 96, height: 28, borderRadius: 20, backgroundColor: "#111" }} />
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+        <svg width="18" height="12" viewBox="0 0 18 12" fill={INK}>
+          <rect x="0" y="7.5" width="3.3" height="4.5" rx="1.65" />
+          <rect x="4.9" y="5" width="3.3" height="7" rx="1.65" />
+          <rect x="9.8" y="2.5" width="3.3" height="9.5" rx="1.65" />
+          <rect x="14.7" y="0" width="3.3" height="12" rx="1.65" />
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12" fill="none" stroke={INK} stroke-width="2.2" stroke-linecap="round">
+          <path d="M1.4 4.6a10.2 10.2 0 0 1 14.2 0" />
+          <path d="M4.4 7.5a6 6 0 0 1 8.2 0" />
+          <circle cx="8.5" cy="10.3" r="1.6" fill={INK} stroke="none" />
+        </svg>
+        <div style={{ position: "relative", display: "flex" }}>
+          <svg width="29" height="13" viewBox="0 0 29 13">
+            <rect width="26" height="13" rx="4" fill={INK} fill-opacity="0.38" />
+            <path d="M4 0H20V13H4A4 4 0 0 1 0 9V4A4 4 0 0 1 4 0Z" fill={INK} />
+            <path d="M27 4.3v4.4c.9-.3 1.5-1.2 1.5-2.2s-.6-1.9-1.5-2.2Z" fill={INK} fill-opacity="0.38" />
+          </svg>
+          <div
+            style={{
+              position: "absolute",
+              inset: "0 3px 0 0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 10.5,
+              fontWeight: 700,
+              color: "white",
+            }}
+          >
+            80
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OgImage({ screen }: { screen: PhoneScreen }) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        display: "flex",
+        width: "100%",
+        height: "100%",
+        fontFamily: "Geist, Noto Sans TC",
+        backgroundImage: [
+          "radial-gradient(70% 90% at 0% 0%, oklch(0.6 0.2 38) 0%, transparent 70%)",
+          "radial-gradient(60% 70% at 85% 10%, oklch(0.72 0.16 50) 0%, transparent 70%)",
+          "radial-gradient(80% 60% at 70% 100%, oklch(0.97 0.03 40) 0%, transparent 70%)",
+          "linear-gradient(to bottom, oklch(0.66 0.18 42) 0%, oklch(0.76 0.13 48) 58%, oklch(0.97 0.02 60) 100%)",
+        ].join(", "),
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          left: 96,
+          top: 196,
+          display: "flex",
+          flexDirection: "column",
+          fontSize: 60,
+          fontWeight: 700,
+          lineHeight: 1.18,
+          letterSpacing: "-0.01em",
+        }}
+      >
+        <div style={{ color: "white" }}>台灣 3+3 郵遞區號</div>
+        <div style={{ color: "rgba(255, 255, 255, 0.62)" }}>即時、快速、</div>
+        <div style={{ color: "rgba(255, 255, 255, 0.62)" }}>無需驗證碼。</div>
+      </div>
+
+      <img
+        src={ICON}
+        width={76}
+        height={76}
+        style={{ position: "absolute", left: 92, bottom: 72, filter: "drop-shadow(0 8px 16px oklch(0.5 0.15 40 / 0.3))" }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          left: 722,
+          top: 160,
+          width: 340,
+          height: 560,
+          display: "flex",
+          flexDirection: "column",
+          padding: "14px 18px",
+          borderRadius: 56,
+          border: "9px solid rgba(255, 255, 255, 0.92)",
+          backgroundColor: "oklch(0.985 0.004 60)",
+          boxShadow: "0 0 0 1px oklch(0.5 0.1 40 / 0.12), 0 30px 60px -20px oklch(0.4 0.14 40 / 0.45)",
+          overflow: "hidden",
+        }}
+      >
+        <StatusBar />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            marginTop: 14,
+            height: 36,
+            padding: "0 16px",
+            borderRadius: 18,
+            backgroundColor: "white",
+            boxShadow: "0 0 0 1px oklch(0.2 0.02 265 / 0.07), 0 2px 6px -2px oklch(0.2 0.02 265 / 0.08)",
+            fontSize: 13,
+            color: "oklch(0.45 0.01 265)",
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="oklch(0.6 0.01 265)" stroke-width="2.5" stroke-linecap="round">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{screen.query}</div>
+        </div>
+
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            marginTop: 14,
+            padding: "18px 18px 20px",
+            borderRadius: 22,
+            overflow: "hidden",
+            color: "white",
+            backgroundImage: `linear-gradient(to bottom, color-mix(in oklab, ${PRIMARY}, white 10%), color-mix(in oklab, ${PRIMARY}, black 6%))`,
+            boxShadow: "inset 0 0 14px rgba(255, 255, 255, 0.16), 0 0 0 1px oklch(0.52 0.19 36), 0 10px 20px -8px oklch(0.45 0.16 40 / 0.5)",
+          }}
+        >
+          <img src={PLUS_GRID} width={308} height={220} style={{ position: "absolute", left: 0, top: 0 }} />
+          <div style={{ fontSize: 17, fontWeight: 600 }}>{screen.place}</div>
+          {screen.house ? (
+            <div style={{ marginTop: 2, fontSize: 13, color: "rgba(255, 255, 255, 0.75)" }}>{screen.house}</div>
+          ) : null}
+          <ZipcodeCells digits={screen.digits} />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16, padding: "0 4px" }}>
+          {screen.rows.map((row) => (
+            <div key={row.label} style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: 11, color: "oklch(0.55 0.01 265)" }}>{row.label}</div>
+              <div style={{ marginTop: 2, fontSize: 13.5, lineHeight: 1.35, color: INK }}>{row.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export async function ogImageResponse(lookup: AddressLookup) {
+  return new ImageResponse(<OgImage screen={phoneScreen(lookup)} />, {
+    width: 1200,
+    height: 630,
+    format: "jpeg",
+    quality: 85,
+    fonts: await (fonts ??= googleFonts([{ name: "Noto Sans TC", weight: "100..900" }])),
+    headers: { "Cache-Control": "public, max-age=86400" },
+  })
+}

@@ -11,6 +11,7 @@ const DESCRIPTION_TAGS = [
   'property="twitter:description"',
 ];
 const URL_TAGS = ['property="og:url"', 'property="twitter:url"'];
+const IMAGE_TAGS = ['property="og:image"', 'property="twitter:image"'];
 
 function escapeHtml(value) {
   return value
@@ -30,15 +31,18 @@ function setContent(html, tags, value) {
 
 /**
  * @param {string} html
- * @param {{ title: string, description: string, url: string, indexable: boolean }} page
+ * Without an image the page keeps the site's own.
+ *
+ * @param {{ title: string, description: string, url: string, image?: string, indexable: boolean }} page
  */
-export function writePageHead(html, { title, description, url, indexable }) {
+export function writePageHead(html, { title, description, url, image, indexable }) {
   const safeTitle = escapeHtml(title);
   const safeUrl = escapeHtml(url);
   let result = html.replace(/<title>[^<]*<\/title>/, () => `<title>${safeTitle}</title>`);
   result = setContent(result, TITLE_TAGS, safeTitle);
   result = setContent(result, DESCRIPTION_TAGS, escapeHtml(description));
   result = setContent(result, URL_TAGS, safeUrl);
+  if (image) result = setContent(result, IMAGE_TAGS, escapeHtml(image));
   // A page that does not exist names no canonical address and stays out of
   // search results.
   return result.replace(/<link rel="canonical" href="[^"]*" \/>/, () =>
