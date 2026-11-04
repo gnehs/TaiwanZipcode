@@ -18,3 +18,9 @@ export const BATCH_META: PageMeta = {
   description: "一次貼上多筆地址，查出每筆的 3+3 郵遞區號與英文地址。",
   path: "/batch",
 }
+
+export const ABOUT_META: PageMeta = {
+  title: `關於｜${SITE_TITLE}`,
+  description: "閃電地址是免費的臺灣 3+3 郵遞區號查詢工具，資料每月同步中華郵政。",
+  path: "/about",
+}

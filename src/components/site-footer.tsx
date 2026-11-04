@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router"
+
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -29,7 +31,14 @@ export function SiteFooter() {
           href="https://github.com/gnehs/TaiwanZipcode"
         >
           GitHub
-        </a>
+        </a>{" "}
+        ·{" "}
+        <Link
+          className={cn(buttonVariants({ variant: "link" }), "h-auto px-0 text-xs")}
+          to="/about"
+        >
+          關於
+        </Link>
       </p>
       <p>
         資料擷取自郵局資料庫，僅供參考；正確資料請以中華郵政公告為準。
