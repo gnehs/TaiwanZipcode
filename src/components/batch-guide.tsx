@@ -44,7 +44,7 @@ export function writeGuideDismissed(dismissed: boolean) {
 
 export function BatchGuide({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <Card className="enter-rise gap-4 py-5" aria-labelledby="batch-guide-title">
+    <Card className="batch-guide enter-rise gap-4 py-5" aria-labelledby="batch-guide-title">
       <div className="flex items-center justify-between gap-3 px-(--card-spacing)">
         <h2 id="batch-guide-title" className="text-base font-semibold">
           使用說明

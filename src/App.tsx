@@ -5,7 +5,6 @@ import {
   useState,
   useSyncExternalStore,
 } from "react"
-import { flushSync } from "react-dom"
 
 import { AddressResult } from "@/components/address-result"
 import { AddressSearch } from "@/components/address-search"
@@ -24,6 +23,7 @@ import {
 } from "@/lib/addresses"
 import { isBatchHash, readHashQuery, writeHashState } from "@/lib/hash-state"
 import { cn } from "@/lib/utils"
+import { runViewTransition } from "@/lib/view-transition"
 import { rememberLookup } from "@/lib/recent-lookups"
 
 type BatchLookupComponent = typeof import("@/components/batch-lookup").BatchLookup
@@ -54,15 +54,7 @@ function useBatchLookup(isBatch: boolean) {
 // the live layout instead reflowed the content every frame. The layout's own
 // transitions pause meanwhile (see index.css).
 function switchMode(toBatch: boolean, apply: () => void) {
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  if (!document.startViewTransition || reduceMotion) {
-    apply()
-    return
-  }
-  const root = document.documentElement
-  root.dataset.modeSwitch = toBatch ? "to-batch" : "to-single"
-  const transition = document.startViewTransition(() => flushSync(apply))
-  void transition.finished.finally(() => delete root.dataset.modeSwitch)
+  runViewTransition(toBatch ? "to-batch" : "to-single", apply)
 }
 
 export default function App() {

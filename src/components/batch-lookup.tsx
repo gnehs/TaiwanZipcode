@@ -26,6 +26,7 @@ import {
   subscribeCorrections,
 } from "@/lib/addresses"
 import { cn } from "@/lib/utils"
+import { runViewTransition } from "@/lib/view-transition"
 import { toTsv } from "@/utils/batchTable.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
@@ -258,11 +259,11 @@ export function BatchLookup() {
         <BatchGuide
           onDismiss={() => {
             writeGuideDismissed(true)
-            setShowGuide(false)
+            runViewTransition("guide", () => setShowGuide(false))
           }}
         />
       ) : null}
-      <Card className="enter-rise gap-0 py-0">
+      <Card className="batch-sheet enter-rise gap-0 py-0">
         <div className="flex flex-wrap items-center justify-between gap-3 py-2 pr-2 pl-(--card-spacing)">
           <p className="text-sm text-muted-foreground" aria-live="polite">
             {filledCount ? `${completeCount} / ${filledCount} 筆完成` : "貼上地址"}
@@ -277,7 +278,7 @@ export function BatchLookup() {
                 aria-label="使用說明"
                 onClick={() => {
                   writeGuideDismissed(false)
-                  setShowGuide(true)
+                  runViewTransition("guide", () => setShowGuide(true))
                 }}
               >
                 <CircleHelpIcon className="size-[1.125rem]" aria-hidden="true" />
