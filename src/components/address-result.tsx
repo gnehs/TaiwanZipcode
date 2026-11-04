@@ -1,5 +1,5 @@
 import { Fragment } from "react"
-import { CircleAlertIcon, InfoIcon, LinkIcon, ListIcon, PlusIcon } from "lucide-react"
+import { CircleAlertIcon, InfoIcon, LinkIcon, PlusIcon } from "lucide-react"
 
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
@@ -71,14 +71,99 @@ function StatusPill({ status }: { status: keyof typeof STATUS }) {
 const FOOTER_BUTTON =
   "h-13 rounded-none px-4 font-semibold text-primary-foreground hover:bg-white/10 hover:text-primary-foreground has-data-[icon=inline-start]:pl-4 aria-expanded:bg-white/10 aria-expanded:text-primary-foreground"
 
-function MetaItem({ label, value }: { label: string; value: string }) {
+const META_VALUE = "min-w-0 font-mono text-[0.8125rem] break-words"
+
+function MetaItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <span className="inline-flex min-w-0 items-baseline gap-2">
       <span className="shrink-0 text-xs text-primary-foreground/70">{label}</span>
-      <span className="min-w-0 font-mono text-[0.8125rem] break-words">
-        {value}
-      </span>
+      {typeof value === "string" ? (
+        <span className={META_VALUE}>{value}</span>
+      ) : (
+        value
+      )}
     </span>
+  )
+}
+
+type ScopeRulesProps = {
+  align: "start" | "center"
+  isComplete: boolean
+  resolvedScope: ZipcodeScope | null
+  scopes: ZipcodeScope[]
+  summary: string
+}
+
+// The rule summary doubles as the trigger for every rule on this road.
+function ScopeRules({
+  align,
+  isComplete,
+  resolvedScope,
+  scopes,
+  summary,
+}: ScopeRulesProps) {
+  if (!scopes.length) return <span className={META_VALUE}>{summary}</span>
+  return (
+    <Popover>
+      {/* Hover only reacts to a mouse, so touch still opens it with a tap. */}
+      <PopoverTrigger
+        openOnHover
+        delay={300}
+        className={cn(
+          META_VALUE,
+          "cursor-pointer rounded-sm text-left underline decoration-[color-mix(in_oklab,var(--primary-foreground)_55%,var(--primary))] decoration-dashed underline-offset-4 outline-none hover:decoration-primary-foreground focus-visible:ring-2 focus-visible:ring-white/60 aria-expanded:decoration-primary-foreground",
+        )}
+      >
+        {summary}
+      </PopoverTrigger>
+      <PopoverContent
+        align={align}
+        className="max-h-96 w-80 max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto overscroll-contain rounded-2xl p-4 sm:w-[26rem]"
+      >
+        <PopoverHeader>
+          <PopoverTitle>此道路的郵遞區號規則</PopoverTitle>
+          <PopoverDescription>
+            依巷弄、門牌範圍與樓層判斷，符合的規則會標示出來。
+          </PopoverDescription>
+        </PopoverHeader>
+        <ul className="flex flex-col divide-y">
+          {scopes.map((rule, index) => {
+            const isCurrent = isComplete && rule === resolvedScope
+            return (
+              <li
+                key={`${rule.zipcode}-${rule.scope}-${index}`}
+                className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 py-2.5 text-sm"
+              >
+                <span
+                  className={cn(
+                    "font-mono text-[0.8125rem]",
+                    isCurrent ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  {rule.zipcode}
+                </span>
+                <div className="flex min-w-0 flex-col gap-1 break-words">
+                  {rule.department ? (
+                    <span className="font-medium">{rule.department}</span>
+                  ) : null}
+                  <span>{formatScopeRule(rule.scope)}</span>
+                </div>
+                {isCurrent ? (
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                      TONE_CLASSES.success,
+                    )}
+                  >
+                    符合
+                  </span>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -182,9 +267,20 @@ export function AddressResult({
       : !hasSuffix && baseZipcodePrefixes.length === 1
         ? "補上門牌後確認後三碼"
         : "確認完整門牌後顯示"
-  const metaItems = (
+  const metaItems = (align: ScopeRulesProps["align"]) => (
     <>
-      <MetaItem label="規則" value={ruleSummary} />
+      <MetaItem
+        label="規則"
+        value={
+          <ScopeRules
+            align={align}
+            isComplete={isComplete}
+            resolvedScope={resolvedScope}
+            scopes={scopes}
+            summary={ruleSummary}
+          />
+        }
+      />
       {matchedRuleBasis && isComplete ? (
         <MetaItem label="依據" value={matchedRuleBasis} />
       ) : null}
@@ -229,7 +325,7 @@ export function AddressResult({
           </div>
 
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 sm:hidden">
-            {metaItems}
+            {metaItems("center")}
           </div>
 
           <div
@@ -267,67 +363,10 @@ export function AddressResult({
         {/* Footer: the rule summary on the left (wider screens), actions on the right. */}
         <div className="relative -mb-(--card-spacing) flex border-t border-white/25">
           <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1 py-3 pl-(--card-spacing) sm:flex">
-            {metaItems}
+            {metaItems("start")}
           </div>
           <div className="flex flex-1 items-center justify-between sm:flex-none">
             <div className="flex">
-              <Popover>
-                <PopoverTrigger
-                  render={
-                    <Button variant="ghost" className={FOOTER_BUTTON} />
-                  }
-                >
-                  <ListIcon data-icon="inline-start" aria-hidden="true" />
-                  {scopes.length} 筆規則
-                </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  className="max-h-96 w-80 max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto overscroll-contain rounded-2xl p-4 sm:w-[26rem]"
-                >
-                  <PopoverHeader>
-                    <PopoverTitle>此道路的郵遞區號規則</PopoverTitle>
-                    <PopoverDescription>
-                      依巷弄、門牌範圍與樓層判斷，符合的規則會標示出來。
-                    </PopoverDescription>
-                  </PopoverHeader>
-                  <ul className="flex flex-col divide-y">
-                    {scopes.map((rule, index) => {
-                      const isCurrent = isComplete && rule === resolvedScope
-                      return (
-                        <li
-                          key={`${rule.zipcode}-${rule.scope}-${index}`}
-                          className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 py-2.5 text-sm"
-                        >
-                          <span
-                            className={cn(
-                              "font-mono text-[0.8125rem]",
-                              isCurrent ? "text-primary" : "text-muted-foreground",
-                            )}
-                          >
-                            {rule.zipcode}
-                          </span>
-                          <div className="flex min-w-0 flex-col gap-1 break-words">
-                            {rule.department ? (
-                              <span className="font-medium">{rule.department}</span>
-                            ) : null}
-                            <span>{formatScopeRule(rule.scope)}</span>
-                          </div>
-                          {isCurrent ? (
-                            <span
-                              className={cn(
-                                "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                                TONE_CLASSES.success,
-                              )}
-                            >
-                              符合
-                            </span>
-                          ) : null}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </PopoverContent>
-              </Popover>
               {slug ? (
                 <CopyButton
                   text={shareUrl(window.location.origin, slug)}
