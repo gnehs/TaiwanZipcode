@@ -464,7 +464,7 @@ export function AddressResult({
               visibleLabel="複製"
               disabled={!isComplete}
               variant="outline"
-              className="my-2 mr-2 h-9 min-h-9 px-4 font-semibold text-paper-ink [--control-bottom:oklch(0.9_0.012_50)] [--control-top:var(--paper)] hover:text-paper-ink"
+              className="my-1.5 mr-1.5 font-semibold text-paper-ink [--control-bottom:oklch(0.9_0.012_50)] [--control-top:var(--paper)] hover:text-paper-ink"
             />
           </div>
         </div>

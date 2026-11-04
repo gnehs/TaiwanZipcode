@@ -102,7 +102,7 @@ export function CopyButton({
         className={cn(
           iconOnly
             ? "size-10 p-0 has-data-[icon=inline-start]:pl-0"
-            : "min-h-11 px-4 has-data-[icon=inline-start]:pl-3.5",
+            : "h-10 px-4 has-data-[icon=inline-start]:pl-3.5",
           className,
         )}
         onClick={copy}
