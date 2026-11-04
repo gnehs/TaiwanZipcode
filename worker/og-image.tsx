@@ -85,34 +85,39 @@ function ZipcodeCells({ digits }: { digits: string }) {
   )
 }
 
+// A 402pt-wide iPhone screen scaled onto the mockup's 322px one: the island
+// sits 11pt from the top, the time centres 65pt from the left edge, the
+// right-hand icons 75pt from the right, and both share the line 32pt down.
 function StatusBar() {
+  const slot = { position: "absolute", top: 0, height: 52, display: "flex", alignItems: "center", justifyContent: "center" } as const
   return (
     <div
       style={{
+        position: "relative",
         display: "flex",
-        alignItems: "center",
-        height: 34,
-        fontSize: 15,
+        height: 48,
+        margin: "-14px -18px 0",
+        fontSize: 14,
         fontWeight: 600,
         color: INK,
       }}
     >
-      <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>9:41</div>
-      <div style={{ width: 96, height: 28, borderRadius: 20, backgroundColor: "#111" }} />
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
-        <svg width="18" height="12" viewBox="0 0 18 12" fill={INK}>
+      <div style={{ ...slot, left: 0, width: 104 }}>9:41</div>
+      <div style={{ position: "absolute", top: 9, left: 111, width: 100, height: 30, borderRadius: 15, backgroundColor: "#111" }} />
+      <div style={{ ...slot, right: 0, width: 120, gap: 5 }}>
+        <svg width="15" height="10" viewBox="0 0 18 12" fill={INK}>
           <rect x="0" y="7.5" width="3.3" height="4.5" rx="1.65" />
           <rect x="4.9" y="5" width="3.3" height="7" rx="1.65" />
           <rect x="9.8" y="2.5" width="3.3" height="9.5" rx="1.65" />
           <rect x="14.7" y="0" width="3.3" height="12" rx="1.65" />
         </svg>
-        <svg width="17" height="12" viewBox="0 0 17 12" fill="none" stroke={INK} stroke-width="2.2" stroke-linecap="round">
+        <svg width="14" height="10" viewBox="0 0 17 12" fill="none" stroke={INK} stroke-width="2.2" stroke-linecap="round">
           <path d="M1.4 4.6a10.2 10.2 0 0 1 14.2 0" />
           <path d="M4.4 7.5a6 6 0 0 1 8.2 0" />
           <circle cx="8.5" cy="10.3" r="1.6" fill={INK} stroke="none" />
         </svg>
         <div style={{ position: "relative", display: "flex" }}>
-          <svg width="29" height="13" viewBox="0 0 29 13">
+          <svg width="22" height="10" viewBox="0 0 29 13">
             <rect width="26" height="13" rx="4" fill={INK} fill-opacity="0.38" />
             <path d="M4 0H20V13H4A4 4 0 0 1 0 9V4A4 4 0 0 1 4 0Z" fill={INK} />
             <path d="M27 4.3v4.4c.9-.3 1.5-1.2 1.5-2.2s-.6-1.9-1.5-2.2Z" fill={INK} fill-opacity="0.38" />
@@ -120,11 +125,11 @@ function StatusBar() {
           <div
             style={{
               position: "absolute",
-              inset: "0 3px 0 0",
+              inset: "0 2px 0 0",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 10.5,
+              fontSize: 8,
               fontWeight: 700,
               color: "white",
             }}
