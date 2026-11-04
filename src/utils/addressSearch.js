@@ -300,3 +300,32 @@ export function getMatchRanges(query, address) {
   }
   return ranges;
 }
+
+// The units that can follow a number, by the last unit written before it.
+const NEXT_UNITS = { '': ['號', '巷'], 巷: ['號', '弄'], 弄: ['號'], 號: ['樓', '室'], 樓: ['室'] };
+
+// A numbered pair (25-1, 3-1) is an attached house number on a road, lane or
+// alley, and a room number after a house number or floor.
+const PAIR_UNITS = { '': ['號'], 巷: ['號'], 弄: ['號'], 號: ['室'], 樓: ['室'] };
+
+/**
+ * Complete a number typed at the end of an address with the units that can
+ * follow it: "…路25" offers "…路25號" and "…路25巷", "…號3-1" offers
+ * "…號3-1室". A branch right after a unit (25號之1) needs nothing more.
+ */
+export function getUnitCompletions(query) {
+  const text = String(query ?? '').trimEnd();
+  const normalized = text.normalize('NFKC');
+  if (!/\d$/u.test(normalized)) return [];
+  let before = normalized.replace(/\d+$/u, '');
+  let next = NEXT_UNITS;
+  if (/[之-]\s*$/u.test(before)) {
+    const pair = before.match(/^(.*?)\d+\s*[之-]\s*$/u);
+    if (!pair) return [];
+    before = pair[1];
+    next = PAIR_UNITS;
+  }
+  const units = before.match(/[巷弄號樓室]/gu);
+  const last = units ? units[units.length - 1] : '';
+  return (next[last] ?? []).map((unit) => `${text}${unit}`);
+}

@@ -215,7 +215,8 @@ function parseAddressSuffix(addressText) {
   const normalized = normalizeText(original);
   const compact = compactText(original);
   const firstFloor = normalized.search(/(?:地下)?\s*\d+\s*樓/);
-  const firstRoom = normalized.search(/[\dA-Za-z]+室/);
+  // A room may carry a branch of its own (3-1室, 3之1室).
+  const firstRoom = normalized.search(/[\dA-Za-z]+(?:\s*[之-]\s*[\dA-Za-z]+)*\s*室/);
   const pathEnd = [firstFloor, firstRoom]
     .filter((index) => index >= 0)
     .reduce((lowest, index) => Math.min(lowest, index), normalized.length);

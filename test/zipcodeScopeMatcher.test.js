@@ -195,3 +195,11 @@ test('a rule written in 號 outranks a lane-bounded range for that number', () =
   const minsheng = roadScopes('臺北市', '松山區', '民生東路三段');
   assert.equal(resolveZipcodeScopes(minsheng, '124號').matches[0].zipcode, 105602);
 });
+
+test('a room numbered with a branch ends the path', () => {
+  for (const suffix of ['25號3-1室', '25號3之1室', '25號3樓3-1室']) {
+    const parsed = parseAddressSuffix(suffix);
+    assert.equal(parsed.complete, true, suffix);
+    assert.deepEqual(parsed.path.map((part) => [part.unit, part.value, part.branch]), [['號', 25, null]], suffix);
+  }
+});

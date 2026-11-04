@@ -23,7 +23,12 @@ import {
   getRecentLookups,
   subscribeRecentLookups,
 } from "@/lib/recent-lookups"
-import { getAddressSelection, getMatchRanges } from "@/utils/addressSearch.js"
+import {
+  getAddressSelection,
+  getMatchRanges,
+  getUnitCompletions,
+} from "@/utils/addressSearch.js"
+import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type AddressSearchProps = {
   query: string
@@ -76,6 +81,9 @@ export function AddressSearch({
   const [highlightedAddress, setHighlightedAddress] = useState<string | null>(
     null,
   )
+  // While the arrow keys walk the list, the input shows the highlighted
+  // suggestion so typing carries on after it; the list still follows `query`.
+  const [inlineValue, setInlineValue] = useState<string | null>(null)
   const comboboxAnchor = useComboboxAnchor()
   const searchResult = useMemo(
     () =>
@@ -88,9 +96,21 @@ export function AddressSearch({
   // The road may come from the cleaned text ("1段" → 一段), which the raw
   // search does not see, so a house number after it also ends the list.
   const hasHouseNumber = Boolean(road) && /^\s*(?:\d|地下)/u.test(addressSuffix)
-  const suggestions = searchResult.prefixMatch || hasHouseNumber
+  const roadSuggestions = searchResult.prefixMatch || hasHouseNumber
     ? []
     : searchResult.matches.filter((address) => address !== road)
+  // A number typed after the road is offered with the units that can follow.
+  // Once the house number is complete, the address itself is the one choice,
+  // so picking it puts the list away.
+  const completions = useMemo(() => {
+    if (!road) return []
+    const units = getUnitCompletions(query)
+    if (units.length) return units
+    return hasHouseNumber && parseAddressSuffix(addressSuffix).complete
+      ? [query.trimEnd()]
+      : []
+  }, [road, query, hasHouseNumber, addressSuffix])
+  const suggestions = completions.length ? completions : roadSuggestions
   const isPopupOpen = isSuggestionsOpen && suggestions.length > 0
   useEffect(() => onPopupOpenChange(isPopupOpen), [isPopupOpen, onPopupOpenChange])
   // Only a dead end is shown on screen; the other hints are for screen readers.
@@ -121,6 +141,7 @@ export function AddressSearch({
   function updateQuery(value: string, openSuggestions: boolean) {
     onQueryChange(value)
     setHighlightedAddress(null)
+    setInlineValue(null)
     setIsSuggestionsOpen(openSuggestions)
     const input = inputRef.current
     if (!input) return
@@ -130,9 +151,16 @@ export function AddressSearch({
     )
   }
 
-  function selectAddress(address: string) {
+  // What choosing a suggestion writes: a completion as is, a road with the
+  // house number already typed after it.
+  function filledText(address: string) {
+    if (completions.includes(address)) return address
     const selection = getAddressSelection(query, address)
-    updateQuery(`${address}${selection?.suffix || ""}`, false)
+    return `${address}${selection?.suffix || ""}`
+  }
+
+  function selectAddress(address: string) {
+    updateQuery(filledText(address), false)
   }
 
   return (
@@ -143,13 +171,17 @@ export function AddressSearch({
             輸入地址
           </FieldLabel>
           <Combobox
-            items={addressIndex.addresses}
+            items={completions.length ? completions : addressIndex.addresses}
             filteredItems={suggestions}
             filter={null}
             value={null}
             open={isPopupOpen}
-            onOpenChange={(open) => setIsSuggestionsOpen(open)}
-            inputValue={query}
+            onOpenChange={(open) => {
+              setIsSuggestionsOpen(open)
+              // Closing the list (Escape, a click away) returns to what was typed.
+              if (!open) setInlineValue(null)
+            }}
+            inputValue={inlineValue ?? query}
             onInputValueChange={(value, details) => {
               // Keep the search text when the popup blurs or changes selection.
               if (
@@ -159,18 +191,24 @@ export function AddressSearch({
                 return
               onQueryChange(value)
               setHighlightedAddress(null)
+              setInlineValue(null)
               setIsSuggestionsOpen(value.trim().length >= MIN_QUERY_LENGTH)
             }}
-            onItemHighlighted={(address) =>
-              setHighlightedAddress(
-                typeof address === "string" ? address : null,
-              )
-            }
+            onItemHighlighted={(address, details) => {
+              const item = typeof address === "string" ? address : null
+              setHighlightedAddress(item)
+              // Only the arrow keys fill the input; the pointer leaves the
+              // typed text alone. Nothing starts highlighted, so the first
+              // arrow press lands on the first suggestion and arrowing back
+              // above it returns to what was typed.
+              if (details.reason === "keyboard") {
+                setInlineValue(item ? filledText(item) : null)
+              }
+            }}
             onValueChange={(address) => {
               if (typeof address !== "string") return
               selectAddress(address)
             }}
-            autoHighlight
           >
             <div ref={comboboxAnchor} className="w-full">
               <ComboboxInput
@@ -229,7 +267,16 @@ export function AddressSearch({
                     className="min-h-11 px-3 whitespace-normal break-words"
                   >
                     <span className="min-w-0 whitespace-normal break-words">
-                      <HighlightedAddress address={address} query={query} />
+                      {completions.includes(address) ? (
+                        <>
+                          <mark className="bg-transparent font-semibold text-primary">
+                            {query.trimEnd()}
+                          </mark>
+                          {address.slice(query.trimEnd().length)}
+                        </>
+                      ) : (
+                        <HighlightedAddress address={address} query={query} />
+                      )}
                     </span>
                   </ComboboxItem>
                 )}

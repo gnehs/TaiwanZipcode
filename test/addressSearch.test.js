@@ -5,6 +5,7 @@ import {
   compactSearchText,
   findLongestAddressPrefix,
   getAddressSelection,
+  getUnitCompletions,
   getMatchRanges,
   normalizeSearchText,
   searchAddressList,
@@ -170,4 +171,27 @@ test('reports which characters of a suggestion matched', () => {
     [6, 9],
   ]);
   assert.deepEqual(getMatchRanges('不相干', '新北市永和區信義路'), []);
+});
+
+test('getUnitCompletions offers the units that can follow a trailing number', () => {
+  assert.deepEqual(getUnitCompletions('測試路25'), ['測試路25號', '測試路25巷']);
+  assert.deepEqual(getUnitCompletions('測試路25巷3'), ['測試路25巷3號', '測試路25巷3弄']);
+  assert.deepEqual(getUnitCompletions('測試路25巷3弄7'), ['測試路25巷3弄7號']);
+  assert.deepEqual(getUnitCompletions('測試路25號3'), ['測試路25號3樓', '測試路25號3室']);
+  assert.deepEqual(getUnitCompletions('測試路25號3樓5'), ['測試路25號3樓5室']);
+  assert.deepEqual(getUnitCompletions('測試路２５'), ['測試路２５號', '測試路２５巷']);
+});
+
+test('getUnitCompletions reads a numbered pair by what comes before it', () => {
+  assert.deepEqual(getUnitCompletions('測試路25-1'), ['測試路25-1號']);
+  assert.deepEqual(getUnitCompletions('測試路3巷25之1'), ['測試路3巷25之1號']);
+  assert.deepEqual(getUnitCompletions('測試路25號3-1'), ['測試路25號3-1室']);
+  assert.deepEqual(getUnitCompletions('測試路25號3樓3-1'), ['測試路25號3樓3-1室']);
+});
+
+test('getUnitCompletions stays quiet without a trailing number to complete', () => {
+  assert.deepEqual(getUnitCompletions('測試路25號'), []);
+  assert.deepEqual(getUnitCompletions('測試路25號之1'), []);
+  assert.deepEqual(getUnitCompletions('測試路25號3樓5室1'), []);
+  assert.deepEqual(getUnitCompletions('測試路'), []);
 });

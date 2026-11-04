@@ -281,7 +281,10 @@ export function formatAddress(
 
   const parsed = parseAddressSuffix(addressSuffix)
   const room =
-    addressSuffix.normalize("NFKC").match(/([\dA-Za-z]+)室/u)?.[1] || null
+    addressSuffix
+      .normalize("NFKC")
+      .match(/([\dA-Za-z]+(?:\s*[之-]\s*[\dA-Za-z]+)*)\s*室/u)?.[1]
+      ?.replace(/\s*[之-]\s*/gu, "-") || null
   const form: ParsedAddress["form"] = {
     ln: parsed.ln,
     aly: parsed.aly,
