@@ -43,7 +43,7 @@ export function SiteHeader({
           <img
             src="/icon.svg"
             alt=""
-            className="size-9 shrink-0 [filter:drop-shadow(0_1px_1px_oklch(0.45_0.14_48/0.3))_drop-shadow(0_3px_8px_oklch(0.6_0.16_55/0.3))]"
+            className="size-9 shrink-0 [filter:drop-shadow(0_1px_1px_oklch(0.2_0_0/0.3))_drop-shadow(0_3px_8px_oklch(0.2_0_0/0.25))]"
           />
           {/* Phones keep only the icon; the name still labels the link. */}
           <h1 className="text-base font-semibold tracking-tight max-sm:sr-only">
