@@ -31,59 +31,61 @@ function CreditLink({ href, children }: { href: string; children: ReactNode }) {
 
 export function SiteFooter() {
   return (
-    // Spans the page edge to edge; the padding lines the logo up with the header's.
-    <footer className="mt-20 w-full border-t bg-muted/50 px-4 pt-10 pb-8 sm:px-6">
-      <div className="flex flex-col gap-3">
-        <Link to="/" className="flex w-fit items-center gap-2 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-          <img
-            src="/icon.svg"
-            alt=""
-            className="size-7 shrink-0 [filter:drop-shadow(0_1px_1px_oklch(0.2_0_0/0.3))_drop-shadow(0_2px_6px_oklch(0.2_0_0/0.2))]"
-          />
-          <span className="text-sm font-semibold tracking-tight">{SITE_TITLE}</span>
-        </Link>
-        <p className="text-xs/relaxed text-muted-foreground">
-          資料擷取自郵局資料庫，僅供參考；
-          <br className="sm:hidden" />
-          正確資料請以中華郵政公告為準。
-        </p>
-        <nav aria-label="說明" className="flex gap-4">
-          {[
-            { to: "/guide", label: "使用說明" },
-            { to: "/faq", label: "常見問題" },
-          ].map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className="w-fit rounded-sm text-xs font-medium text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+    // The band spans the page edge to edge; its content keeps to the header's width.
+    <footer className="mt-20 w-full border-t bg-muted/50 pt-10 pb-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="flex flex-col gap-3">
+          <Link to="/" className="flex w-fit items-center gap-2 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+            <img
+              src="/icon.svg"
+              alt=""
+              className="size-7 shrink-0 [filter:drop-shadow(0_1px_1px_oklch(0.2_0_0/0.3))_drop-shadow(0_2px_6px_oklch(0.2_0_0/0.2))]"
+            />
+            <span className="text-sm font-semibold tracking-tight">{SITE_TITLE}</span>
+          </Link>
+          <p className="text-xs/relaxed text-muted-foreground">
+            資料擷取自郵局資料庫，僅供參考；
+            <br className="sm:hidden" />
+            正確資料請以中華郵政公告為準。
+          </p>
+          <nav aria-label="說明" className="flex gap-4">
+            {[
+              { to: "/guide", label: "使用說明" },
+              { to: "/faq", label: "常見問題" },
+            ].map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className="w-fit rounded-sm text-xs font-medium text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <div className="mt-8 flex items-center justify-between gap-4 border-t pt-6 sm:mt-10">
+          {/* Phones split the credit over two lines so the controls keep their place beside it. */}
+          <p className="text-xs/relaxed text-muted-foreground">
+            Developed by <CreditLink href="https://gnehs.net">gnehs</CreditLink>
+            <span className="max-sm:hidden"> · </span>
+            <br className="sm:hidden" />
+            Made with <CreditLink href="https://pancake.gnehs.net">🥞</CreditLink> in Taiwan
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <a
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon-lg" }),
+                "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control",
+              )}
+              href="https://github.com/gnehs/TaiwanZipcode"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub"
             >
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </div>
-      <div className="mt-8 flex items-center justify-between gap-4 border-t pt-6 sm:mt-10">
-        {/* Phones split the credit over two lines so the controls keep their place beside it. */}
-        <p className="text-xs/relaxed text-muted-foreground">
-          Developed by <CreditLink href="https://gnehs.net">gnehs</CreditLink>
-          <span className="max-sm:hidden"> · </span>
-          <br className="sm:hidden" />
-          Made with <CreditLink href="https://pancake.gnehs.net">🥞</CreditLink> in Taiwan
-        </p>
-        <div className="flex shrink-0 items-center gap-2">
-          <a
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon-lg" }),
-              "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control",
-            )}
-            href="https://github.com/gnehs/TaiwanZipcode"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="GitHub"
-          >
-            <GitHubIcon />
-          </a>
-          <ThemeToggle />
+              <GitHubIcon />
+            </a>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </footer>

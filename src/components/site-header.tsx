@@ -38,7 +38,7 @@ export function SiteHeader({
           !onBand && "opacity-0",
         )}
       />
-      <header className="relative z-10 grid [view-transition-name:site-bar] grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 pt-3 sm:px-5 sm:pt-5">
+      <header className="relative z-10 mx-auto grid w-full max-w-6xl [view-transition-name:site-bar] grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 pt-3 sm:px-5 sm:pt-5">
         <Link
           to="/"
           className={cn(
