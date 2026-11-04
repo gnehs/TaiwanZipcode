@@ -65,39 +65,39 @@
 
 :root {
     --background: oklch(0.985 0.004 60);
-    --foreground: oklch(0.2 0.006 265);
+    --foreground: oklch(0.2 0.006 60);
     --card: oklch(0.998 0.002 60);
-    --card-foreground: oklch(0.2 0.006 265);
-    --popover: oklch(0.995 0.001 265);
-    --popover-foreground: oklch(0.2 0.006 265);
+    --card-foreground: oklch(0.2 0.006 60);
+    --popover: oklch(0.995 0.001 60);
+    --popover-foreground: oklch(0.2 0.006 60);
     --primary: oklch(0.6 0.19 40);
     --primary-foreground: oklch(0.99 0.005 40);
-    --secondary: oklch(0.95 0.003 265);
-    --secondary-foreground: oklch(0.25 0.006 265);
-    --muted: oklch(0.955 0.003 265);
-    --muted-foreground: oklch(0.54 0.01 265);
-    --accent: oklch(0.94 0.004 265);
-    --accent-foreground: oklch(0.2 0.006 265);
+    --secondary: oklch(0.95 0.003 60);
+    --secondary-foreground: oklch(0.25 0.006 60);
+    --muted: oklch(0.955 0.003 60);
+    --muted-foreground: oklch(0.54 0.01 60);
+    --accent: oklch(0.94 0.004 60);
+    --accent-foreground: oklch(0.2 0.006 60);
     --destructive: oklch(0.58 0.21 25);
     --success: oklch(0.56 0.14 155);
     --warning: oklch(0.62 0.14 70);
-    --border: oklch(0.92 0.004 265);
-    --input: oklch(0.91 0.004 265);
+    --border: oklch(0.92 0.004 60);
+    --input: oklch(0.91 0.004 60);
     --ring: oklch(0.6 0.19 40);
     /* Cream "paper" from the icon; it sits on the orange card in both themes. */
     --paper: oklch(0.995 0.004 50);
     --paper-ink: oklch(0.646 0.222 41.116);
     /* Borders are drawn as translucent 1px shadows so they blend with any background. */
     /* Outline buttons: lit from above, slightly darker at the bottom. */
-    --control-top: oklch(0.995 0.002 265);
-    --control-bottom: oklch(0.955 0.003 265);
-    --surface-shadow: 0 0 0 1px oklch(0.2 0.02 265 / 0.07), 0 1px 2px oklch(0.2 0.02 265 / 0.05), 0 6px 20px -6px oklch(0.2 0.02 265 / 0.08);
+    --control-top: oklch(0.995 0.002 60);
+    --control-bottom: oklch(0.955 0.003 60);
+    --surface-shadow: 0 0 0 1px oklch(0.2 0.02 60 / 0.07), 0 1px 2px oklch(0.2 0.02 60 / 0.05), 0 6px 20px -6px oklch(0.2 0.02 60 / 0.08);
     /* The edge is a 1px gradient border: brighter where light hits the top. */
-    --control-edge-top: oklch(0.2 0.02 265 / 0.08);
-    --control-edge-bottom: oklch(0.2 0.02 265 / 0.17);
+    --control-edge-top: oklch(0.2 0.02 60 / 0.08);
+    --control-edge-bottom: oklch(0.2 0.02 60 / 0.17);
     /* Inner rim goes all the way round: brightest on top, still lit at the bottom. */
-    --control-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.7), inset 0 0 6px oklch(1 0 0 / 0.5), 0 1px 2px oklch(0.2 0.02 265 / 0.06);
-    --popover-shadow: 0 0 0 1px oklch(0.2 0.02 265 / 0.08), 0 4px 8px -2px oklch(0.2 0.02 265 / 0.06), 0 16px 36px -8px oklch(0.2 0.02 265 / 0.16);
+    --control-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.7), inset 0 0 6px oklch(1 0 0 / 0.5), 0 1px 2px oklch(0.2 0.02 60 / 0.06);
+    --popover-shadow: 0 0 0 1px oklch(0.2 0.02 60 / 0.08), 0 4px 8px -2px oklch(0.2 0.02 60 / 0.06), 0 16px 36px -8px oklch(0.2 0.02 60 / 0.16);
     /* Offset inset shadows turn into crescents at rounded corners, so the rim itself is the `rim` utility. */
     --primary-shadow: inset 0 0 14px oklch(1 0 0 / 0.16), 0 0 0 1px oklch(0.52 0.19 36), 0 2px 3px oklch(0.4 0.14 38 / 0.22), 0 10px 20px -8px oklch(0.45 0.16 40 / 0.5);
     --chart-1: oklch(0.87 0 0);

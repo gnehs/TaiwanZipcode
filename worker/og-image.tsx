@@ -31,7 +31,7 @@ function phoneScreen(lookup: AddressLookup): PhoneScreen {
 }
 
 const PRIMARY = "oklch(0.6 0.19 40)"
-const INK = "oklch(0.2 0.006 265)"
+const INK = "oklch(0.2 0.006 60)"
 const ICON = `data:image/svg+xml,${encodeURIComponent(iconSvg)}`
 // The card's "+" texture, fading toward the bottom like the app's plus-grid.
 // Each row carries its own opacity, since the renderer ignores SVG masks.
@@ -213,12 +213,12 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
             padding: "0 16px",
             borderRadius: 18,
             backgroundColor: "white",
-            boxShadow: "0 0 0 1px oklch(0.2 0.02 265 / 0.07), 0 2px 6px -2px oklch(0.2 0.02 265 / 0.08)",
+            boxShadow: "0 0 0 1px oklch(0.2 0.02 60 / 0.07), 0 2px 6px -2px oklch(0.2 0.02 60 / 0.08)",
             fontSize: 13,
-            color: "oklch(0.45 0.01 265)",
+            color: "oklch(0.45 0.01 60)",
           }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="oklch(0.6 0.01 265)" stroke-width="2.5" stroke-linecap="round">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="oklch(0.6 0.01 60)" stroke-width="2.5" stroke-linecap="round">
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3.5-3.5" />
           </svg>
@@ -250,7 +250,7 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16, padding: "0 4px" }}>
           {screen.rows.map((row) => (
             <div key={row.label} style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ fontSize: 11, color: "oklch(0.55 0.01 265)" }}>{row.label}</div>
+              <div style={{ fontSize: 11, color: "oklch(0.55 0.01 60)" }}>{row.label}</div>
               <div style={{ marginTop: 2, fontSize: 13.5, lineHeight: 1.35, color: INK }}>{row.value}</div>
             </div>
           ))}
