@@ -785,6 +785,17 @@ function resolveZipcodeScopes(scopes, addressText) {
   const top = matches.filter(({ parsed }) => parsed.specificity === topScore);
   const topZipcodes = new Set(top.map(({ item }) => item && typeof item === 'object' ? item.zipcode : undefined));
   const ambiguous = top.length > 1 && (topZipcodes.size > 1 || topZipcodes.has(undefined));
+  // A bulk recipient's own code is for mail to that recipient; anyone else
+  // at the address uses the general range it overlaps. The recipients are
+  // returned so the sender can pick one instead.
+  const general = top.filter(({ item }) => item && typeof item === 'object' && !item.department);
+  if (ambiguous && general.length && new Set(general.map(({ item }) => item.zipcode)).size === 1) {
+    return {
+      status: 'matched',
+      matches: [...general, ...matches.filter((match) => !general.includes(match))].map(({ item }) => item),
+      recipients: top.filter((match) => !general.includes(match)).map(({ item }) => item),
+    };
+  }
   return {
     status: ambiguous ? 'ambiguous' : 'matched',
     matches: matches.map(({ item }) => item),

@@ -1,9 +1,16 @@
 import { Fragment } from "react"
-import { CircleAlertIcon, InfoIcon, LinkIcon, PlusIcon } from "lucide-react"
+import { ChevronDownIcon, CircleAlertIcon, InfoIcon, LinkIcon, PlusIcon } from "lucide-react"
 
 import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Popover,
   PopoverContent,
@@ -31,6 +38,8 @@ type AddressResultProps = {
   resolvedScope: ZipcodeScope | null
   scopeResolution: ScopeResolution
   scopes: ZipcodeScope[]
+  // Picks a bulk recipient's own code, or null for the general range.
+  onRecipientChange: (scope: ZipcodeScope | null) => void
 }
 
 type Tone = "success" | "warning" | "neutral" | "destructive"
@@ -65,6 +74,68 @@ function StatusPill({ status }: { status: keyof typeof STATUS }) {
       <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
       {label}
     </span>
+  )
+}
+
+// An address shared with bulk recipients asks who the mail is for. Like the
+// status pill it sits on the orange card, so it uses paper with fixed inks.
+function RecipientPicker({
+  general,
+  recipients,
+  selected,
+  onChange,
+}: {
+  general: ZipcodeScope
+  recipients: ZipcodeScope[]
+  selected: ZipcodeScope | null
+  onChange: (scope: ZipcodeScope | null) => void
+}) {
+  const options = [
+    { label: "一般地址", scope: general },
+    ...recipients.map((scope) => ({
+      label: scope.department ?? String(scope.zipcode),
+      scope,
+    })),
+  ]
+  const index = Math.max(
+    0,
+    options.findIndex(({ scope }) => scope === selected),
+  )
+  return (
+    <div className="-mb-2 flex justify-center">
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={`收件對象：${options[index].label}`}
+          className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-full bg-paper pr-2 pl-3 text-xs font-medium text-paper-ink shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] outline-none transition-colors duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--paper),var(--paper-ink)_8%)] focus-visible:ring-3 focus-visible:ring-white/50"
+        >
+          <span className="truncate">{options[index].label}</span>
+          <ChevronDownIcon className="size-3.5 shrink-0" aria-hidden="true" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="center" className="w-auto max-w-[min(22rem,calc(100vw-2rem))]">
+          <DropdownMenuRadioGroup
+            value={String(index)}
+            onValueChange={(value) => {
+              const scope = options[Number(value)].scope
+              onChange(scope === general ? null : scope)
+            }}
+          >
+            {options.map(({ label, scope }, optionIndex) => (
+              <DropdownMenuRadioItem
+                key={optionIndex}
+                value={String(optionIndex)}
+                closeOnClick
+                className="min-h-10 gap-3 pl-3"
+              >
+                <span className="min-w-0 flex-1 break-words">{label}</span>
+                <span className="font-mono text-[0.8125rem] text-muted-foreground tabular-nums">
+                  {scope.zipcode}
+                </span>
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }
 
@@ -214,6 +285,7 @@ export function AddressResult({
   resolvedScope,
   scopeResolution,
   scopes,
+  onRecipientChange,
 }: AddressResultProps) {
   const hasSuffix = Boolean(addressSuffix.trim())
   const isSuffixIncomplete =
@@ -313,6 +385,13 @@ export function AddressResult({
             <div className="-mb-2 flex justify-center">
               <StatusPill status={status} />
             </div>
+          ) : scopeResolution.recipients?.length ? (
+            <RecipientPicker
+              general={scopeResolution.matches[0]}
+              recipients={scopeResolution.recipients}
+              selected={resolvedScope}
+              onChange={onRecipientChange}
+            />
           ) : null}
 
           <div

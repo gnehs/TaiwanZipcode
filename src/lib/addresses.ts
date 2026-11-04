@@ -127,6 +127,8 @@ export type ScopeResolution = {
   status: "empty" | "incomplete" | "unmatched" | "ambiguous" | "matched"
   matches: ZipcodeScope[]
   pending?: ZipcodeScope[]
+  // Bulk recipients sharing the matched range, each with its own code.
+  recipients?: ZipcodeScope[]
 }
 
 export type AddressLookup = {
@@ -162,6 +164,25 @@ export function lookupRoad(road: string, addressSuffix: string): AddressLookup {
       : scopes.length === 1 && scopeResolution.status !== "unmatched"
         ? scopes[0]
         : null
+  return withResolvedScope({ road, addressSuffix, scopes, scopeResolution }, resolvedScope)
+}
+
+// The same lookup, read for mail to one of the bulk recipients at the address.
+export function lookupForRecipient(lookup: AddressLookup, recipient: ZipcodeScope) {
+  return lookup.scopeResolution.recipients?.includes(recipient)
+    ? withResolvedScope(lookup, recipient)
+    : lookup
+}
+
+function withResolvedScope(
+  {
+    road,
+    addressSuffix,
+    scopes,
+    scopeResolution,
+  }: Pick<AddressLookup, "road" | "addressSuffix" | "scopes" | "scopeResolution">,
+  resolvedScope: ZipcodeScope | null,
+): AddressLookup {
   const baseZipcodePrefixes = [
     ...new Set(
       scopes

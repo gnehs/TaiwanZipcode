@@ -138,14 +138,26 @@ test('normalizes the database descending numeric interval', () => {
   assert.equal(matchZipcodeScope('41之15號至之1號', '41之8號'), true);
 });
 
-test('keeps all matching records available when overlapping ranges are ambiguous', () => {
+test('an ordinary address takes the general range over a bulk recipient sharing it', () => {
   const scopes = roadScopes('臺北市', '中山區', '八德路二段');
-  const selected = scopes.find((item) => item.zipcode === 104498 && item.scope.includes('306'));
+  const bulk = scopes.find((item) => item.zipcode === 104498 && item.scope.includes('306'));
   const result = resolveZipcodeScopes(scopes, '306號');
 
+  assert.equal(result.status, 'matched');
+  assert.equal(result.matches[0].zipcode, 104098);
+  assert.equal(result.matches.includes(bulk), true);
+  assert.deepEqual(result.recipients, [bulk]);
+
+  const sameRange = resolveZipcodeScopes(roadScopes('臺北市', '中山區', '中山北路一段'), '7號');
+  assert.equal(sameRange.status, 'matched');
+  assert.equal(sameRange.matches[0].zipcode, 104005);
+  assert.deepEqual(sameRange.recipients.map((item) => item.zipcode), [104405]);
+});
+
+test('stays ambiguous when only bulk recipients share an address', () => {
+  const result = resolveZipcodeScopes(roadScopes('臺北市', '大安區', '和平東路一段'), '162號');
+
   assert.equal(result.status, 'ambiguous');
-  assert.equal(result.matches.includes(selected), true);
-  assert.equal(result.matches.some((item) => item.zipcode === 104098), true);
 });
 
 test('matches representative nested, attached-number, and floor records from the database', () => {

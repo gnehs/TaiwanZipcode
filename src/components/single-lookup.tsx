@@ -9,7 +9,9 @@ import { RecentLookups } from "@/components/recent-lookups"
 import {
   getCorrectionsVersion,
   lookupCleanedAddress,
+  lookupForRecipient,
   subscribeCorrections,
+  type ZipcodeScope,
 } from "@/lib/addresses"
 import { addressSlug, parseAddressSlug } from "@/lib/address-path"
 import { addressMeta } from "@/lib/page-meta"
@@ -28,11 +30,21 @@ export function SingleLookup() {
     subscribeCorrections,
     getCorrectionsVersion,
   )
-  const lookup = useMemo(
+  const typedLookup = useMemo(
     () => lookupCleanedAddress(query),
     // A new version means the correction tables arrived; read the query again.
     [query, correctionsVersion],
   )
+  // A bulk recipient picked for this address; another address forgets it.
+  const addressKey = `${typedLookup.road}${typedLookup.addressSuffix.trim()}`
+  const [recipient, setRecipient] = useState<{
+    addressKey: string
+    scope: ZipcodeScope
+  } | null>(null)
+  const lookup =
+    recipient?.addressKey === addressKey
+      ? lookupForRecipient(typedLookup, recipient.scope)
+      : typedLookup
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [isSuggesting, setIsSuggesting] = useState(false)
   const {
@@ -80,19 +92,20 @@ export function SingleLookup() {
   }, [title])
 
   useEffect(() => {
-    if (!road || displayedZipcode.length !== 6) return
+    if (!road || typedLookup.displayedZipcode.length !== 6) return
     // Wait for typing to settle so partial house numbers are not remembered.
     const timer = window.setTimeout(
       () =>
         rememberLookup({
           road,
           suffix: addressSuffix.trim(),
-          zipcode: displayedZipcode,
+          // The general code, which is what reopening the address shows.
+          zipcode: typedLookup.displayedZipcode,
         }),
       1000,
     )
     return () => window.clearTimeout(timer)
-  }, [road, addressSuffix, displayedZipcode])
+  }, [road, addressSuffix, typedLookup.displayedZipcode])
 
   useEffect(() => {
     const isDesktop = window.matchMedia(
@@ -166,6 +179,9 @@ export function SingleLookup() {
             resolvedScope={resolvedScope}
             scopeResolution={scopeResolution}
             scopes={scopes}
+            onRecipientChange={(scope) =>
+              setRecipient(scope ? { addressKey, scope } : null)
+            }
           />
         ) : (
           <>
