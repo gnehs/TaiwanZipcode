@@ -14,7 +14,7 @@ const MODES = [
 // the pill slides across under the labels.
 export function ModeSwitch({ isBatch }: { isBatch: boolean }) {
   return (
-    <nav aria-label="查詢模式" className="flex justify-center pb-2">
+    <nav aria-label="查詢模式">
       <div className="relative grid grid-cols-2 rounded-full bg-card p-1 shadow-surface [view-transition-name:mode-switch]">
         <span
           aria-hidden="true"
