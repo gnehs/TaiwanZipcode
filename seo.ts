@@ -2,12 +2,12 @@ import { readFileSync } from "node:fs"
 
 import type { Plugin } from "vite"
 
-import { ABOUT_META, BATCH_META, SITE_ORIGIN } from "./src/lib/site.ts"
+import { ABOUT_META, BATCH_META, FAQ_META, SITE_ORIGIN } from "./src/lib/site.ts"
 import { writePageHead } from "./src/utils/pageHead.js"
 import { decodeZipcodeData } from "./src/utils/zipcodeCodec.js"
 
 // Pages that do not depend on the address are files, so only address pages
-// run the Worker: the batch and about pages, plus a sitemap of every road and
+// run the Worker: the batch, FAQ and about pages, plus a sitemap of every road and
 // robots.txt. House numbers are left out of the sitemap; those pages are
 // reached from the road.
 export function seoFiles(): Plugin {
@@ -20,7 +20,7 @@ export function seoFiles(): Plugin {
       handler(_, bundle) {
         const index = bundle["index.html"]
         if (index?.type !== "asset") throw new Error("index.html was not built")
-        for (const meta of [BATCH_META, ABOUT_META]) {
+        for (const meta of [BATCH_META, FAQ_META, ABOUT_META]) {
           this.emitFile({
             type: "asset",
             fileName: `${meta.path.slice(1)}.html`,
@@ -35,7 +35,7 @@ export function seoFiles(): Plugin {
         const database = decodeZipcodeData(
           readFileSync(new URL("./src/assets/zipcode.txt", import.meta.url), "utf8"),
         ) as Record<string, { areas: Record<string, { roads: Record<string, unknown> }> }>
-        const paths = ["/", BATCH_META.path, ABOUT_META.path]
+        const paths = ["/", BATCH_META.path, FAQ_META.path, ABOUT_META.path]
         for (const [city, { areas }] of Object.entries(database)) {
           for (const [area, { roads }] of Object.entries(areas)) {
             for (const road of Object.keys(roads)) {

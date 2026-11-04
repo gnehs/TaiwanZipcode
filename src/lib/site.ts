@@ -19,6 +19,12 @@ export const BATCH_META: PageMeta = {
   path: "/batch",
 }
 
+export const FAQ_META: PageMeta = {
+  title: `常見問題｜${SITE_TITLE}`,
+  description: "查不到道路、找不到範圍、門牌待確認等提示的原因，以及資料來源與門牌資料涵蓋的縣市。",
+  path: "/faq",
+}
+
 export const ABOUT_META: PageMeta = {
   title: `關於｜${SITE_TITLE}`,
   description: "閃電地址是免費的臺灣 3+3 郵遞區號查詢工具，資料每月同步中華郵政。",

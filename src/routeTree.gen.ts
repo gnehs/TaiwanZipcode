@@ -13,6 +13,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as SingleRouteImport } from "./routes/_single"
 import { Route as AboutRouteImport } from "./routes/about"
+import { Route as FaqRouteImport } from "./routes/faq"
 import { Route as SingleIndexRouteImport } from "./routes/_single.index"
 import { Route as SingleAAddressRouteImport } from "./routes/_single.a.$address"
 
@@ -32,6 +33,11 @@ const BatchLazyRoute = BatchLazyRouteImport.update({
   path: "/batch",
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import("./routes/batch.lazy").then((d) => d.Route))
+const FaqRoute = FaqRouteImport.update({
+  id: "/faq",
+  path: "/faq",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SingleIndexRoute = SingleIndexRouteImport.update({
   id: "/",
   path: "/",
@@ -46,11 +52,13 @@ const SingleAAddressRoute = SingleAAddressRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof SingleIndexRoute
   "/about": typeof AboutRoute
+  "/faq": typeof FaqRoute
   "/batch": typeof BatchLazyRoute
   "/a/$address": typeof SingleAAddressRoute
 }
 export interface FileRoutesByTo {
   "/about": typeof AboutRoute
+  "/faq": typeof FaqRoute
   "/batch": typeof BatchLazyRoute
   "/": typeof SingleIndexRoute
   "/a/$address": typeof SingleAAddressRoute
@@ -59,19 +67,21 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/_single": typeof SingleRouteWithChildren
   "/about": typeof AboutRoute
+  "/faq": typeof FaqRoute
   "/batch": typeof BatchLazyRoute
   "/_single/": typeof SingleIndexRoute
   "/_single/a/$address": typeof SingleAAddressRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/about" | "/batch" | "/a/$address"
+  fullPaths: "/" | "/about" | "/faq" | "/batch" | "/a/$address"
   fileRoutesByTo: FileRoutesByTo
-  to: "/about" | "/batch" | "/" | "/a/$address"
+  to: "/about" | "/faq" | "/batch" | "/" | "/a/$address"
   id:
     | "__root__"
     | "/_single"
     | "/about"
+    | "/faq"
     | "/batch"
     | "/_single/"
     | "/_single/a/$address"
@@ -80,6 +90,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   SingleRoute: typeof SingleRouteWithChildren
   AboutRoute: typeof AboutRoute
+  FaqRoute: typeof FaqRoute
   BatchLazyRoute: typeof BatchLazyRoute
 }
 
@@ -104,6 +115,13 @@ declare module "@tanstack/react-router" {
       path: "/batch"
       fullPath: "/batch"
       preLoaderRoute: typeof BatchLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/faq": {
+      id: "/faq"
+      path: "/faq"
+      fullPath: "/faq"
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/_single/": {
@@ -139,6 +157,7 @@ const SingleRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   SingleRoute: SingleRouteWithChildren,
   AboutRoute: AboutRoute,
+  FaqRoute: FaqRoute,
   BatchLazyRoute: BatchLazyRoute,
 }
 export const routeTree = rootRouteImport

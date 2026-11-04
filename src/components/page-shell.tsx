@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { cn } from "@/lib/utils"
 
-export type Page = "single" | "batch" | "about"
+export type Page = "single" | "batch" | "about" | "faq"
 
 export function PageShell({
   page,
@@ -38,6 +38,7 @@ export function PageShell({
               single: "[view-transition-name:page-single]",
               batch: "[view-transition-name:page-batch]",
               about: "[view-transition-name:page-about]",
+              faq: "[view-transition-name:page-faq]",
             }[page],
           )}
         >

@@ -47,6 +47,12 @@ export function SiteFooter() {
           <br className="sm:hidden" />
           正確資料請以中華郵政公告為準。
         </p>
+        <Link
+          to="/faq"
+          className="w-fit rounded-sm text-xs font-medium text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          常見問題
+        </Link>
       </div>
       <div className="mt-8 flex items-center justify-between gap-4 border-t pt-6 sm:mt-10">
         {/* Phones split the credit over two lines so the controls keep their place beside it. */}

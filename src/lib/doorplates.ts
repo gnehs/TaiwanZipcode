@@ -13,12 +13,27 @@ async function fetchJson<T>(path: string): Promise<T> {
   return response.json()
 }
 
-async function loadRoad(road: string) {
+export type DoorplateDate = { date: string; kind: "data" | "updated" }
+
+/**
+ * When each covered county's doorplates were taken, as an ROC date
+ * ("115-10", "115-9-14"): named by the county, or only the upload date.
+ */
+export function loadDoorplateDates() {
+  return fetchJson<Record<string, DoorplateDate>>("/doorplates/dates.json")
+}
+
+/** The districts with a doorplate file, as "臺北市北投區". */
+export function loadDoorplateDistricts() {
   districtNames ??= fetchJson<string[]>("/doorplates/index.json").catch((error) => {
     districtNames = null
     throw error
   })
-  const district = (await districtNames).find((name) => road.startsWith(name))
+  return districtNames
+}
+
+async function loadRoad(road: string) {
+  const district = (await loadDoorplateDistricts()).find((name) => road.startsWith(name))
   if (!district) return null
   let file = districtFiles.get(district)
   if (!file) {

@@ -1,9 +1,20 @@
 import { Link } from "@tanstack/react-router"
-import { InfoIcon } from "lucide-react"
+import { CircleHelpIcon, InfoIcon, MenuIcon } from "lucide-react"
 
 import { ModeSwitch } from "@/components/mode-switch"
 import type { Page } from "@/components/page-shell"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+
+const MENU_LINKS = [
+  { to: "/faq", label: "常見問題", icon: CircleHelpIcon },
+  { to: "/about", label: "關於", icon: InfoIcon },
+] as const
 
 // The outer columns share the leftover width, so the mode switch stays
 // centred however wide the logo is.
@@ -51,19 +62,32 @@ export function SiteHeader({
           </h1>
         </Link>
         <ModeSwitch page={page} onBand={onBand} />
-        <Link
-          to="/about"
-          aria-label="關於"
-          aria-current={page === "about" ? "page" : undefined}
-          className={cn(
-            "flex size-11 items-center justify-center justify-self-end rounded-full outline-none transition-[color,background-color,box-shadow] duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
-            onBand
-              ? "text-white hover:bg-white/20"
-              : "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control aria-[current=page]:text-foreground",
-          )}
-        >
-          <InfoIcon className="size-[1.125rem]" aria-hidden="true" />
-        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label="選單"
+            className={cn(
+              "flex size-11 items-center justify-center justify-self-end rounded-full outline-none transition-[color,background-color,box-shadow] duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
+              onBand
+                ? "text-white hover:bg-white/20 aria-expanded:bg-white/20"
+                : "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control aria-expanded:bg-card aria-expanded:text-foreground aria-expanded:shadow-control",
+            )}
+          >
+            <MenuIcon className="size-[1.125rem]" aria-hidden="true" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-auto min-w-40">
+            {MENU_LINKS.map(({ to, label, icon: Icon }) => (
+              <DropdownMenuItem
+                key={to}
+                render={<Link to={to} />}
+                aria-current={page === to.slice(1) ? "page" : undefined}
+                className="min-h-10 gap-3 rounded-xl px-3 aria-[current=page]:font-medium"
+              >
+                <Icon className="text-muted-foreground" aria-hidden="true" />
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
     </>
   )

@@ -1,4 +1,5 @@
 import { Fragment } from "react"
+import { Link } from "@tanstack/react-router"
 import { ChevronDownIcon, CircleAlertIcon, InfoIcon, LinkIcon, PlusIcon } from "lucide-react"
 
 import { CopyButton } from "@/components/copy-button"
@@ -62,7 +63,7 @@ const STATUS = {
   pending: { label: "尚未確認", ink: "text-[oklch(0.52_0.12_70)]" },
   awaiting: { label: "待補門牌", ink: "text-paper-ink" },
   unmatched: { label: "找不到範圍", ink: "text-[oklch(0.52_0.2_25)]" },
-  noDoor: { label: "查無此門牌", ink: "text-[oklch(0.52_0.12_70)]" },
+  noDoor: { label: "門牌待確認", ink: "text-[oklch(0.52_0.12_70)]" },
 } as const
 
 function StatusPill({ status }: { status: keyof typeof STATUS }) {
@@ -302,8 +303,10 @@ export function AddressResult({
   const chineseAddress = `${fullZipcode}${address}${addressSuffix.trim()}`
   const slug = addressSlug(address, addressSuffix)
   const { doorplates } = useRoadDoorplates(address)
+  const isDoorUnlisted =
+    isComplete && findDoor(doorplates, addressSuffix) === "missing"
   const status = isComplete
-    ? findDoor(doorplates, addressSuffix) === "missing"
+    ? isDoorUnlisted
       ? "noDoor"
       : null
     : isUnmatched
@@ -319,7 +322,9 @@ export function AddressResult({
         ? "此地址對應多個區號，請補上附號或樓層，協助縮小範圍。"
         : !resolvedScope && scopeResolution.status === "incomplete"
           ? "還需要更完整的門牌資訊。請確認已填寫「號」，並補上適用的附號或樓層。"
-          : ""
+          : isDoorUnlisted
+            ? "縣市門牌資料中找不到這個門牌，可能是門牌有誤或尚未收錄。"
+            : ""
   const isStreetUnusable =
     isSuffixIncomplete || parsedAddress.warns.length > 0
   const fields = parsedAddress.enFields
@@ -441,7 +446,17 @@ export function AddressResult({
                     aria-hidden="true"
                   />
                 )}
-                {message}
+                <span className="min-w-0 flex-1">{message}</span>
+                {isDoorUnlisted ? (
+                  // Its own column, so the message wraps without splitting it.
+                  <Link
+                    to="/faq"
+                    hash="doorplates"
+                    className="shrink-0 font-medium underline underline-offset-4"
+                  >
+                    了解原因
+                  </Link>
+                ) : null}
               </p>
             ) : null}
           </div>

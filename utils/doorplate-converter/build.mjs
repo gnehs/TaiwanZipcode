@@ -8,7 +8,6 @@ import {
   parseDoorNumber,
   parseDoorPath,
 } from '../../src/utils/doorplates.js';
-import { SOURCES } from './sources.mjs';
 
 const TEMP = new URL('./temp/', import.meta.url);
 const RESULT = new URL('./result/doorplates/', import.meta.url);
@@ -44,13 +43,41 @@ function parseCsv(text) {
   return rows;
 }
 
+// Each format read into { areaCode, street, place, lane, alley, number }.
+const READERS = {
+  csv: (text) => parseCsv(text).slice(1).map(([, areaCode, , , street, place, lane, alley, number]) => (
+    { areaCode, street, place, lane, alley, number }
+  )),
+  json: (text) => JSON.parse(text).map((row) => ({
+    areaCode: row['鄉鎮市區代碼'],
+    street: row['街路段'],
+    place: row['地區'],
+    lane: row['巷'],
+    alley: row['弄'],
+    number: row['號'],
+  })),
+  // Keelung names the district instead of coding it, and has no 地區 column.
+  'no-place-csv': (text) => parseCsv(text).slice(1).map(([, areaCode, , , street, lane, alley, number]) => (
+    { areaCode, street, place: '', lane, alley, number }
+  )),
+  // The address column runs road, lane, alley and number together.
+  'address-csv': (text) => parseCsv(text).slice(1).map(([, areaCode, , , address = '']) => {
+    const match = address.normalize('NFKC').match(/^(.*?)(\d+巷)?(\d+弄)?(\d+(?:之\d+)?號.*)$/u);
+    return match
+      ? { areaCode, street: match[1], place: '', lane: match[2], alley: match[3], number: match[4] }
+      : { areaCode, street: address, place: '', lane: '', alley: '', number: '' };
+  }),
+};
+
+const manifest = JSON.parse(await fs.readFile(new URL('manifest.json', TEMP), 'utf8'));
+
 const zipcodeData = decodeZipcodeData(
   await fs.readFile(new URL('../../src/assets/zipcode.txt', import.meta.url), 'utf8'),
 );
 
 // district file name → road → door path → house numbers
 const districts = new Map();
-for (const { county } of SOURCES) {
+for (const { county, format, files } of manifest) {
   const areasOfRoad = new Map();
   for (const [area, { roads }] of Object.entries(zipcodeData[county].areas)) {
     for (const road of Object.keys(roads)) {
@@ -60,10 +87,13 @@ for (const { county } of SOURCES) {
   }
 
   // The files name districts by code only; each code is the district its roads fall in.
-  const rows = parseCsv(await fs.readFile(new URL(`${county}.csv`, TEMP), 'utf8')).slice(1);
+  const rows = [];
+  for (const file of files) {
+    for (const row of READERS[format](await fs.readFile(new URL(file, TEMP), 'utf8'))) rows.push(row);
+  }
   const doors = [];
   const votes = new Map();
-  for (const [, areaCode, , , street, place, lane, alley, number] of rows) {
+  for (const { areaCode, street, place, lane, alley, number } of rows) {
     const road = normalizeRoadName(street) || normalizeRoadName(place);
     const doorPath = parseDoorPath(lane, alley);
     const door = parseDoorNumber(number);
@@ -109,4 +139,9 @@ for (const name of names) {
   await fs.writeFile(new URL(`${name}.json`, RESULT), JSON.stringify(roads));
 }
 await fs.writeFile(new URL('index.json', RESULT), JSON.stringify(names));
+// When each county's file was taken: kind 'data' is a date the county named,
+// 'updated' only when the file was last uploaded.
+await fs.writeFile(new URL('dates.json', RESULT), JSON.stringify(
+  Object.fromEntries(manifest.map(({ county, date }) => [county, date])),
+));
 console.log(`Wrote ${names.length} district files`);
