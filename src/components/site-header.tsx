@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router"
+import { InfoIcon } from "lucide-react"
 
 import { ModeSwitch } from "@/components/mode-switch"
 import type { Page } from "@/components/page-shell"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
 
 // The outer columns share the leftover width, so the mode switch stays
@@ -51,9 +51,19 @@ export function SiteHeader({
           </h1>
         </Link>
         <ModeSwitch page={page} onBand={onBand} />
-        <div className="justify-self-end">
-          <ThemeToggle onBand={onBand} />
-        </div>
+        <Link
+          to="/about"
+          aria-label="關於"
+          aria-current={page === "about" ? "page" : undefined}
+          className={cn(
+            "flex size-11 items-center justify-center justify-self-end rounded-full outline-none transition-[color,background-color,box-shadow] duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
+            onBand
+              ? "text-white hover:bg-white/20"
+              : "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control aria-[current=page]:text-foreground",
+          )}
+        >
+          <InfoIcon className="size-[1.125rem]" aria-hidden="true" />
+        </Link>
       </header>
     </>
   )

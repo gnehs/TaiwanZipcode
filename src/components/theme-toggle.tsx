@@ -1,15 +1,9 @@
 import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
 import { useSyncExternalStore } from "react"
 
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Toggle } from "@base-ui/react/toggle"
+import { ToggleGroup } from "@base-ui/react/toggle-group"
+
 import {
   getTheme,
   setTheme,
@@ -27,47 +21,30 @@ const THEME_OPTIONS = [
   icon: typeof SunIcon
 }>
 
-export function ThemeToggle({ onBand }: { onBand: boolean }) {
+// All three choices sit in view, so the current one needs no menu to find.
+export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribeTheme, getTheme)
-  const current =
-    THEME_OPTIONS.find((option) => option.value === theme) ?? THEME_OPTIONS[2]
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-lg"
-            className={cn(
-              "size-11",
-              onBand
-                ? "text-white hover:bg-white/20 hover:text-white aria-expanded:bg-white/20 aria-expanded:text-white dark:hover:bg-white/20"
-                : "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control aria-expanded:bg-card aria-expanded:text-foreground aria-expanded:shadow-control",
-            )}
-            aria-label={`主題：${current.label}`}
-          />
-        }
-      >
-        <current.icon className="size-[1.125rem]" aria-hidden="true" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuRadioGroup
-          value={theme}
-          onValueChange={(value) => setTheme(value as Theme)}
+    <ToggleGroup
+      aria-label="主題"
+      value={[theme]}
+      onValueChange={([value]) => {
+        // Pressing the current choice again would empty the group; keep it.
+        if (value) setTheme(value as Theme)
+      }}
+      className="flex rounded-full bg-card p-1 shadow-surface"
+    >
+      {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+        <Toggle
+          key={value}
+          value={value}
+          aria-label={label}
+          className="flex size-7 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors duration-150 ease-out hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 data-pressed:bg-secondary data-pressed:text-foreground [&_svg]:size-3.5"
         >
-          {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
-            <DropdownMenuRadioItem
-              key={value}
-              value={value}
-              className="min-h-10 gap-2.5 pl-3"
-            >
-              <Icon aria-hidden="true" />
-              {label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <Icon aria-hidden="true" />
+        </Toggle>
+      ))}
+    </ToggleGroup>
   )
 }
