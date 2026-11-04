@@ -1,5 +1,5 @@
 export const SITE_ORIGIN = "https://zipcode.gnehs.net"
-export const SITE_TITLE = "台灣 3+3 郵遞區號查詢"
+export const SITE_TITLE = "閃電地址"
 
 export type PageMeta = {
   title: string
@@ -9,7 +9,7 @@ export type PageMeta = {
 
 export const HOME_META: PageMeta = {
   title: SITE_TITLE,
-  description: "即時、快速、無需驗證碼之郵遞區號線上查詢工具。",
+  description: "填表不卡關，地址閃電查。",
   path: "/",
 }
 

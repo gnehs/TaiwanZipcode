@@ -172,7 +172,7 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
           letterSpacing: "-0.01em",
         }}
       >
-        <div style={{ color: "white" }}>台灣 3+3 郵遞區號</div>
+        <div style={{ color: "white" }}>閃電地址</div>
         <div style={{ color: "rgba(255, 255, 255, 0.62)" }}>即時、快速、</div>
         <div style={{ color: "rgba(255, 255, 255, 0.62)" }}>無需驗證碼。</div>
       </div>

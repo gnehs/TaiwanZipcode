@@ -44,7 +44,7 @@ export function SiteHeader({
             compact ? "text-lg" : "text-2xl sm:text-3xl",
           )}
         >
-          台灣 3+3 郵遞區號查詢
+          閃電地址
         </h1>
       </Link>
     </header>
