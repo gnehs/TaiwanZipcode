@@ -39,6 +39,12 @@ export function rememberLookup(lookup: RecentLookup) {
   updateLookups(addRecentLookup(lookups, lookup))
 }
 
+export function forgetLookup({ road, suffix }: RecentLookup) {
+  updateLookups(
+    lookups.filter((lookup) => lookup.road !== road || lookup.suffix !== suffix),
+  )
+}
+
 export function clearRecentLookups() {
   updateLookups([])
 }
