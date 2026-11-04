@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { useNavigate, useParams, useRouter } from "@tanstack/react-router"
 
 import { AddressResult } from "@/components/address-result"
+import { AsciiPhoto } from "@/components/ascii-photo"
 import { AddressSearch } from "@/components/address-search"
 import { FeatureCards } from "@/components/feature-cards"
 import { PageShell } from "@/components/page-shell"
 import { RecentLookups } from "@/components/recent-lookups"
 import {
+  formatAddress,
   getCorrectionsVersion,
   lookupCleanedAddress,
   lookupForRecipient,
@@ -15,6 +17,7 @@ import {
 } from "@/lib/addresses"
 import { addressSlug, parseAddressSlug } from "@/lib/address-path"
 import { addressMeta } from "@/lib/page-meta"
+import { placePhoto } from "@/lib/place-photos"
 import { rememberLookup } from "@/lib/recent-lookups"
 import { cn } from "@/lib/utils"
 
@@ -86,6 +89,15 @@ export function SingleLookup() {
     )
   }, [targetQuery])
 
+  const photo = placePhoto(road)
+  // Only the words, so the band spells names rather than numbers and commas.
+  const englishAddress = road
+    ? `${formatAddress(road, addressSuffix, "")
+        .en.toUpperCase()
+        .split(/[\s,.()]+/)
+        .filter((word) => /^[A-Z]{2,}$/.test(word))
+        .join(" ")} `
+    : undefined
   const title = addressMeta(lookup).title
   useEffect(() => {
     document.title = title
@@ -119,7 +131,7 @@ export function SingleLookup() {
 
   return (
     <PageShell
-      isBatch={false}
+      page="single"
       raised={Boolean(road)}
       onHome={() => {
         setQuery("")
@@ -129,20 +141,25 @@ export function SingleLookup() {
       {/* The band runs edge to edge and up behind the header to the page top
           (the header's height plus the page's top padding), and ends with
           this block. It stays mounted so the search never loses focus. */}
-      <div
-        className={cn(
-          "relative transition-[padding] duration-500 ease-out motion-reduce:transition-none",
-          !road && "pb-16 sm:pb-18",
-        )}
-      >
+      <div className="relative pb-16 sm:pb-18">
         <div
           aria-hidden="true"
           className={cn(
-            "hero-band pointer-events-none absolute inset-x-[calc(50%-50vw)] -top-[calc(3.5rem+--spacing(10))] bottom-0 -z-10 sm:-top-[calc(4rem+9vh)] overflow-hidden transition-opacity duration-500 ease-out motion-reduce:transition-none",
-            road && "opacity-0",
+            "hero-band pointer-events-none absolute inset-x-[calc(50%-50vw)] bottom-0 -z-10 overflow-hidden transition-[top] duration-500 ease-out motion-reduce:transition-none",
+            road
+              ? "-top-[calc(3.5rem+--spacing(6))] sm:-top-[calc(4rem+--spacing(8))]"
+              : "-top-[calc(3.5rem+--spacing(10))] sm:-top-[calc(4rem+9vh)]",
           )}
         >
-          <div className="plus-grid absolute inset-0 text-white/15" />
+          {/* The address's city, spelled out in its English address, or the
+              whole island before one is typed. Blurred at the top so the
+              header reads over it. */}
+          <AsciiPhoto
+            src={photo}
+            text={englishAddress}
+            blurTop={road ? 80 : 112}
+            className="absolute inset-0 size-full"
+          />
         </div>
         {road ? null : (
           <h2 className="enter-rise pb-8 text-center text-[2.75rem] leading-[1.1] font-extrabold tracking-tight text-white [text-shadow:0_2px_20px_oklch(0.45_0.15_45/0.3)] sm:pb-10 sm:text-7xl">
@@ -152,7 +169,7 @@ export function SingleLookup() {
           </h2>
         )}
         <AddressSearch
-          onBand={!road}
+          onBand
           query={query}
           road={road}
           addressSuffix={addressSuffix}

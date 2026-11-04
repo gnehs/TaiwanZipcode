@@ -17,7 +17,7 @@ function BatchPage() {
   }, [])
 
   return (
-    <PageShell isBatch raised>
+    <PageShell page="batch" raised>
       <BatchLookup />
     </PageShell>
   )

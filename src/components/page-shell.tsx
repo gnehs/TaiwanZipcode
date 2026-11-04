@@ -3,26 +3,28 @@ import type { ReactNode } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { cn } from "@/lib/utils"
 
+export type Page = "single" | "batch" | "about"
+
 export function PageShell({
-  isBatch,
+  page,
   raised,
   onHome,
   children,
 }: {
-  isBatch: boolean
+  page: Page
   raised: boolean
   onHome?: () => void
   children: ReactNode
 }) {
-  // The home page sits on the orange band until a result appears.
-  const onBand = !isBatch && !raised
+  // The single lookup always sits on the photo band.
+  const onBand = page === "single"
   return (
     <>
-      <SiteHeader isBatch={isBatch} onBand={onBand} onHome={onHome} />
+      <SiteHeader page={page} onBand={onBand} onHome={onHome} />
       <main
         className={cn(
           "relative mx-auto flex w-full flex-1 flex-col gap-3 px-4 transition-[padding] duration-500 ease-out motion-reduce:transition-none sm:px-6",
-          isBatch ? "max-w-6xl" : "max-w-2xl",
+          page === "batch" ? "max-w-6xl" : "max-w-2xl",
           // The search rises once a result appears below it.
           raised ? "pt-6 sm:pt-8" : "pt-10 sm:pt-[9vh]",
         )}
@@ -32,9 +34,11 @@ export function PageShell({
         <div
           className={cn(
             "flex flex-col gap-3",
-            isBatch
-              ? "[view-transition-name:page-batch]"
-              : "[view-transition-name:page-single]",
+            {
+              single: "[view-transition-name:page-single]",
+              batch: "[view-transition-name:page-batch]",
+              about: "[view-transition-name:page-about]",
+            }[page],
           )}
         >
           {children}

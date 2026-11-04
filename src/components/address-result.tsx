@@ -360,7 +360,8 @@ export function AddressResult({
   )
 
   return (
-    <section className="flex flex-col gap-3" aria-label="查詢結果">
+    // Pulled up to overlap the photo band, like the recent lookups card.
+    <section className="relative -mt-12 flex flex-col gap-3 sm:-mt-14" aria-label="查詢結果">
       <Card className="enter-rise relative bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary),var(--primary-gold)_35%),color-mix(in_oklab,var(--primary),black_4%))] text-primary-foreground shadow-primary">
         <div
           className="plus-grid pointer-events-none absolute inset-0 text-white/15"

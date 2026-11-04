@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router"
 
+import type { Page } from "@/components/page-shell"
 import { cn } from "@/lib/utils"
 
 const MODES = [
-  { to: "/", label: "單筆查詢", batch: false },
-  { to: "/batch", label: "批次查詢", batch: true },
+  { to: "/", label: "單筆查詢", page: "single" },
+  { to: "/batch", label: "批次查詢", page: "batch" },
 ] as const
 
 // Each mode has its own path, so each link is a real, shareable destination.
@@ -12,7 +13,9 @@ const MODES = [
 // a translate of 100% lands exactly on the other one. During a mode switch
 // the switch, pill and labels are view-transition layers in that order, so
 // the pill slides across under the labels.
-export function ModeSwitch({ isBatch, onBand }: { isBatch: boolean; onBand: boolean }) {
+// Pages outside the two modes, like about, leave both unselected.
+export function ModeSwitch({ page, onBand }: { page: Page; onBand: boolean }) {
+  const isBatch = page === "batch"
   return (
     <nav aria-label="查詢模式">
       <div
@@ -28,10 +31,11 @@ export function ModeSwitch({ isBatch, onBand }: { isBatch: boolean; onBand: bool
             "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full transition-[translate,background-color] duration-300 ease-out [view-transition-name:mode-pill] motion-reduce:transition-none",
             onBand ? "bg-card" : "bg-secondary",
             isBatch && "translate-x-full",
+            page === "about" && "opacity-0",
           )}
         />
         {MODES.map((mode) => {
-          const isCurrent = mode.batch === isBatch
+          const isCurrent = mode.page === page
           return (
             <Link
               key={mode.to}
@@ -39,7 +43,7 @@ export function ModeSwitch({ isBatch, onBand }: { isBatch: boolean; onBand: bool
               aria-current={isCurrent ? "page" : undefined}
               className={cn(
                 "relative flex h-8 items-center justify-center rounded-full px-4 text-sm font-medium outline-none transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
-                mode.batch
+                mode.page === "batch"
                   ? "[view-transition-name:mode-batch]"
                   : "[view-transition-name:mode-single]",
                 isCurrent
