@@ -49,8 +49,11 @@ export type AddressIndex = {
   addresses: string[]
   scopesByAddress: Record<string, ZipcodeScope[]>
   englishByAddress: Record<string, EnglishPlace>
-  places: { city: string; area: string; road: string }[]
+  places: Place[]
+  placeByAddress: Record<string, Place>
 }
+
+type Place = { city: string; area: string; road: string }
 
 // The fields most address forms ask for, so each can be pasted on its own.
 export type EnglishAddressFields = {
@@ -82,13 +85,16 @@ export type ParsedAddress = {
 function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
   const scopesByAddress: Record<string, ZipcodeScope[]> = {}
   const englishByAddress: Record<string, EnglishPlace> = {}
-  const places: AddressIndex["places"] = []
+  const places: Place[] = []
+  const placeByAddress: Record<string, Place> = {}
 
   for (const [cityName, city] of Object.entries(database)) {
     for (const [areaName, area] of Object.entries(city.areas)) {
       for (const [roadName, road] of Object.entries(area.roads)) {
         const address = `${cityName}${areaName}${roadName}`
-        places.push({ city: cityName, area: areaName, road: roadName })
+        const place = { city: cityName, area: areaName, road: roadName }
+        places.push(place)
+        placeByAddress[address] = place
         scopesByAddress[address] = road.scopes
         englishByAddress[address] = {
           road: road.en,
@@ -104,6 +110,7 @@ function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
     scopesByAddress,
     englishByAddress,
     places,
+    placeByAddress,
   }
 }
 

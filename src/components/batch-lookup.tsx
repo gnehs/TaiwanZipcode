@@ -20,6 +20,7 @@ import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
+  addressIndex,
   formatAddress,
   getCorrectionsVersion,
   lookupCleanedAddress,
@@ -37,6 +38,9 @@ type BatchResult = {
   status: string
   zipcode: string
   zh: string
+  zhCity: string
+  zhArea: string
+  zhRest: string
   en: string
   line1: string
   line2: string
@@ -58,6 +62,9 @@ const RESULT_COLUMNS: {
   { key: "status", title: "狀態", basis: 112 },
   { key: "zipcode", title: "郵遞區號", basis: 96 },
   { key: "zh", title: "中文地址", basis: 260, grow: 1 },
+  { key: "zhCity", title: "縣市", basis: 96 },
+  { key: "zhArea", title: "鄉鎮市區", basis: 104 },
+  { key: "zhRest", title: "詳細地址", basis: 200 },
   { key: "en", title: "英文地址", basis: 380, grow: 1 },
   { key: "line1", title: "Address Line 1", basis: 260 },
   { key: "line2", title: "Address Line 2", basis: 140 },
@@ -76,6 +83,9 @@ const EMPTY_RESULT: BatchResult = {
   status: "",
   zipcode: "",
   zh: "",
+  zhCity: "",
+  zhArea: "",
+  zhRest: "",
   en: "",
   line1: "",
   line2: "",
@@ -100,6 +110,7 @@ function resolveRow(input: string): BatchResult {
   const isComplete = displayedZipcode.length === 6
   const parsed = formatAddress(road, addressSuffix, isComplete ? displayedZipcode : "")
   const fields = parsed.enFields
+  const place = addressIndex.placeByAddress[road]
   const isStreetUncertain =
     !suffix || !parseAddressSuffix(addressSuffix).complete || parsed.warns.length > 0
 
@@ -117,6 +128,9 @@ function resolveRow(input: string): BatchResult {
     status,
     zipcode: displayedZipcode,
     zh: `${road}${suffix}`,
+    zhCity: place?.city || "",
+    zhArea: place?.area || "",
+    zhRest: place ? `${place.road}${suffix}` : "",
     en: parsed.en,
     line1: fields?.line1 || "",
     line2: fields?.line2 || "",
