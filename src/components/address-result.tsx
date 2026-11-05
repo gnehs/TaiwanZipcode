@@ -511,7 +511,7 @@ export function AddressResult({
             <li className="flex items-center gap-3.5 py-4">
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <h3 className="text-xs text-muted-foreground">中文地址</h3>
-                <p className="break-words select-all">{chineseAddress}</p>
+                <p className="break-words">{chineseAddress}</p>
                 {isHouseIncomplete ? (
                   <p className="text-xs text-warning">門牌不完整</p>
                 ) : null}
@@ -526,7 +526,7 @@ export function AddressResult({
               <div className="flex items-center gap-3.5">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <h3 className="text-xs text-muted-foreground">英文地址</h3>
-                  <p lang="en" className="break-words select-all">
+                  <p lang="en" className="break-words">
                     {parsedAddress.en}
                   </p>
                 </div>
@@ -551,7 +551,7 @@ export function AddressResult({
                         <span
                           lang="en"
                           className={cn(
-                            "min-w-0 break-words select-all",
+                            "min-w-0 break-words",
                             field.value ? undefined : "text-muted-foreground",
                           )}
                         >
