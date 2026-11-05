@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import {
-  DataSheetGrid,
+  DynamicDataSheetGrid,
   keyColumn,
   textColumn,
   type CellProps,
@@ -8,8 +8,9 @@ import {
   type DataSheetGridRef,
 } from "react-datasheet-grid"
 import "react-datasheet-grid/dist/style.css"
-import { CircleHelpIcon } from "lucide-react"
+import { ChevronDownIcon, CircleHelpIcon } from "lucide-react"
 
+import { BatchColumnsMenu } from "@/components/batch-columns-menu"
 import { BatchContextMenu } from "@/components/batch-context-menu"
 import {
   BatchGuide,
@@ -20,15 +21,23 @@ import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   addressIndex,
   formatAddress,
   getCorrectionsVersion,
   lookupCleanedAddress,
   subscribeCorrections,
 } from "@/lib/addresses"
+import { readColumnPrefs, writeColumnPrefs, type ColumnPrefs } from "@/lib/batch-columns"
 import { cn } from "@/lib/utils"
 import { runViewTransition } from "@/lib/view-transition"
-import { toTsv } from "@/utils/batchTable.js"
+import { clampColumnWidth } from "@/utils/batchColumns.js"
+import { toCsv, toTsv } from "@/utils/batchTable.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type Tone = "success" | "warning" | "destructive"
@@ -53,6 +62,10 @@ type GridRow = BatchResult & { input: string | null }
 
 type ResultKey = Exclude<keyof BatchResult, "tone">
 
+type ColumnKey = ResultKey | "input"
+
+const INPUT_COLUMN = { key: "input", title: "地址", basis: 300, grow: 1 } as const
+
 const RESULT_COLUMNS: {
   key: ResultKey
   title: string
@@ -71,6 +84,9 @@ const RESULT_COLUMNS: {
   { key: "district", title: "District", basis: 140 },
   { key: "city", title: "City", basis: 150 },
 ]
+
+const RESULT_KEYS = RESULT_COLUMNS.map((column) => column.key)
+const DEFAULT_PREFS: ColumnPrefs<ResultKey> = { order: RESULT_KEYS, hidden: [], widths: {} }
 
 const TONE_CLASSES: Record<Tone, string> = {
   success: "text-success",
@@ -181,7 +197,43 @@ function ResultCell({ rowData, columnData }: CellProps<GridRow, ResultKey>) {
   )
 }
 
-function ColumnTitle({ title, text }: { title: string; text: string }) {
+// Room beside the text: a cell pads 10px a side plus its border; a header
+// also holds its copy button and gaps.
+const CELL_PADDING = 24
+const HEADER_EXTRA = 48
+
+let measureContext: CanvasRenderingContext2D | null = null
+function measureText(text: string, font: string) {
+  measureContext ??= document.createElement("canvas").getContext("2d")
+  if (!measureContext) return 0
+  measureContext.font = font
+  return measureContext.measureText(text).width
+}
+
+// Like a spreadsheet's double-click on a column edge: wide enough for the
+// title and the longest value, so nothing in the column is cut off.
+function fitColumnWidth(grid: HTMLElement, key: ColumnKey, title: string, values: string[]) {
+  const style = getComputedStyle(grid)
+  const size = key === "input" ? "14px" : style.fontSize
+  const family =
+    key === "zipcode" ? style.getPropertyValue("--font-mono") || "monospace" : style.fontFamily
+  const font = `${size} ${family}`
+  const widest = Math.max(0, ...values.map((value) => measureText(value, font)))
+  const header = measureText(title, `12px ${style.fontFamily}`) + HEADER_EXTRA
+  return clampColumnWidth(Math.ceil(Math.max(widest + CELL_PADDING, header)))
+}
+
+function ColumnTitle({
+  title,
+  text,
+  onResize,
+  onAutoFit,
+}: {
+  title: string
+  text: string
+  onResize: (width: number) => void
+  onAutoFit: () => void
+}) {
   return (
     <span className="flex w-full items-center justify-between gap-1 pl-1.5 text-xs">
       <span className="truncate">{title}</span>
@@ -192,8 +244,57 @@ function ColumnTitle({ title, text }: { title: string; text: string }) {
         variant="ghost"
         className="size-7"
       />
+      <span
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={`調整「${title}」欄寬`}
+        className="batch-resize-handle"
+        // The grid selects the column on mousedown; resizing must not.
+        onMouseDown={(event) => event.stopPropagation()}
+        onPointerDown={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          const handle = event.currentTarget
+          const cell = handle.closest(".dsg-cell")
+          if (!cell) return
+          const startWidth = cell.getBoundingClientRect().width
+          const startX = event.clientX
+          handle.setPointerCapture(event.pointerId)
+          handle.dataset.active = ""
+          const move = (moveEvent: PointerEvent) =>
+            onResize(clampColumnWidth(startWidth + moveEvent.clientX - startX))
+          const end = () => {
+            delete handle.dataset.active
+            handle.removeEventListener("pointermove", move)
+            handle.removeEventListener("pointerup", end)
+            handle.removeEventListener("pointercancel", end)
+          }
+          handle.addEventListener("pointermove", move)
+          handle.addEventListener("pointerup", end)
+          handle.addEventListener("pointercancel", end)
+        }}
+        onDoubleClick={(event) => {
+          event.stopPropagation()
+          onAutoFit()
+        }}
+      />
     </span>
   )
+}
+
+function downloadFile(name: string, data: BlobPart, type: string) {
+  const url = URL.createObjectURL(new Blob([data], { type }))
+  const link = document.createElement("a")
+  link.href = url
+  link.download = name
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 0)
+}
+
+function exportName(extension: string) {
+  const date = new Date()
+  const pad = (value: number) => String(value).padStart(2, "0")
+  return `批次查詢-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}.${extension}`
 }
 
 export function BatchLookup() {
@@ -205,6 +306,9 @@ export function BatchLookup() {
   const [inputs, setInputs] = useState(() => padInputs([]))
   const gridRef = useRef<DataSheetGridRef>(null)
   const [showGuide, setShowGuide] = useState(() => !readGuideDismissed())
+  const [prefs, setPrefs] = useState(() => readColumnPrefs(RESULT_KEYS))
+  const gridBoxRef = useRef<HTMLDivElement>(null)
+  useEffect(() => writeColumnPrefs(prefs), [prefs])
   const rows = useMemo<GridRow[]>(
     () =>
       Array.from({ length: Math.max(inputs.length, MIN_ROWS) }, (_, index) => {
@@ -214,58 +318,81 @@ export function BatchLookup() {
     [inputs, correctionsVersion],
   )
   // Every row up to the last one with an address, keeping blank rows between.
-  const filledRows = rows.slice(0, inputs.length - 1)
-  // The grid keeps the first callback it was given, so read live values here.
-  const lastFilledRowRef = useRef(-1)
-  const lastRowRef = useRef(-1)
-  lastFilledRowRef.current = filledRows.length - 1
-  lastRowRef.current = rows.length - 1
+  const filledRows = useMemo(() => rows.slice(0, inputs.length - 1), [rows, inputs.length])
   const completeCount = filledRows.filter((row) => row.tone === "success").length
   const filledCount = filledRows.filter((row) => row.tone).length
 
-  const columns = useMemo<Column<GridRow>[]>(
-    () => [
+  const visibleColumns = useMemo(() => {
+    const byKey = new Map(RESULT_COLUMNS.map((column) => [column.key, column]))
+    return prefs.order
+      .filter((key) => !prefs.hidden.includes(key))
+      .flatMap((key) => byKey.get(key) ?? [])
+  }, [prefs.order, prefs.hidden])
+  const tableColumns = [INPUT_COLUMN, ...visibleColumns]
+  const cellText = (row: GridRow, key: ColumnKey) => row[key] ?? ""
+
+  const columns = useMemo<Column<GridRow>[]>(() => {
+    const sizing = ({ key, basis, grow = 0 }: (typeof tableColumns)[number]) => {
+      const width = prefs.widths[key]
+      return width
+        ? { basis: width, grow: 0, shrink: 0, minWidth: width, maxWidth: width }
+        : { basis, grow, minWidth: key === "input" ? 220 : basis }
+    }
+    const title = ({ key, title }: (typeof tableColumns)[number]) => (
+      <ColumnTitle
+        title={title}
+        text={toTsv(filledRows.map((row) => [cellText(row, key)]))}
+        onResize={(width) =>
+          setPrefs((current) => ({ ...current, widths: { ...current.widths, [key]: width } }))
+        }
+        onAutoFit={() => {
+          if (!gridBoxRef.current) return
+          const width = fitColumnWidth(
+            gridBoxRef.current,
+            key,
+            title,
+            filledRows.map((row) => cellText(row, key)),
+          )
+          setPrefs((current) => ({ ...current, widths: { ...current.widths, [key]: width } }))
+        }}
+      />
+    )
+    return [
       {
         ...keyColumn<GridRow, "input">("input", textColumn),
-        title: (
-          <ColumnTitle
-            title="地址"
-            text={toTsv(filledRows.map((row) => [row.input ?? ""]))}
-          />
-        ),
-        basis: 300,
-        grow: 1,
-        minWidth: 220,
+        title: title(INPUT_COLUMN),
+        ...sizing(INPUT_COLUMN),
       },
-      ...RESULT_COLUMNS.map(
-        ({ key, title, basis, grow = 0 }): Column<GridRow> => ({
-          id: key,
-          title: (
-            <ColumnTitle
-              title={title}
-              text={toTsv(filledRows.map((row) => [row[key]]))}
-            />
-          ),
-          basis,
-          grow,
-          minWidth: basis,
+      ...visibleColumns.map(
+        (column): Column<GridRow> => ({
+          id: column.key,
+          title: title(column),
+          ...sizing(column),
           component: ResultCell as Column<GridRow>["component"],
-          columnData: key,
+          columnData: column.key,
           disabled: true,
-          copyValue: ({ rowData }) => rowData[key],
+          copyValue: ({ rowData }) => rowData[column.key],
         }),
       ),
-    ],
-    [filledRows],
-  )
+    ]
+  }, [filledRows, visibleColumns, prefs.widths])
 
-  const tableText = toTsv([
-    ["地址", ...RESULT_COLUMNS.map((column) => column.title)],
-    ...filledRows.map((row) => [
-      row.input ?? "",
-      ...RESULT_COLUMNS.map((column) => row[column.key]),
-    ]),
-  ])
+  const tableRows = [
+    tableColumns.map((column) => column.title),
+    ...filledRows.map((row) => tableColumns.map((column) => cellText(row, column.key))),
+  ]
+  const tableText = toTsv(tableRows)
+  const isDefaultPrefs = JSON.stringify(prefs) === JSON.stringify(DEFAULT_PREFS)
+
+  async function downloadXlsx() {
+    const { toXlsx } = await import("@/utils/xlsx.js")
+    const widths = tableColumns.map((column) => prefs.widths[column.key] ?? column.basis)
+    downloadFile(
+      exportName("xlsx"),
+      toXlsx(tableRows, widths) as Uint8Array<ArrayBuffer>,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+  }
 
   return (
     <section className="flex flex-col gap-3" aria-label="批次查詢">
@@ -308,14 +435,51 @@ export function BatchLookup() {
                 清除
               </Button>
             ) : null}
+            <BatchColumnsMenu
+              columns={RESULT_COLUMNS}
+              order={prefs.order}
+              hidden={prefs.hidden}
+              isDefault={isDefaultPrefs}
+              onOrderChange={(order) => setPrefs((current) => ({ ...current, order }))}
+              onHiddenChange={(hidden) => setPrefs((current) => ({ ...current, hidden }))}
+              onReset={() => setPrefs(DEFAULT_PREFS)}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-11 gap-1 pr-3 pl-4"
+                    disabled={!filledCount}
+                  />
+                }
+              >
+                下載
+                <ChevronDownIcon className="size-4" aria-hidden="true" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-auto">
+                <DropdownMenuItem
+                  className="min-h-10 px-3"
+                  onClick={() =>
+                    downloadFile(exportName("csv"), `\ufeff${toCsv(tableRows)}`, "text/csv;charset=utf-8")
+                  }
+                >
+                  CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem className="min-h-10 px-3" onClick={downloadXlsx}>
+                  Excel（.xlsx）
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <CopyButton
               text={filledCount ? tableText : ""}
               label="複製表格"
             />
           </div>
         </div>
-        <div className="batch-grid">
-          <DataSheetGrid<GridRow>
+        <div className="batch-grid" ref={gridBoxRef}>
+          <DynamicDataSheetGrid<GridRow>
             value={rows}
             onChange={(next) => setInputs(padInputs(next.map((row) => row.input ?? "")))}
             columns={columns}
@@ -330,12 +494,12 @@ export function BatchLookup() {
             onSelectionChange={({ selection }) => {
               // A header click selects the padding rows too; trim them so a
               // pasted column does not blank the cells below it in Excel.
-              const lastRow = lastFilledRowRef.current
+              const lastRow = filledRows.length - 1
               if (
                 selection &&
                 lastRow >= 0 &&
                 selection.min.row === 0 &&
-                selection.max.row === lastRowRef.current &&
+                selection.max.row === rows.length - 1 &&
                 lastRow < selection.max.row
               ) {
                 gridRef.current?.setSelection({

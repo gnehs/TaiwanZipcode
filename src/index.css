@@ -452,3 +452,30 @@
     animation: none;
   }
 }
+
+/* A thin bar on a header's right edge; dragging it sets the column width and
+   a double-click fits the column to its content. */
+.batch-resize-handle {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  z-index: 1;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+  &::after {
+    content: "";
+    position: absolute;
+    inset-block: 8px;
+    right: 2px;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--primary);
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+  &:hover::after,
+  &[data-active]::after {
+    opacity: 1;
+  }
+}
