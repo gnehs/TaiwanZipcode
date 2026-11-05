@@ -70,9 +70,21 @@ function AboutPage() {
         role="region"
       >
         <CardContent className="flex flex-col">
-          <h2 id="photos-title" className="pb-2 text-base font-semibold">
+          <h2 id="photos-title" className="text-base font-semibold">
             圖片來源
           </h2>
+          <p className="pb-2 text-sm text-muted-foreground">
+            照片皆依{" "}
+            <a
+              href="https://unsplash.com/license"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Unsplash License
+            </a>{" "}
+            使用
+          </p>
           <ul className="-mx-3 -mb-3 grid sm:grid-cols-2">
             {PLACE_PHOTOS.map(({ name, slug, photo, author }) => (
               <li key={slug}>
