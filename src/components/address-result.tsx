@@ -21,6 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import {
+  addressIndex,
   formatAddress,
   formatScopeRule,
   type ScopeResolution,
@@ -327,6 +328,14 @@ export function AddressResult({
             : ""
   const isStreetUnusable =
     isSuffixIncomplete || parsedAddress.warns.length > 0
+  const place = addressIndex.placeByAddress[address]
+  const chineseFields = place
+    ? [
+        { label: "縣市", value: place.city, disabled: false },
+        { label: "鄉鎮市區", value: place.area, disabled: false },
+        { label: "詳細地址", value: `${place.road}${addressSuffix.trim()}`, disabled: false },
+      ]
+    : []
   const fields = parsedAddress.enFields
   const englishFields = fields
     ? [
@@ -508,19 +517,22 @@ export function AddressResult({
                 </div>
               </li>
             ) : null}
-            <li className="flex items-center gap-3.5 py-4">
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <h3 className="text-xs text-muted-foreground">中文地址</h3>
-                <p className="break-words">{chineseAddress}</p>
-                {isHouseIncomplete ? (
-                  <p className="text-xs text-warning">門牌不完整</p>
-                ) : null}
+            <li className="flex flex-col gap-3 py-4">
+              <div className="flex items-center gap-3.5">
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <h3 className="text-xs text-muted-foreground">中文地址</h3>
+                  <p className="break-words">{chineseAddress}</p>
+                  {isHouseIncomplete ? (
+                    <p className="text-xs text-warning">門牌不完整</p>
+                  ) : null}
+                </div>
+                <CopyButton
+                  text={chineseAddress}
+                  label="複製中文地址"
+                  visibleLabel="複製"
+                />
               </div>
-              <CopyButton
-                text={chineseAddress}
-                label="複製中文地址"
-                visibleLabel="複製"
-              />
+              {chineseFields.length ? <AddressFields fields={chineseFields} /> : null}
             </li>
             <li className="flex flex-col gap-3 py-4 last:pb-0">
               <div className="flex items-center gap-3.5">
@@ -537,38 +549,7 @@ export function AddressResult({
                   disabled={isStreetUnusable}
                 />
               </div>
-              {englishFields.length ? (
-                <ul className="flex flex-col divide-y rounded-2xl bg-muted px-4">
-                  {englishFields.map((field) => (
-                    <li
-                      key={field.label}
-                      className="flex items-center gap-3 py-2"
-                    >
-                      <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
-                        <span className="text-xs text-muted-foreground sm:w-28 sm:shrink-0">
-                          {field.label}
-                        </span>
-                        <span
-                          lang="en"
-                          className={cn(
-                            "min-w-0 break-words",
-                            field.value ? undefined : "text-muted-foreground",
-                          )}
-                        >
-                          {field.value || "—"}
-                        </span>
-                      </div>
-                      <CopyButton
-                        text={field.value}
-                        label={`複製 ${field.label}`}
-                        visibleLabel=""
-                        variant="outline"
-                        disabled={field.disabled}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+              {englishFields.length ? <AddressFields fields={englishFields} lang="en" /> : null}
               {parsedAddress.warns.length ? (
                 <p
                   className={cn(
@@ -594,5 +575,40 @@ export function AddressResult({
         </CardContent>
       </Card>
     </section>
+  )
+}
+
+type AddressField = { label: string; value: string; disabled: boolean }
+
+// The parts most address forms ask for, each copied on its own.
+function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string }) {
+  return (
+    <ul className="flex flex-col divide-y rounded-2xl bg-muted px-4">
+      {fields.map((field) => (
+        <li key={field.label} className="flex items-center gap-3 py-2">
+          <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
+            <span className="text-xs text-muted-foreground sm:w-28 sm:shrink-0">
+              {field.label}
+            </span>
+            <span
+              lang={lang}
+              className={cn(
+                "min-w-0 break-words",
+                field.value ? undefined : "text-muted-foreground",
+              )}
+            >
+              {field.value || "—"}
+            </span>
+          </div>
+          <CopyButton
+            text={field.value}
+            label={`複製 ${field.label}`}
+            visibleLabel=""
+            variant="outline"
+            disabled={field.disabled}
+          />
+        </li>
+      ))}
+    </ul>
   )
 }
