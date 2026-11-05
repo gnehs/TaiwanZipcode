@@ -52,6 +52,7 @@ export function SiteFooter() {
             {[
               { to: "/guide", label: "使用說明" },
               { to: "/faq", label: "常見問題" },
+              { to: "/about", label: "關於" },
             ].map(({ to, label }) => (
               <Link
                 key={to}
