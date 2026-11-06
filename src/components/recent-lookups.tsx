@@ -4,7 +4,7 @@ import { ArrowRightIcon, Trash2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { addressSlug } from "@/lib/address-path"
+import { addressSlug, hashOfSlug } from "@/lib/address-path"
 import {
   clearRecentLookups,
   forgetLookup,
@@ -58,8 +58,8 @@ export function RecentLookups() {
               style={{ "--enter-delay": `${60 + index * 40}ms` } as React.CSSProperties}
             >
               <Link
-                to="/a/$address"
-                params={{ address: lookup.address! }}
+                to="/"
+                hash={hashOfSlug(lookup.address!)}
                 className="group/row flex min-w-0 items-center gap-4 rounded-2xl px-3 py-3 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 {/* The zipcode leads, so the codes line up in a column and the

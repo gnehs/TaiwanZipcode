@@ -1,50 +1,21 @@
-import { addressIndex } from "@/lib/addresses"
+import { zipcodeData } from "@/lib/addresses"
+import { createAddressUrls } from "@/utils/addressUrls.js"
 
-// Each address is one path segment under /a/, /a/臺北市信義區信義路五段7號:
-// the road as the database names it, then the house number as typed.
-const roads = new Set(
-  addressIndex.places.map((place) => `${place.city}${place.area}${place.road}`),
-)
+// The one place address URLs are made and read; see utils/addressUrls.js
+// for the forms.
+const urls = createAddressUrls(zipcodeData)
 
-export function addressSlug(road: string, suffix: string): string | null {
-  return roads.has(road) ? `${road}${suffix.trim()}` : null
-}
+export const {
+  addressSlug,
+  parseAddressSlug,
+  slugOfShareParts,
+  slugOfSharePath,
+  currentSharePath,
+  hashOfSlug,
+  slugOfHash,
+  slugOfLegacyHash,
+} = urls
 
-// The same encoding the router uses for path params.
-export function addressPath(slug: string) {
-  return `/a/${encodeURIComponent(slug)}`
-}
-
-// For pasting into chats: Chinese stays readable, and only characters that
-// would end or break the link there (spaces, #, ?, %) are escaped.
-export function shareUrl(origin: string, slug: string) {
-  const path = slug.replace(/[^\p{L}\p{N}\-._~]/gu, encodeURIComponent)
-  return `${origin}/a/${path}`
-}
-
-// Some roads begin with another road's name, so the longest one is the road.
-export function parseAddressSlug(
-  slug: string,
-): { road: string; suffix: string } | null {
-  for (let end = slug.length; end > 0; end--) {
-    const road = slug.slice(0, end)
-    if (roads.has(road)) return { road, suffix: slug.slice(end) }
-  }
-  return null
-}
-
-// Links shared before the router kept the address in the hash, either as
-// #z=…&a=…&s=… or as the older #zipcode_address_suffix.
-export function readLegacyHash(hash: string): string | null {
-  const rawHash = hash.replace(/^#/, "")
-  try {
-    if (rawHash.startsWith("z=")) {
-      const params = new URLSearchParams(rawHash)
-      return addressSlug(params.get("a") || "", params.get("s") || "")
-    }
-    const [, address = "", ...suffix] = decodeURIComponent(rawHash).split("_")
-    return addressSlug(address, suffix.join("_"))
-  } catch {
-    return null
-  }
-}
+export const sharePath = (slug: string): string => urls.sharePath(slug) ?? "/"
+export const shareUrl = (origin: string, slug: string): string =>
+  urls.shareUrl(origin, slug) ?? origin

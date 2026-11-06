@@ -16,7 +16,7 @@ import { Route as AboutRouteImport } from "./routes/about"
 import { Route as FaqRouteImport } from "./routes/faq"
 import { Route as GuideRouteImport } from "./routes/guide"
 import { Route as SingleIndexRouteImport } from "./routes/_single.index"
-import { Route as SingleAAddressRouteImport } from "./routes/_single.a.$address"
+import { Route as SingleADistrictAddressRouteImport } from "./routes/_single.a.$district.$address"
 
 const BatchLazyRouteImport = createFileRoute("/batch")()
 
@@ -49,9 +49,9 @@ const SingleIndexRoute = SingleIndexRouteImport.update({
   path: "/",
   getParentRoute: () => SingleRoute,
 } as any)
-const SingleAAddressRoute = SingleAAddressRouteImport.update({
-  id: "/a/$address",
-  path: "/a/$address",
+const SingleADistrictAddressRoute = SingleADistrictAddressRouteImport.update({
+  id: "/a/$district/$address",
+  path: "/a/$district/$address",
   getParentRoute: () => SingleRoute,
 } as any)
 
@@ -61,7 +61,7 @@ export interface FileRoutesByFullPath {
   "/faq": typeof FaqRoute
   "/guide": typeof GuideRoute
   "/batch": typeof BatchLazyRoute
-  "/a/$address": typeof SingleAAddressRoute
+  "/a/$district/$address": typeof SingleADistrictAddressRoute
 }
 export interface FileRoutesByTo {
   "/about": typeof AboutRoute
@@ -69,7 +69,7 @@ export interface FileRoutesByTo {
   "/guide": typeof GuideRoute
   "/batch": typeof BatchLazyRoute
   "/": typeof SingleIndexRoute
-  "/a/$address": typeof SingleAAddressRoute
+  "/a/$district/$address": typeof SingleADistrictAddressRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -79,13 +79,14 @@ export interface FileRoutesById {
   "/guide": typeof GuideRoute
   "/batch": typeof BatchLazyRoute
   "/_single/": typeof SingleIndexRoute
-  "/_single/a/$address": typeof SingleAAddressRoute
+  "/_single/a/$district/$address": typeof SingleADistrictAddressRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/about" | "/faq" | "/guide" | "/batch" | "/a/$address"
+  fullPaths:
+    "/" | "/about" | "/faq" | "/guide" | "/batch" | "/a/$district/$address"
   fileRoutesByTo: FileRoutesByTo
-  to: "/about" | "/faq" | "/guide" | "/batch" | "/" | "/a/$address"
+  to: "/about" | "/faq" | "/guide" | "/batch" | "/" | "/a/$district/$address"
   id:
     | "__root__"
     | "/_single"
@@ -94,7 +95,7 @@ export interface FileRouteTypes {
     | "/guide"
     | "/batch"
     | "/_single/"
-    | "/_single/a/$address"
+    | "/_single/a/$district/$address"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -149,11 +150,11 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof SingleIndexRouteImport
       parentRoute: typeof SingleRoute
     }
-    "/_single/a/$address": {
-      id: "/_single/a/$address"
-      path: "/a/$address"
-      fullPath: "/a/$address"
-      preLoaderRoute: typeof SingleAAddressRouteImport
+    "/_single/a/$district/$address": {
+      id: "/_single/a/$district/$address"
+      path: "/a/$district/$address"
+      fullPath: "/a/$district/$address"
+      preLoaderRoute: typeof SingleADistrictAddressRouteImport
       parentRoute: typeof SingleRoute
     }
   }
@@ -161,12 +162,12 @@ declare module "@tanstack/react-router" {
 
 interface SingleRouteChildren {
   SingleIndexRoute: typeof SingleIndexRoute
-  SingleAAddressRoute: typeof SingleAAddressRoute
+  SingleADistrictAddressRoute: typeof SingleADistrictAddressRoute
 }
 
 const SingleRouteChildren: SingleRouteChildren = {
   SingleIndexRoute: SingleIndexRoute,
-  SingleAAddressRoute: SingleAAddressRoute,
+  SingleADistrictAddressRoute: SingleADistrictAddressRoute,
 }
 
 const SingleRouteWithChildren =

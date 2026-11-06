@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
-import { useNavigate, useParams, useRouter } from "@tanstack/react-router"
+import { useLocation, useNavigate, useParams, useRouter } from "@tanstack/react-router"
 
 import { AddressResult } from "@/components/address-result"
 import { AsciiPhoto } from "@/components/ascii-photo"
@@ -15,7 +15,12 @@ import {
   subscribeCorrections,
   type ZipcodeScope,
 } from "@/lib/addresses"
-import { addressSlug, parseAddressSlug } from "@/lib/address-path"
+import {
+  addressSlug,
+  hashOfSlug,
+  slugOfHash,
+  slugOfShareParts,
+} from "@/lib/address-path"
 import { addressMeta } from "@/lib/page-meta"
 import { placePhoto } from "@/lib/place-photos"
 import { rememberLookup } from "@/lib/recent-lookups"
@@ -24,8 +29,12 @@ import { cn } from "@/lib/utils"
 export function SingleLookup() {
   const router = useRouter()
   const navigate = useNavigate()
-  const { address: urlAddress = "" } = useParams({ strict: false })
-  const urlQuery = parseAddressSlug(urlAddress) ? urlAddress : ""
+  const { district, address: rest } = useParams({ strict: false })
+  const hash = useLocation({ select: (location) => location.hash })
+  // A shared link keeps its path until the typed address differs from it;
+  // the address then moves into the hash, which stays in the browser.
+  const urlQuery =
+    (district && rest ? slugOfShareParts(district, rest) : slugOfHash(hash)) ?? ""
   // The typed text stays the source of truth; the URL only names the road
   // and house number read from it, so a messy spelling is not rewritten.
   const [query, setQuery] = useState(urlQuery)
@@ -82,11 +91,12 @@ export function SingleLookup() {
   useEffect(() => {
     if (targetQuery === urlQuery) return
     followUrl.current = false
-    void navigate(
-      targetQuery
-        ? { to: "/a/$address", params: { address: targetQuery }, replace: true, resetScroll: false }
-        : { to: "/", replace: true, resetScroll: false },
-    )
+    void navigate({
+      to: "/",
+      hash: targetQuery ? hashOfSlug(targetQuery) : undefined,
+      replace: true,
+      resetScroll: false,
+    })
   }, [targetQuery])
 
   const photo = placePhoto(road)

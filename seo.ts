@@ -4,6 +4,7 @@ import { gzipSync } from "node:zlib"
 import type { Plugin } from "vite"
 
 import { ABOUT_META, BATCH_META, FAQ_META, GUIDE_META, SITE_ORIGIN } from "./src/lib/site.ts"
+import { createAddressUrls } from "./src/utils/addressUrls.js"
 import { writePageHead } from "./src/utils/pageHead.js"
 import { decodeZipcodeData } from "./src/utils/zipcodeCodec.js"
 
@@ -38,9 +39,15 @@ export function seoFiles(): Plugin {
 
         const database = decodeZipcodeData(
           readFileSync(new URL("./src/assets/zipcode.txt", import.meta.url), "utf8"),
-        ) as Record<string, { areas: Record<string, { roads: Record<string, unknown> }> }>
+        ) as Record<string, { areas: Record<string, { roads: Record<string, { scopes: { zipcode: number }[] }> }> }>
         // Each district's roads, lanes and houses, after the pages that are
         // not an address.
+        const urls = createAddressUrls(database)
+        const sharePath = (slug: string) => {
+          const path = urls.sharePath(slug)
+          if (!path) throw new Error(`${slug} is not an address in the database`)
+          return path
+        }
         const groups = new Map<string, string[]>([
           ["pages", ["/", BATCH_META.path, GUIDE_META.path, FAQ_META.path, ABOUT_META.path]],
         ])
@@ -48,7 +55,7 @@ export function seoFiles(): Plugin {
           for (const [area, { roads }] of Object.entries(areas)) {
             groups.set(
               `${city}${area}`,
-              Object.keys(roads).map((road) => `/a/${encodeURIComponent(`${city}${area}${road}`)}`),
+              Object.keys(roads).map((road) => sharePath(`${city}${area}${road}`)),
             )
           }
         }
@@ -59,15 +66,15 @@ export function seoFiles(): Plugin {
           for (const [road, lanes] of Object.entries(
             readDoorplates<Record<string, Record<string, string>>>(`${district}.json`),
           )) {
-            if (!roads.has(`/a/${encodeURIComponent(`${district}${road}`)}`)) {
+            if (!roads.has(sharePath(`${district}${road}`))) {
               throw new Error(`${district}${road} is not a road in the database`)
             }
             for (const [lane, numbers] of Object.entries(lanes)) {
-              if (lane) paths.push(`/a/${encodeURIComponent(`${district}${road}${lane}`)}`)
+              if (lane) paths.push(sharePath(`${district}${road}${lane}`))
               for (const number of numbers.split(",")) {
                 const [base, branch] = number.split("-")
                 const house = branch ? `${base}之${branch}號` : `${base}號`
-                paths.push(`/a/${encodeURIComponent(`${district}${road}${lane}${house}`)}`)
+                paths.push(sharePath(`${district}${road}${lane}${house}`))
               }
             }
           }

@@ -58,15 +58,22 @@ export function createAddressUrls(database) {
     }
   }
 
-  // The slug of /a/<district>/<rest>, or null when the path is not an address.
+  // The slug of a district (code or name) and the rest, both already decoded,
+  // or null when they do not name an address.
+  function slugOfShareParts(segment, rest) {
+    const district = codes.districtOf(segment);
+    if (!district || !rest) return null;
+    const slug = `${district}${rest}`;
+    const address = parseAddressSlug(slug);
+    return address && districtOfRoad.get(address.road) === district ? slug : null;
+  }
+
   function slugOfSharePath(pathname) {
     const [, prefix, segment, rest, ...extra] = pathname.split('/');
     if (prefix !== 'a' || !segment || !rest || extra.length) return null;
-    const district = codes.districtOf(decode(segment) ?? '');
+    const district = decode(segment);
     const text = decode(rest);
-    if (!district || text === null) return null;
-    const address = parseAddressSlug(`${district}${text}`);
-    return address && districtOfRoad.get(address.road) === district ? `${district}${text}` : null;
+    return district === null || text === null ? null : slugOfShareParts(district, text);
   }
 
   // The new path of a link shared as /a/<slug>, or null for any other path.
@@ -106,6 +113,7 @@ export function createAddressUrls(database) {
     parseAddressSlug,
     sharePath,
     shareUrl,
+    slugOfShareParts,
     slugOfSharePath,
     currentSharePath,
     hashOfSlug,

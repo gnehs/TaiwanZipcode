@@ -10,7 +10,7 @@ import {
   lookupCleanedAddress,
   subscribeCorrections,
 } from "@/lib/addresses"
-import { addressSlug } from "@/lib/address-path"
+import { addressSlug, hashOfSlug } from "@/lib/address-path"
 import { cn } from "@/lib/utils"
 
 const placeByRoad = new Map(
@@ -139,8 +139,8 @@ export function TypingDemo({ examples }: { examples: string[] }) {
       </div>
       {/* Shown once an example is typed out, to open it in the real search. */}
       <Link
-        to="/a/$address"
-        params={{ address: slug ?? "" }}
+        to="/"
+        hash={slug ? hashOfSlug(slug) : undefined}
         tabIndex={slug ? 0 : -1}
         aria-hidden={!slug}
         className={cn(

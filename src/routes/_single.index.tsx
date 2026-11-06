@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 
-import { readLegacyHash } from "@/lib/address-path"
+import { slugOfLegacyHash, hashOfSlug } from "@/lib/address-path"
 
 export const Route = createFileRoute("/_single/")({
   beforeLoad: ({ location }) => {
@@ -8,9 +8,7 @@ export const Route = createFileRoute("/_single/")({
     if (location.hash.replace(/^#/, "") === "batch") {
       throw redirect({ to: "/batch", replace: true })
     }
-    const address = readLegacyHash(location.hash)
-    if (address) {
-      throw redirect({ to: "/a/$address", params: { address }, replace: true })
-    }
+    const slug = slugOfLegacyHash(location.hash)
+    if (slug) throw redirect({ to: "/", hash: hashOfSlug(slug), replace: true })
   },
 })

@@ -3,7 +3,7 @@ import {
   lookupRoad,
   type AddressLookup,
 } from "@/lib/addresses"
-import { addressPath, addressSlug, parseAddressSlug } from "@/lib/address-path"
+import { addressSlug, parseAddressSlug, sharePath, slugOfSharePath } from "@/lib/address-path"
 import { HOME_META, SITE_TITLE, type PageMeta } from "@/lib/site"
 
 export function addressMeta(lookup: AddressLookup): PageMeta {
@@ -13,7 +13,7 @@ export function addressMeta(lookup: AddressLookup): PageMeta {
   const { zh, en } = formatAddress(road, suffix, displayedZipcode)
   const address = suffix ? zh : road
   const slug = addressSlug(road, suffix)
-  const path = slug ? addressPath(slug) : "/"
+  const path = slug ? sharePath(slug) : "/"
   const english = en ? `英文地址：${en}` : ""
 
   if (displayedZipcode.length === 6) {
@@ -35,14 +35,8 @@ export function addressMeta(lookup: AddressLookup): PageMeta {
 // The Worker serves only address pages (see wrangler.jsonc); null means no
 // address lives at this path.
 export function lookupForPath(pathname: string): AddressLookup | null {
-  const [, prefix, slug, ...rest] = pathname.split("/")
-  if (prefix !== "a" || !slug || rest.length) return null
-  let address
-  try {
-    address = parseAddressSlug(decodeURIComponent(slug))
-  } catch {
-    return null
-  }
+  const slug = slugOfSharePath(pathname)
+  const address = slug && parseAddressSlug(slug)
   // The path names the road exactly, so no search through every road.
   return address ? lookupRoad(address.road, address.suffix) : null
 }

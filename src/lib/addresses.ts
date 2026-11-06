@@ -114,7 +114,7 @@ function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
   }
 }
 
-const zipcodeData = decodeZipcodeData(zipcodeText) as ZipcodeDatabase
+export const zipcodeData = decodeZipcodeData(zipcodeText) as ZipcodeDatabase
 
 export const addressIndex = buildAddressIndex(zipcodeData)
 
