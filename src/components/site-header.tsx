@@ -52,10 +52,11 @@ export function SiteHeader({
             onHome()
           }}
         >
+          {/* The flat mark: the hairline keeps the light tile's edge on light pages. */}
           <img
-            src="/icon.svg"
+            src="/icon-flat.svg"
             alt=""
-            className="size-9 shrink-0 [filter:drop-shadow(0_1px_1px_oklch(0.2_0_0/0.3))_drop-shadow(0_3px_8px_oklch(0.2_0_0/0.25))]"
+            className="size-8 shrink-0 rounded-[7px] ring-1 ring-foreground/10"
           />
           {/* Phones keep only the icon; the name still labels the link. */}
           <h1 className="text-base font-semibold tracking-tight max-sm:sr-only">

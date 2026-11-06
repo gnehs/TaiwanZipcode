@@ -15,6 +15,24 @@ function GitHubIcon() {
   )
 }
 
+// The site icon's pin, flat and oversized, tucked past the footer's corner.
+// The bolt is a hole, so the band shows through it.
+function FooterPin() {
+  return (
+    <svg
+      viewBox="23 16 54 72"
+      aria-hidden="true"
+      className="pointer-events-none absolute -right-8 -bottom-8 h-64 w-auto text-[color-mix(in_oklch,var(--foreground)_6%,var(--background))]"
+    >
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M77 43C77 60 62 76 53.6 85.2Q50 89 46.4 85.2C38 76 23 60 23 43A27 27 0 1 1 77 43ZM52.29 26.46L39.26 45.19Q38 47 40.2 47L46.4 47Q48 47 47.71 48.57L45.55 60.05Q45 63 46.73 60.55L60.73 40.8Q62 39 59.8 39L53.6 39Q52 39 52.21 37.41L53.6 26.97Q54 24 52.29 26.46Z"
+      />
+    </svg>
+  )
+}
+
 // Inline credits read as part of the sentence, so they keep the body colour.
 function CreditLink({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -32,16 +50,12 @@ function CreditLink({ href, children }: { href: string; children: ReactNode }) {
 export function SiteFooter() {
   return (
     // The band spans the page edge to edge; its content keeps to the header's width.
-    <footer className="mt-20 w-full border-t bg-muted/50 pt-10 pb-8">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+    <footer className="relative mt-20 w-full overflow-hidden border-t bg-muted/50 pt-10 pb-8">
+      <FooterPin />
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex flex-col gap-3">
-          <Link to="/" className="flex w-fit items-center gap-2 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-            <img
-              src="/icon.svg"
-              alt=""
-              className="size-7 shrink-0 [filter:drop-shadow(0_1px_1px_oklch(0.2_0_0/0.3))_drop-shadow(0_2px_6px_oklch(0.2_0_0/0.2))]"
-            />
-            <span className="text-sm font-semibold tracking-tight">{SITE_TITLE}</span>
+          <Link to="/" className="w-fit rounded-sm text-sm font-semibold tracking-tight outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+            {SITE_TITLE}
           </Link>
           <p className="text-sm/relaxed text-muted-foreground">
             {SITE_INTRO}
