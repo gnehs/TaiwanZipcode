@@ -171,7 +171,8 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
       <div
         style={{
           position: "absolute",
-          left: 96,
+          // The glyphs' own side bearing (~3px at 80px) puts their ink on the icon's edge.
+          left: 85,
           top: 252,
           display: "flex",
           flexDirection: "column",
