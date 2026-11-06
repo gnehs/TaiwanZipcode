@@ -1,0 +1,115 @@
+import { buildDistrictCodes } from './districtCodes.js';
+
+// An address is named by a slug: a road as the database spells it, with its
+// city and district, then the house number as typed. Where the slug goes in
+// a URL depends on whether the address is being looked up or shared.
+//   in the app   /#<slug>             the hash never reaches a server
+//   shared       /a/<district>/<rest>  <rest> is the slug after the district
+//   shared once  /a/<slug>             redirected to the form above
+
+// Chinese stays readable, and only characters that would end or break a link
+// (spaces, #, ?, %) are escaped.
+const readable = (text) => text.replace(/[^\p{L}\p{N}\-._~]/gu, encodeURIComponent);
+
+export function createAddressUrls(database) {
+  const codes = buildDistrictCodes(database);
+  const districtOfRoad = new Map();
+  for (const [city, { areas }] of Object.entries(database)) {
+    for (const [area, { roads }] of Object.entries(areas)) {
+      for (const road of Object.keys(roads)) districtOfRoad.set(`${city}${area}${road}`, `${city}${area}`);
+    }
+  }
+
+  function addressSlug(road, suffix) {
+    return districtOfRoad.has(road) ? `${road}${suffix.trim()}` : null;
+  }
+
+  // Some roads begin with another road's name, so the longest one is the road.
+  function parseAddressSlug(slug) {
+    for (let end = slug.length; end > 0; end--) {
+      const road = slug.slice(0, end);
+      if (districtOfRoad.has(road)) return { road, suffix: slug.slice(end) };
+    }
+    return null;
+  }
+
+  function splitSlug(slug) {
+    const address = parseAddressSlug(slug);
+    if (!address) return null;
+    const district = districtOfRoad.get(address.road);
+    return { segment: codes.segmentOf(district), rest: slug.slice(district.length) };
+  }
+
+  function sharePath(slug) {
+    const parts = splitSlug(slug);
+    return parts && `/a/${encodeURIComponent(parts.segment)}/${encodeURIComponent(parts.rest)}`;
+  }
+
+  function shareUrl(origin, slug) {
+    const parts = splitSlug(slug);
+    return parts && `${origin}/a/${readable(parts.segment)}/${readable(parts.rest)}`;
+  }
+
+  function decode(text) {
+    try {
+      return decodeURIComponent(text);
+    } catch {
+      return null;
+    }
+  }
+
+  // The slug of /a/<district>/<rest>, or null when the path is not an address.
+  function slugOfSharePath(pathname) {
+    const [, prefix, segment, rest, ...extra] = pathname.split('/');
+    if (prefix !== 'a' || !segment || !rest || extra.length) return null;
+    const district = codes.districtOf(decode(segment) ?? '');
+    const text = decode(rest);
+    if (!district || text === null) return null;
+    const address = parseAddressSlug(`${district}${text}`);
+    return address && districtOfRoad.get(address.road) === district ? `${district}${text}` : null;
+  }
+
+  // The new path of a link shared as /a/<slug>, or null for any other path.
+  function currentSharePath(pathname) {
+    const [, prefix, segment, ...extra] = pathname.split('/');
+    if (prefix !== 'a' || !segment || extra.length) return null;
+    const slug = decode(segment);
+    return slug === null ? null : sharePath(slug);
+  }
+
+  const hashOfSlug = readable;
+
+  // The router hands the hash over already decoded.
+  function slugOfHash(hash) {
+    const slug = hash.replace(/^#/, '');
+    return parseAddressSlug(slug) ? slug : null;
+  }
+
+  // Links made before the address moved into the hash, either #z=…&a=…&s=…
+  // or the older #zipcode_address_suffix.
+  function slugOfLegacyHash(hash) {
+    const raw = hash.replace(/^#/, '');
+    try {
+      if (raw.startsWith('z=')) {
+        const params = new URLSearchParams(raw);
+        return addressSlug(params.get('a') || '', params.get('s') || '');
+      }
+      const [, address = '', ...suffix] = decodeURIComponent(raw).split('_');
+      return addressSlug(address, suffix.join('_'));
+    } catch {
+      return null;
+    }
+  }
+
+  return {
+    addressSlug,
+    parseAddressSlug,
+    sharePath,
+    shareUrl,
+    slugOfSharePath,
+    currentSharePath,
+    hashOfSlug,
+    slugOfHash,
+    slugOfLegacyHash,
+  };
+}
