@@ -6,6 +6,13 @@ import { cn } from "@/lib/utils"
 const RAMP = "   .:+xX08S$"
 const CELL_WIDTH = 8
 const CELL_HEIGHT = 12
+
+// A fixed pseudo-random number in [0, 1) per cell and stream, so every redraw
+// scatters the glyphs the same way.
+function cellNoise(column: number, row: number, stream: number) {
+  const value = Math.sin(column * 12.9898 + row * 78.233 + stream * 37.719) * 43758.5453
+  return value - Math.floor(value)
+}
 // Blur radius (CSS px) and how far down it reaches, as a share of the blurred
 // edge. Weaker blurs reach further, so the blur builds towards the top.
 const BLUR_STEPS = [
@@ -124,6 +131,9 @@ function renderPhoto(
   context.textAlign = "center"
   context.textBaseline = "middle"
   for (let row = 0; row < rows; row++) {
+    // Each row picks up the text somewhere else, so the words never stack
+    // into columns; skipped cells still use up a letter, keeping words whole.
+    const textOffset = text ? Math.floor(cellNoise(0, row, 1) * text.length) : 0
     for (let column = 0; column < columns; column++) {
       const index = (row * columns + column) * 4
       const red = pixels[index]
@@ -132,13 +142,15 @@ function renderPhoto(
       const light = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255
       // A fixed per-cell jitter mixes neighbouring glyphs, so flat sky
       // reads as scattered text rather than one repeated character.
-      const jitter = ((Math.sin(column * 12.9898 + row * 78.233) * 43758.5453) % 1) * 1.6
+      const jitter = (cellNoise(column, row, 0) * 2 - 1) * 1.6
       const level = Math.floor(light * RAMP.length + jitter)
       const shade = RAMP[Math.max(0, Math.min(RAMP.length - 1, level))]
-      if (shade === " ") continue
-      const glyph = text ? text[(row * columns + column) % text.length] : shade
-      // Glyphs carry the colour under them, lifted halfway to white.
-      context.fillStyle = `rgb(${(red + 255) / 2} ${(green + 255) / 2} ${(blue + 255) / 2} / ${(light - 0.2) * 0.35})`
+      if (shade === " " || cellNoise(column, row, 2) < 0.15) continue
+      const glyph = text ? text[(textOffset + column) % text.length] : shade
+      // Glyphs carry the colour under them, lifted halfway to white, each a
+      // little brighter or fainter than its neighbours.
+      const alpha = (light - 0.2) * 0.35 * (0.5 + cellNoise(column, row, 3) * 0.9)
+      context.fillStyle = `rgb(${(red + 255) / 2} ${(green + 255) / 2} ${(blue + 255) / 2} / ${alpha})`
       context.fillText(
         glyph,
         column * CELL_WIDTH + CELL_WIDTH / 2,
