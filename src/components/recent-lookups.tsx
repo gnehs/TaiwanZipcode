@@ -11,6 +11,12 @@ import {
   getRecentLookups,
   subscribeRecentLookups,
 } from "@/lib/recent-lookups"
+import { cn } from "@/lib/utils"
+
+// Things appearing on hover sharpen in through a blur, like the copy
+// buttons' icons.
+const REVEAL =
+  "transition-[opacity,filter,scale,color,background-color] duration-200 ease-out motion-reduce:scale-100 motion-reduce:blur-none"
 
 export function RecentLookups() {
   const lookups = useSyncExternalStore(subscribeRecentLookups, getRecentLookups)
@@ -46,9 +52,9 @@ export function RecentLookups() {
           {lookups.map((lookup, index) => (
             <li
               key={`${lookup.road}${lookup.suffix}`}
-              // The delete button's column opens on hover, so the row
-              // gives it room instead of sitting under it.
-              className="enter-rise grid grid-cols-[1fr_0rem] items-center transition-[grid-template-columns] duration-200 ease-out hover:grid-cols-[1fr_2.75rem] focus-within:grid-cols-[1fr_2.75rem] motion-reduce:transition-none [@media(hover:none)]:grid-cols-[1fr_2.75rem]"
+              // The delete button keeps its own column beside the row, so
+              // hovering only fades things in place and never resizes the row.
+              className="enter-rise group/item grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1"
               style={{ "--enter-delay": `${60 + index * 40}ms` } as React.CSSProperties}
             >
               <Link
@@ -56,33 +62,38 @@ export function RecentLookups() {
                 params={{ address: lookup.address! }}
                 className="group/row flex min-w-0 items-center gap-4 rounded-2xl px-3 py-3 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
               >
+                {/* The zipcode leads, so the codes line up in a column and the
+                    right end is left to the arrow and the delete button. */}
+                <span className="shrink-0 font-mono text-[0.8125rem] text-muted-foreground tabular-nums">
+                  {lookup.zipcode}
+                </span>
                 <span className="min-w-0 flex-1 truncate">
                   {lookup.road}
                   {lookup.suffix}
                 </span>
-                {/* On hover the zipcode gives way to an arrow, since the row
-                    opens the address. */}
-                <span className="relative shrink-0">
-                  <span className="block font-mono text-[0.8125rem] text-muted-foreground tabular-nums transition-opacity duration-150 ease-out [@media(hover:hover)]:group-hover/row:opacity-0">
-                    {lookup.zipcode}
-                  </span>
-                  <ArrowRightIcon
-                    aria-hidden="true"
-                    className="absolute top-1/2 right-0 size-4 -translate-y-1/2 text-foreground opacity-0 transition-opacity duration-150 ease-out [@media(hover:hover)]:group-hover/row:opacity-100"
-                  />
-                </span>
+                <ArrowRightIcon
+                  aria-hidden="true"
+                  className={cn(
+                    "size-4 shrink-0 -translate-x-1 text-foreground opacity-0",
+                    REVEAL,
+                    "transition-[opacity,translate] motion-reduce:translate-x-0 [@media(hover:hover)]:group-hover/row:translate-x-0 [@media(hover:hover)]:group-hover/row:opacity-100 group-focus-visible/row:translate-x-0 group-focus-visible/row:opacity-100",
+                  )}
+                />
               </Link>
-              <div className="flex justify-end overflow-hidden">
-                <Button
-                  variant="ghost"
-                  size="icon-lg"
-                  aria-label={`從最近查詢移除 ${lookup.road}${lookup.suffix}`}
-                  className="text-muted-foreground"
-                  onClick={() => forgetLookup(lookup)}
-                >
-                  <Trash2Icon aria-hidden="true" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                aria-label={`從最近查詢移除 ${lookup.road}${lookup.suffix}`}
+                className={cn(
+                  "size-10 p-0 text-muted-foreground hover:text-destructive",
+                  REVEAL,
+                  // Shown while the pointer is anywhere on the row, or the
+                  // keyboard is on it; touch screens always show it.
+                  "[@media(hover:hover)]:scale-75 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:blur-[3px] [@media(hover:hover)]:group-hover/item:scale-100 [@media(hover:hover)]:group-hover/item:opacity-100 [@media(hover:hover)]:group-hover/item:blur-none [@media(hover:hover)]:group-has-focus-visible/item:scale-100 [@media(hover:hover)]:group-has-focus-visible/item:opacity-100 [@media(hover:hover)]:group-has-focus-visible/item:blur-none",
+                )}
+                onClick={() => forgetLookup(lookup)}
+              >
+                <Trash2Icon aria-hidden="true" />
+              </Button>
             </li>
           ))}
         </ul>
