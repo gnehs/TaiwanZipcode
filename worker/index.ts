@@ -1,6 +1,7 @@
 import { addressMeta, lookupForPath } from "@/lib/page-meta"
 import { HOME_META, SITE_ORIGIN } from "@/lib/site"
 import { writePageHead } from "@/utils/pageHead.js"
+import { visitPoint } from "@/utils/visitPoint.js"
 
 import { ogImageResponse } from "./og-image"
 
@@ -16,6 +17,7 @@ export default {
 
     const lookup = lookupForPath(url.pathname)
     const meta = lookup ? addressMeta(lookup) : HOME_META
+    if (lookup) env.VISITS.writeDataPoint(visitPoint(request.headers.get("User-Agent"), meta.path))
     const page = await env.ASSETS.fetch(new URL("/", url))
     const headers = new Headers(page.headers)
     // The body differs per path, so the index file's validator does not apply.
