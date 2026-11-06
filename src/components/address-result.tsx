@@ -1,9 +1,8 @@
 import { Fragment } from "react"
 import { Link } from "@tanstack/react-router"
-import { ChevronDownIcon, CircleAlertIcon, InfoIcon, PlusIcon } from "lucide-react"
+import { ChevronDownIcon, CircleAlertIcon, InfoIcon, LinkIcon, PlusIcon } from "lucide-react"
 
 import { CopyButton } from "@/components/copy-button"
-import { ShareButton } from "@/components/share-button"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -480,8 +479,12 @@ export function AddressResult({
           <div className="flex flex-1 items-center justify-between gap-2 sm:flex-none">
             <div className="flex">
               {slug ? (
-                <ShareButton
-                  url={shareUrl(window.location.origin, slug)}
+                <CopyButton
+                  text={shareUrl(window.location.origin, slug)}
+                  label="複製分享連結"
+                  visibleLabel="分享"
+                  variant="ghost"
+                  icon={<LinkIcon />}
                   className={FOOTER_BUTTON}
                 />
               ) : null}
