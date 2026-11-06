@@ -382,8 +382,8 @@ export function AddressResult({
 
   return (
     // Pulled up to overlap the photo band, like the recent lookups card.
-    <section className="relative -mt-12 flex flex-col gap-3 sm:-mt-14" aria-label="查詢結果">
-      <Card className="enter-rise relative bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary),var(--primary-gold)_35%),color-mix(in_oklab,var(--primary),black_4%))] text-primary-foreground shadow-primary">
+    <section className="relative -mt-12 flex flex-col sm:-mt-14" aria-label="查詢結果">
+      <Card className="enter-rise relative z-10 bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary),var(--primary-gold)_35%),color-mix(in_oklab,var(--primary),black_4%))] text-primary-foreground shadow-primary">
         <div
           className="plus-grid pointer-events-none absolute inset-0 text-white/15"
           aria-hidden="true"
@@ -476,7 +476,7 @@ export function AddressResult({
           <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1 py-3 pl-(--card-spacing) sm:flex">
             {metaItems("start")}
           </div>
-          <div className="flex flex-1 items-center justify-between sm:flex-none">
+          <div className="flex flex-1 items-center justify-between gap-2 sm:flex-none">
             <div className="flex">
               {slug ? (
                 <CopyButton
@@ -502,11 +502,18 @@ export function AddressResult({
         </div>
       </Card>
 
+      {/* Tucked under the zipcode card so the two read as one stack. */}
       <Card
-        className="enter-rise"
+        className="enter-rise relative -mt-8 rounded-t-none pt-[calc(var(--card-spacing)+2rem)] pb-5"
         style={{ "--enter-delay": "60ms" } as React.CSSProperties}
       >
-        <CardContent className="flex flex-col">
+        {/* The orange card's glow spilling onto this one. It starts at the very top,
+            under the orange card, so its rounded corners show the glow too. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary)_14%,transparent)_2rem,transparent)]"
+          aria-hidden="true"
+        />
+        <CardContent className="relative flex flex-col">
           <h2 className="pb-2 text-base font-semibold">地址資訊</h2>
           <ul className="flex flex-col divide-y">
             {resolvedScope?.department && isComplete ? (
@@ -521,7 +528,7 @@ export function AddressResult({
               <div className="flex items-center gap-3.5">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <h3 className="text-xs text-muted-foreground">中文地址</h3>
-                  <p className="break-words">{chineseAddress}</p>
+                  <p className="text-base font-medium break-words sm:text-lg">{chineseAddress}</p>
                   {isHouseIncomplete ? (
                     <p className="text-xs text-warning">門牌不完整</p>
                   ) : null}
@@ -538,7 +545,7 @@ export function AddressResult({
               <div className="flex items-center gap-3.5">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <h3 className="text-xs text-muted-foreground">英文地址</h3>
-                  <p lang="en" className="break-words">
+                  <p lang="en" className="text-base font-medium break-words sm:text-lg">
                     {parsedAddress.en}
                   </p>
                 </div>
@@ -564,7 +571,7 @@ export function AddressResult({
                   {parsedAddress.warns.join("；")}。請修正後再複製英文地址。
                 </p>
               ) : (
-                <p className="text-xs text-muted-foreground" role="status">
+                <p className="pt-2 text-xs text-muted-foreground" role="status">
                   {isSuffixIncomplete
                     ? "門牌尚未辨識完整，補齊後即可複製英文地址。"
                     : "依已辨識的內容轉換，使用前請與中文地址核對。"}
@@ -580,12 +587,30 @@ export function AddressResult({
 
 type AddressField = { label: string; value: string; disabled: boolean }
 
+// A click anywhere on a row copies it, unless the click ended a text selection:
+// people also drag across part of a value to copy just that.
+function copyRow(event: React.MouseEvent<HTMLLIElement>) {
+  const row = event.currentTarget
+  if ((event.target as Element).closest("button")) return
+  const selection = window.getSelection()
+  if (selection && !selection.isCollapsed && row.contains(selection.anchorNode)) return
+  row.querySelector("button")?.click()
+}
+
 // The parts most address forms ask for, each copied on its own.
 function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string }) {
   return (
-    <ul className="flex flex-col divide-y rounded-2xl bg-muted px-4">
+    <ul className="flex flex-col rounded-2xl bg-muted shadow-well">
       {fields.map((field) => (
-        <li key={field.label} className="flex items-center gap-3 py-2">
+        <li
+          key={field.label}
+          onClick={field.disabled || !field.value ? undefined : copyRow}
+          className={cn(
+            // Inset divider, so the row itself can run out to the tray's edges.
+            "group/field relative flex items-center gap-3 px-4 py-2 not-first:before:absolute not-first:before:inset-x-4 not-first:before:top-0 not-first:before:h-px not-first:before:bg-border",
+            field.disabled || !field.value ? undefined : "cursor-pointer",
+          )}
+        >
           <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:gap-3">
             <span className="text-xs text-muted-foreground sm:w-28 sm:shrink-0">
               {field.label}
@@ -595,6 +620,8 @@ function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string
               className={cn(
                 "min-w-0 break-words",
                 field.value ? undefined : "text-muted-foreground",
+                // Digits match the zipcode cells above.
+                /^\d+$/.test(field.value) && "tabular-nums",
               )}
             >
               {field.value || "—"}
@@ -604,8 +631,9 @@ function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string
             text={field.value}
             label={`複製 ${field.label}`}
             visibleLabel=""
-            variant="outline"
+            variant="ghost"
             disabled={field.disabled}
+            className="text-muted-foreground group-hover/field:enabled:bg-background group-hover/field:enabled:text-foreground group-hover/field:enabled:shadow-control focus-visible:bg-background"
           />
         </li>
       ))}
