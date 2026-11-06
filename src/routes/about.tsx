@@ -5,7 +5,7 @@ import { ArrowUpRightIcon } from "lucide-react"
 import { PageShell } from "@/components/page-shell"
 import { Card, CardContent } from "@/components/ui/card"
 import { PLACE_PHOTOS } from "@/lib/place-photos"
-import { ABOUT_META } from "@/lib/site"
+import { ABOUT_META, SITE_INTRO } from "@/lib/site"
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
@@ -35,7 +35,7 @@ function AboutPage() {
           <div className="flex flex-col gap-2">
             <h2 className="text-2xl font-bold tracking-tight">關於閃電地址</h2>
             <p className="text-muted-foreground">
-              臺灣 3+3 郵遞區號查詢工具。輸入地址，邊打字邊查出完整郵遞區號與英文地址，也能一次貼上多筆批次查詢。
+              {SITE_INTRO}
             </p>
           </div>
           <dl className="flex flex-col divide-y divide-border">

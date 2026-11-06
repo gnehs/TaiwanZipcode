@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router"
 
 import { ThemeToggle } from "@/components/theme-toggle"
 import { buttonVariants } from "@/components/ui/button"
-import { SITE_TITLE } from "@/lib/site"
+import { SITE_INTRO, SITE_TITLE } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
 // lucide ships no brand marks, so the GitHub mark is drawn here.
@@ -43,6 +43,9 @@ export function SiteFooter() {
             />
             <span className="text-sm font-semibold tracking-tight">{SITE_TITLE}</span>
           </Link>
+          <p className="text-sm/relaxed text-muted-foreground">
+            {SITE_INTRO}
+          </p>
           <p className="text-xs/relaxed text-muted-foreground">
             資料擷取自郵局資料庫，僅供參考；
             <br className="sm:hidden" />
