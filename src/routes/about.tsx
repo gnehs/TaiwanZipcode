@@ -13,7 +13,7 @@ export const Route = createFileRoute("/about")({
 
 const FACTS = [
   { label: "資料", value: "中華郵政 3+3 區號與各縣市門牌，每月自動同步" },
-  { label: "隱私", value: "查詢在瀏覽器內完成，只統計使用次數，不保存你查過的地址" },
+  { label: "隱私", value: "查詢在瀏覽器內完成，地址不上傳伺服器" },
   { label: "費用", value: "無訂閱費、無查詢費，免註冊、免驗證碼" },
   {
     label: "原始碼",

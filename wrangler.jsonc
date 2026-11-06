@@ -11,8 +11,6 @@
     "run_worker_first": ["/a/*", "/og/*"]
   },
   "routes": [{ "pattern": "zipcode.gnehs.net", "custom_domain": true }],
-  // Each address lives in its URL, so the Worker never logs request URLs.
-  // Visits are counted in VISITS instead (see worker/index.ts).
-  "observability": { "enabled": true, "logs": { "invocation_logs": false } },
-  "analytics_engine_datasets": [{ "binding": "VISITS", "dataset": "taiwan_zipcode_visits" }]
+  // Shared links carry the address in their path, so request URLs are not logged.
+  "observability": { "enabled": true, "logs": { "invocation_logs": false } }
 }
