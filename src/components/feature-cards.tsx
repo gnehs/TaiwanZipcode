@@ -1,7 +1,7 @@
 const FEATURES = [
   {
     title: "隱私保護",
-    description: "不收集個人資料，地址不上傳伺服器，查詢紀錄只存在瀏覽器",
+    description: "不用註冊，查過的地址只記在你自己的手機或電腦裡",
   },
   {
     title: "閃電搜尋",
@@ -9,7 +9,7 @@ const FEATURES = [
   },
   {
     title: "每月更新",
-    description: "每月自動同步中華郵政 3+3 郵遞區號資料庫",
+    description: "每個月自動更新中華郵政的郵遞區號資料",
   },
 ]
 

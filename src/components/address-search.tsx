@@ -296,7 +296,8 @@ export function AddressSearch({
             </div>
             <ComboboxContent
               anchor={comboboxAnchor}
-              className={cn(onBand && "dark:light-scheme")}
+              // Close to the pill search above: 26px, with 22px items 4px in.
+              className={cn("rounded-4xl", onBand && "dark:light-scheme")}
             >
               <ComboboxEmpty>找不到符合的道路，請調整關鍵字</ComboboxEmpty>
               <ComboboxList>
@@ -304,7 +305,7 @@ export function AddressSearch({
                   <ComboboxItem
                     key={address}
                     value={address}
-                    className="min-h-11 px-3 whitespace-normal break-words"
+                    className="min-h-11 rounded-3xl px-4 whitespace-normal break-words"
                   >
                     <span className="min-w-0 whitespace-normal break-words">
                       {completions.includes(address) ? (
