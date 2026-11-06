@@ -66,9 +66,95 @@ type AsciiPhotoProps = {
   className?: string
 }
 
+// The photo and its glyphs, drawn once at a width. It covers more height than
+// the canvas shows, so the band growing or shrinking only re-crops it.
+type Rendering = {
+  bitmap: HTMLCanvasElement
+  width: number
+  scale: number
+  // CSS pixels of photo it holds, centred on the photo like the crop.
+  height: number
+  ratio: number
+}
+
+function renderPhoto(
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+  ratio: number,
+  color: string,
+  text: string | undefined,
+): Rendering | null {
+  const scale = Math.max(width / image.width, height / image.height)
+  const drawWidth = image.width * scale
+  const drawHeight = image.height * scale
+  // Room for the band to grow to twice its height before drawing again.
+  const renderHeight = Math.min(drawHeight, height * 2)
+  const left = (width - drawWidth) / 2
+  const top = (renderHeight - drawHeight) / 2
+
+  const bitmap = document.createElement("canvas")
+  bitmap.width = Math.round(width * ratio)
+  bitmap.height = Math.round(renderHeight * ratio)
+  const context = bitmap.getContext("2d")
+  if (!context) return null
+  context.scale(ratio, ratio)
+  context.drawImage(image, left, top, drawWidth, drawHeight)
+  context.fillStyle = color
+  context.fillRect(0, 0, width, renderHeight)
+
+  // Shrinking the photo to one pixel per cell averages each cell's colour.
+  const columns = Math.ceil(width / CELL_WIDTH)
+  const rows = Math.ceil(renderHeight / CELL_HEIGHT)
+  const sampler = document.createElement("canvas")
+  sampler.width = columns
+  sampler.height = rows
+  const sample = sampler.getContext("2d", { willReadFrequently: true })
+  if (!sample) return null
+  sample.drawImage(
+    image,
+    left / CELL_WIDTH,
+    top / CELL_HEIGHT,
+    drawWidth / CELL_WIDTH,
+    drawHeight / CELL_HEIGHT,
+  )
+  const pixels = sample.getImageData(0, 0, columns, rows).data
+
+  context.font = `600 ${CELL_HEIGHT - 1}px ui-monospace, "SF Mono", Menlo, monospace`
+  context.textAlign = "center"
+  context.textBaseline = "middle"
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < columns; column++) {
+      const index = (row * columns + column) * 4
+      const red = pixels[index]
+      const green = pixels[index + 1]
+      const blue = pixels[index + 2]
+      const light = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255
+      // A fixed per-cell jitter mixes neighbouring glyphs, so flat sky
+      // reads as scattered text rather than one repeated character.
+      const jitter = ((Math.sin(column * 12.9898 + row * 78.233) * 43758.5453) % 1) * 1.6
+      const level = Math.floor(light * RAMP.length + jitter)
+      const shade = RAMP[Math.max(0, Math.min(RAMP.length - 1, level))]
+      if (shade === " ") continue
+      const glyph = text ? text[(row * columns + column) % text.length] : shade
+      // Glyphs carry the colour under them, lifted halfway to white.
+      context.fillStyle = `rgb(${(red + 255) / 2} ${(green + 255) / 2} ${(blue + 255) / 2} / ${(light - 0.2) * 0.35})`
+      context.fillText(
+        glyph,
+        column * CELL_WIDTH + CELL_WIDTH / 2,
+        row * CELL_HEIGHT + CELL_HEIGHT / 2,
+      )
+    }
+  }
+  return { bitmap, width, scale, height: renderHeight, ratio }
+}
+
 function AsciiCanvas({ src, text, blurTop, className }: AsciiPhotoProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawn, setIsDrawn] = useState(false)
+  // Read when drawing, so a new blur reach re-crops instead of redrawing glyphs.
+  const blurTopRef = useRef(blurTop)
+  const redrawRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -76,73 +162,37 @@ function AsciiCanvas({ src, text, blurTop, className }: AsciiPhotoProps) {
     const image = new Image()
     image.src = src
     let isCancelled = false
+    let rendering: Rendering | null = null
 
     const draw = () => {
       const width = canvas.clientWidth
       const height = canvas.clientHeight
       if (!width || !height) return
       const ratio = window.devicePixelRatio || 1
+      const scale = Math.max(width / image.width, height / image.height)
+      if (
+        !rendering ||
+        rendering.width !== width ||
+        rendering.ratio !== ratio ||
+        rendering.scale !== scale ||
+        rendering.height < height
+      ) {
+        rendering = renderPhoto(image, width, height, ratio, getComputedStyle(canvas).color, text)
+        if (!rendering) return
+      }
+
       canvas.width = Math.round(width * ratio)
       canvas.height = Math.round(height * ratio)
       const context = canvas.getContext("2d")
       if (!context) return
-      context.scale(ratio, ratio)
-
-      const scale = Math.max(width / image.width, height / image.height)
-      const drawWidth = image.width * scale
-      const drawHeight = image.height * scale
-      const left = (width - drawWidth) / 2
-      const top = (height - drawHeight) / 2
-      context.drawImage(image, left, top, drawWidth, drawHeight)
-      context.fillStyle = getComputedStyle(canvas).color
-      context.fillRect(0, 0, width, height)
-
-      // Shrinking the photo to one pixel per cell averages each cell's colour.
-      const columns = Math.ceil(width / CELL_WIDTH)
-      const rows = Math.ceil(height / CELL_HEIGHT)
-      const sampler = document.createElement("canvas")
-      sampler.width = columns
-      sampler.height = rows
-      const sample = sampler.getContext("2d", { willReadFrequently: true })
-      if (!sample) return
-      sample.drawImage(
-        image,
-        left / CELL_WIDTH,
-        top / CELL_HEIGHT,
-        drawWidth / CELL_WIDTH,
-        drawHeight / CELL_HEIGHT,
-      )
-      const pixels = sample.getImageData(0, 0, columns, rows).data
-
-      context.font = `600 ${CELL_HEIGHT - 1}px ui-monospace, "SF Mono", Menlo, monospace`
-      context.textAlign = "center"
-      context.textBaseline = "middle"
-      for (let row = 0; row < rows; row++) {
-        for (let column = 0; column < columns; column++) {
-          const index = (row * columns + column) * 4
-          const red = pixels[index]
-          const green = pixels[index + 1]
-          const blue = pixels[index + 2]
-          const light = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255
-          // A fixed per-cell jitter mixes neighbouring glyphs, so flat sky
-          // reads as scattered text rather than one repeated character.
-          const jitter = ((Math.sin(column * 12.9898 + row * 78.233) * 43758.5453) % 1) * 1.6
-          const level = Math.floor(light * RAMP.length + jitter)
-          const shade = RAMP[Math.max(0, Math.min(RAMP.length - 1, level))]
-          if (shade === " ") continue
-          const glyph = text ? text[(row * columns + column) % text.length] : shade
-          // Glyphs carry the colour under them, lifted halfway to white.
-          context.fillStyle = `rgb(${(red + 255) / 2} ${(green + 255) / 2} ${(blue + 255) / 2} / ${(light - 0.2) * 0.35})`
-          context.fillText(
-            glyph,
-            column * CELL_WIDTH + CELL_WIDTH / 2,
-            row * CELL_HEIGHT + CELL_HEIGHT / 2,
-          )
-        }
-      }
-      if (blurTop) blurTopEdge(canvas, Math.round(blurTop * ratio), ratio)
+      // The middle of the rendering, as the photo is cropped to cover the box.
+      const offset = Math.round(((rendering.height - height) / 2) * ratio)
+      context.drawImage(rendering.bitmap, 0, -offset)
+      const reach = blurTopRef.current
+      if (reach) blurTopEdge(canvas, Math.round(reach * ratio), ratio)
       setIsDrawn(true)
     }
+    redrawRef.current = draw
 
     const observer = new ResizeObserver(() => {
       if (image.complete && image.naturalWidth) draw()
@@ -157,9 +207,16 @@ function AsciiCanvas({ src, text, blurTop, className }: AsciiPhotoProps) {
     )
     return () => {
       isCancelled = true
+      redrawRef.current = null
       observer.disconnect()
     }
-  }, [src, text, blurTop])
+  }, [src, text])
+
+  useEffect(() => {
+    if (blurTopRef.current === blurTop) return
+    blurTopRef.current = blurTop
+    redrawRef.current?.()
+  }, [blurTop])
 
   return (
     <canvas
@@ -176,8 +233,17 @@ function AsciiCanvas({ src, text, blurTop, className }: AsciiPhotoProps) {
 
 // A new photo fades in over the one it replaces, which stays drawn beneath so
 // the change never shows the background between them.
+// The outgoing photo keeps the text it was drawn with: it is fading away, and
+// spelling the new address on it would mean drawing all its glyphs again.
 export function AsciiPhoto(props: AsciiPhotoProps) {
-  const [sources, setSources] = useState([props.src])
-  if (sources.at(-1) !== props.src) setSources([sources.at(-1)!, props.src])
-  return sources.map((src) => <AsciiCanvas key={src} {...props} src={src} />)
+  const [layers, setLayers] = useState([{ src: props.src, text: props.text }])
+  const current = layers.at(-1)!
+  if (current.src !== props.src) {
+    setLayers([current, { src: props.src, text: props.text }])
+  } else if (current.text !== props.text) {
+    setLayers([...layers.slice(0, -1), { src: props.src, text: props.text }])
+  }
+  return layers.map((layer) => (
+    <AsciiCanvas key={layer.src} {...props} src={layer.src} text={layer.text} />
+  ))
 }
