@@ -31,6 +31,7 @@ import {
   getUnitCompletions,
 } from "@/utils/addressSearch.js"
 import { suggestDoors } from "@/utils/doorplates.js"
+import { getFloorChoices } from "@/utils/floorChoices.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type AddressSearchProps = {
@@ -64,6 +65,13 @@ function HighlightedAddress({
   }
   parts.push(address.slice(cursor))
   return <>{parts}</>
+}
+
+type FloorChoice = {
+  floor: string
+  label: string
+  zipcode: number
+  department: string | null
 }
 
 const ROAD_KEYWORD_EXAMPLES = ["中山北路", "忠孝東路", "和平東路"]
@@ -113,20 +121,32 @@ export function AddressSearch({
   // list away.
   const { doorplates, isLoading: areDoorplatesLoading } = useRoadDoorplates(road)
   const hasRoadSuggestions = roadSuggestions.length > 0
-  const { completions, areDoors } = useMemo(() => {
-    if (!road) return { completions: [], areDoors: false }
+  const { completions, areDoors, floorByCompletion } = useMemo(() => {
+    const floorByCompletion = new Map<string, FloorChoice>()
+    if (!road) return { completions: [], areDoors: false, floorByCompletion }
+    // A house whose zipcode turns on the floor offers its floors.
+    const floors: FloorChoice[] = getFloorChoices(
+      addressIndex.scopesByAddress[road] ?? [],
+      addressSuffix,
+    )
+    if (floors.length) {
+      for (const choice of floors)
+        floorByCompletion.set(`${query.trimEnd()}${choice.floor}`, choice)
+      return { completions: [...floorByCompletion.keys()], areDoors: false, floorByCompletion }
+    }
     const doors = suggestDoors(doorplates, query, addressSuffix)
     // A bare road still lists the longer roads it is the start of.
     if (doors.length && (addressSuffix.trim() || !hasRoadSuggestions))
-      return { completions: doors, areDoors: true }
+      return { completions: doors, areDoors: true, floorByCompletion }
     const units = getUnitCompletions(query)
-    if (units.length) return { completions: units, areDoors: false }
+    if (units.length) return { completions: units, areDoors: false, floorByCompletion }
     return {
       completions:
         hasHouseNumber && parseAddressSuffix(addressSuffix).complete
           ? [query.trimEnd()]
           : [],
       areDoors: false,
+      floorByCompletion,
     }
   }, [road, query, hasHouseNumber, addressSuffix, doorplates, hasRoadSuggestions])
   const suggestions = completions.length ? completions : roadSuggestions
@@ -301,26 +321,45 @@ export function AddressSearch({
             >
               <ComboboxEmpty>找不到符合的道路，請調整關鍵字</ComboboxEmpty>
               <ComboboxList>
-                {(address: string) => (
-                  <ComboboxItem
-                    key={address}
-                    value={address}
-                    className="min-h-11 rounded-3xl px-4 whitespace-normal break-words"
-                  >
-                    <span className="min-w-0 whitespace-normal break-words">
-                      {completions.includes(address) ? (
+                {(address: string) => {
+                  const floor = floorByCompletion.get(address)
+                  return (
+                    <ComboboxItem
+                      key={address}
+                      value={address}
+                      className="min-h-11 rounded-3xl px-4 whitespace-normal break-words"
+                    >
+                      {floor ? (
                         <>
-                          <mark className="bg-transparent font-semibold text-primary">
-                            {query.trimEnd()}
-                          </mark>
-                          {address.slice(query.trimEnd().length)}
+                          <span className="flex min-w-0 flex-1 flex-col py-0.5">
+                            <span>{floor.label}</span>
+                            {floor.department ? (
+                              <span className="text-xs text-muted-foreground">
+                                {floor.department}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="shrink-0 font-medium text-primary tabular-nums">
+                            {floor.zipcode}
+                          </span>
                         </>
                       ) : (
-                        <HighlightedAddress address={address} query={query} />
+                        <span className="min-w-0 whitespace-normal break-words">
+                          {completions.includes(address) ? (
+                            <>
+                              <mark className="bg-transparent font-semibold text-primary">
+                                {query.trimEnd()}
+                              </mark>
+                              {address.slice(query.trimEnd().length)}
+                            </>
+                          ) : (
+                            <HighlightedAddress address={address} query={query} />
+                          )}
+                        </span>
                       )}
-                    </span>
-                  </ComboboxItem>
-                )}
+                    </ComboboxItem>
+                  )
+                }}
               </ComboboxList>
               {areDoorplatesLoading ? (
                 // Delayed so a cached or quick load never flashes it.
