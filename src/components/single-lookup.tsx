@@ -161,13 +161,28 @@ export function SingleLookup() {
             className="absolute inset-0 size-full"
           />
         </div>
-        {road ? null : (
-          <h2 className="enter-rise pb-8 text-center text-[2.75rem] leading-[1.1] font-extrabold tracking-tight text-white [text-shadow:0_2px_20px_oklch(0.45_0.15_45/0.3)] sm:pb-10 sm:text-7xl">
-            填表不卡關
-            <br />
-            <span className="text-[oklch(0.99_0.04_90)]">地址閃電查</span>
-          </h2>
-        )}
+        {/* Folds away with the band rather than vanishing, so the search glides
+            up into place instead of jumping there. */}
+        <div
+          aria-hidden={road ? true : undefined}
+          className={cn(
+            "grid transition-[grid-template-rows] duration-500 ease-out motion-reduce:transition-none",
+            road ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <h2
+              className={cn(
+                "enter-rise pb-8 text-center text-[2.75rem] leading-[1.1] font-extrabold tracking-tight text-white [text-shadow:0_2px_20px_oklch(0.45_0.15_45/0.3)] transition-[opacity,scale] ease-out motion-reduce:transition-none sm:pb-10 sm:text-7xl",
+                road ? "scale-95 opacity-0 duration-200" : "duration-500",
+              )}
+            >
+              填表不卡關
+              <br />
+              <span className="text-[oklch(0.99_0.04_90)]">地址閃電查</span>
+            </h2>
+          </div>
+        </div>
         <AddressSearch
           onBand
           query={query}
