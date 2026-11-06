@@ -192,7 +192,7 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
           top: 160,
           display: "flex",
           alignItems: "center",
-          gap: 6,
+          gap: 14,
           color: "white",
           fontSize: 30,
           fontWeight: 700,
