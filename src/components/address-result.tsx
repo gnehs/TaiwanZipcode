@@ -171,6 +171,14 @@ type ScopeRulesProps = {
   summary: string
 }
 
+// A long list opens with the matching rule in the middle of view.
+function scrollToCurrentRule(list: HTMLUListElement | null) {
+  const current = list?.querySelector<HTMLElement>("[data-current]")
+  if (!list || !current) return
+  list.scrollTop =
+    current.offsetTop - (list.clientHeight - current.offsetHeight) / 2
+}
+
 // The rule summary doubles as the trigger for every rule on this road.
 function ScopeRules({
   align,
@@ -195,20 +203,24 @@ function ScopeRules({
       </PopoverTrigger>
       <PopoverContent
         align={align}
-        className="max-h-96 w-80 max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto overscroll-contain rounded-2xl p-4 sm:w-[26rem]"
+        className="max-h-96 w-80 max-w-[calc(100vw-2rem)] gap-1 rounded-2xl p-0 sm:w-[26rem]"
       >
-        <PopoverHeader>
+        <PopoverHeader className="px-4 pt-4">
           <PopoverTitle>此道路的郵遞區號規則</PopoverTitle>
           <PopoverDescription>
             依巷弄、門牌範圍與樓層判斷，符合的規則會標示出來。
           </PopoverDescription>
         </PopoverHeader>
-        <ul className="flex flex-col divide-y">
+        <ul
+          ref={scrollToCurrentRule}
+          className="scroll-fade relative flex min-h-0 flex-col divide-y overflow-y-auto overscroll-contain px-4 pb-2"
+        >
           {scopes.map((rule, index) => {
             const isCurrent = isComplete && rule === resolvedScope
             return (
               <li
                 key={`${rule.zipcode}-${rule.scope}-${index}`}
+                data-current={isCurrent || undefined}
                 className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 py-2.5 text-sm"
               >
                 <span
