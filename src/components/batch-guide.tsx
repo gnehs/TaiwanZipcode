@@ -8,18 +8,18 @@ const MOD_KEY = /Mac|iPhone|iPad/u.test(navigator.platform) ? "⌘" : "Ctrl+"
 export const BATCH_STEPS = [
   {
     icon: ClipboardCopyIcon,
-    title: "從 Excel 複製地址",
-    description: "選取整欄地址，一格一筆",
+    title: "複製 Excel 地址",
+    description: "選取試算表的整欄地址，一格一筆",
   },
   {
     icon: ClipboardPasteIcon,
     title: "貼進「地址」欄",
-    description: `點第一格，按 ${MOD_KEY}V 貼上`,
+    description: `點表格第一格，按 ${MOD_KEY}V 貼上`,
   },
   {
     icon: MousePointerClickIcon,
-    title: "選取需要的欄位貼回",
-    description: `點欄位標題或拖曳框選，按 ${MOD_KEY}C 複製`,
+    title: "複製結果貼回",
+    description: `點欄位標題或拖曳框選，按 ${MOD_KEY}C 複製後貼回試算表`,
   },
 ]
 

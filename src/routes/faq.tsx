@@ -11,7 +11,22 @@ export const Route = createFileRoute("/faq")({
   component: FaqPage,
 })
 
-const CITIES = [...new Set(addressIndex.places.map(({ city }) => city))]
+// North to south down the west coast, then the east coast, then the islands,
+// the order people scan for their own county in.
+const CITY_ORDER = [
+  "臺北市", "新北市", "基隆市", "桃園市", "新竹市", "新竹縣", "苗栗縣",
+  "臺中市", "彰化縣", "南投縣", "雲林縣",
+  "嘉義市", "嘉義縣", "臺南市", "高雄市", "屏東縣",
+  "宜蘭縣", "花蓮縣", "臺東縣",
+  "澎湖縣", "金門縣", "連江縣",
+]
+const rank = (city: string) => {
+  const index = CITY_ORDER.indexOf(city)
+  return index === -1 ? CITY_ORDER.length : index
+}
+const CITIES = [...new Set(addressIndex.places.map(({ city }) => city))].sort(
+  (a, b) => rank(a) - rank(b),
+)
 
 // Which counties have doorplates and how old they are, read from the files
 // the site ships.
@@ -25,9 +40,9 @@ function useDoorplateDates() {
   return dates
 }
 
-function formatRocDate({ date, kind }: DoorplateDate) {
+function formatDoorplateDate({ date, kind }: DoorplateDate) {
   const [year, month, day] = date.split("-")
-  const text = `${year} 年${month ? ` ${month} 月` : ""}${day ? ` ${day} 日` : ""}`
+  const text = `${Number(year) + 1911} 年${month ? ` ${month} 月` : ""}${day ? ` ${day} 日` : ""}`
   return kind === "updated" ? `${text}更新` : text
 }
 
@@ -94,7 +109,7 @@ function questions(dates: Record<string, DoorplateDate> | null): Question[] {
       answer: (
         <>
           <p>
-            門牌檢查與巷弄號建議需要縣市公開的門牌資料。以下縣市尚未釋出門牌資料，或資料目前無法取得，這些地區只會依郵遞區號範圍查詢：
+            門牌檢查與巷弄號建議需要各縣市政府公開的門牌資料。以下縣市尚未釋出或目前無法取得資料，只提供 3+3 郵遞區號查詢，不比對門牌：
           </p>
           {uncovered ? (
             <p className="font-medium text-foreground">{uncovered.join("、")}</p>
@@ -116,7 +131,7 @@ function questions(dates: Record<string, DoorplateDate> | null): Question[] {
                 <div key={city} className="contents">
                   <dt>{city}</dt>
                   <dd className="text-foreground tabular-nums">
-                    {formatRocDate(dates[city])}
+                    {formatDoorplateDate(dates[city])}
                   </dd>
                 </div>
               ))}
@@ -139,7 +154,7 @@ function questions(dates: Record<string, DoorplateDate> | null): Question[] {
       question: "資料從哪裡來？多久更新？",
       answer: (
         <p>
-          郵遞區號來自中華郵政 3+3 郵遞區號資料，門牌來自各縣市公開的門牌位置資料，兩者每月自動檢查更新（雲林縣的門牌資料需人工更新）。查詢結果僅供參考，正確資料請以中華郵政公告為準。
+          郵遞區號來自中華郵政 3+3 郵遞區號資料，門牌來自各縣市公開的門牌位置資料，兩者皆每月定期檢查更新。查詢結果僅供參考，正確資料請以中華郵政公告為準。
         </p>
       ),
     },

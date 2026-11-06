@@ -14,7 +14,7 @@ export const Route = createFileRoute("/guide")({
   component: GuidePage,
 })
 
-type Tip = { id: string; title: string; body: ReactNode; examples: string[] }
+type Tip = { id: string; title: string; body: ReactNode; examples?: string[] }
 
 const TIPS: Tip[] = [
   {
@@ -42,7 +42,7 @@ const TIPS: Tip[] = [
     title: "錯字、漏字會自動修正",
     body: (
       <p>
-        常見的錯字、異體字、簡稱，漏打的「路」「街」「號」，以及括號裡的備註都會自動處理。手上的地址不確定對不對，整段貼上來試試看。
+        常見的錯字、異體字、簡稱，漏打的「路」「街」「號」會自動修正補齊，括號裡的備註也會自動濾除。手上的地址不確定對不對，整段貼上來試試看。
       </p>
     ),
     examples: [
@@ -52,6 +52,15 @@ const TIPS: Tip[] = [
       "臺北市內湖科技園區瑞光路100號",
       "臺北市中正區丹陽街3號(收發室)",
     ],
+  },
+  {
+    id: "doorplate",
+    title: "自動核對門牌，減少退件",
+    body: (
+      <p>
+        除了查郵遞區號，也會比對各縣市政府公開的門牌資料。號碼落在郵遞區號範圍內、門牌資料裡卻查不到時（例如把 18 號打成 81 號），會提醒「門牌待確認」。
+      </p>
+    ),
   },
 ]
 
@@ -98,7 +107,7 @@ function GuidePage() {
               </h2>
               <div className="text-sm/relaxed text-muted-foreground">{body}</div>
             </div>
-            <TypingDemo examples={examples} />
+            {examples ? <TypingDemo examples={examples} /> : null}
           </CardContent>
         </Card>
       ))}
@@ -116,7 +125,7 @@ function GuidePage() {
               批次查詢，一次查完整份名單
             </h2>
             <p className="text-sm/relaxed text-muted-foreground">
-              寄送名單、會員資料要補郵遞區號，不必一筆一筆查。整欄地址貼進表格，每一列都會用同樣的方式補齊、修正，再把需要的欄位複製回試算表。
+              寄送名單、會員資料要補郵遞區號，不必一筆一筆查。整欄地址貼進表格，每一列都會用同樣的方式補齊、修正，查出郵遞區號、中文與英文地址，再把需要的欄位複製回試算表。名單只在你的瀏覽器裡處理，不會上傳伺服器。
             </p>
           </div>
           <BatchDemo addresses={BATCH_EXAMPLES} />
