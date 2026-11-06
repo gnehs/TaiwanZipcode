@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useId, useState, useSyncExternalStore } from "react"
 import { CheckIcon, CopyIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -30,6 +30,21 @@ async function writeClipboard(text: string) {
   } catch {
     return false
   }
+}
+
+// Only the most recent copy on the page keeps its check mark, so several
+// quick copies never leave a row of checks behind.
+let latestCopy: string | null = null
+const latestCopyListeners = new Set<() => void>()
+
+function markLatestCopy(id: string) {
+  latestCopy = id
+  latestCopyListeners.forEach((listener) => listener())
+}
+
+function subscribeLatestCopy(listener: () => void) {
+  latestCopyListeners.add(listener)
+  return () => latestCopyListeners.delete(listener)
 }
 
 const ICON_LAYER =
@@ -79,7 +94,10 @@ export function CopyButton({
     text: string
     status: "pending" | "copied" | "failed"
   } | null>(null)
-  const status = feedback?.text === text ? feedback.status : null
+  const id = useId()
+  const isLatest = useSyncExternalStore(subscribeLatestCopy, () => latestCopy === id)
+  const ownStatus = feedback?.text === text ? feedback.status : null
+  const status = ownStatus === "copied" && !isLatest ? null : ownStatus
   const iconOnly = !visibleLabel
 
   useEffect(() => {
@@ -91,6 +109,7 @@ export function CopyButton({
   async function copy() {
     setFeedback({ text, status: "pending" })
     const copied = await writeClipboard(text)
+    if (copied) markLatestCopy(id)
     setFeedback({ text, status: copied ? "copied" : "failed" })
   }
 
