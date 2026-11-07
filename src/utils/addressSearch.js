@@ -154,6 +154,27 @@ function getCompactList(list) {
   return compactList;
 }
 
+const prefixIndexCache = new WeakMap();
+
+// Each compact name maps to its first address, so duplicates resolve as a scan would.
+function getPrefixIndex(list) {
+  let prefixIndex = prefixIndexCache.get(list);
+  if (!prefixIndex) {
+    const addressByCompact = new Map();
+    const compactList = getCompactList(list);
+    for (const [index, compactAddress] of compactList.entries()) {
+      if (compactAddress && !addressByCompact.has(compactAddress)) {
+        addressByCompact.set(compactAddress, list[index]);
+      }
+    }
+    const lengths = [...new Set([...addressByCompact.keys()].map((key) => key.length))]
+      .sort((a, b) => b - a);
+    prefixIndex = { addressByCompact, lengths };
+    prefixIndexCache.set(list, prefixIndex);
+  }
+  return prefixIndex;
+}
+
 /**
  * Find the longest canonical road name at the start of a pasted address.
  * Returning the remaining text lets the caller open the detail view with the
@@ -163,23 +184,16 @@ export function findLongestAddressPrefix(query, addresses) {
   const compactQuery = compactSearchTextWithSource(query).compact;
   if (!compactQuery || !Array.isArray(addresses)) return null;
 
-  let best = null;
-  const compactList = getCompactList(addresses);
-  for (const [index, address] of addresses.entries()) {
-    const compactAddress = compactList[index];
-    if (!compactAddress || !compactQuery.startsWith(compactAddress)) continue;
-
-    if (!best || compactAddress.length > best.compactAddress.length) {
-      best = {
-        address,
-        suffix: suffixAfterPrefix(query, compactAddress),
-        compactAddress,
-      };
+  const { addressByCompact, lengths } = getPrefixIndex(addresses);
+  for (const length of lengths) {
+    if (length > compactQuery.length) continue;
+    const compactAddress = compactQuery.slice(0, length);
+    const address = addressByCompact.get(compactAddress);
+    if (address !== undefined) {
+      return { address, suffix: suffixAfterPrefix(query, compactAddress) };
     }
   }
-
-  if (!best) return null;
-  return { address: best.address, suffix: best.suffix };
+  return null;
 }
 
 /**
