@@ -188,7 +188,6 @@ function ResultCell({ rowData, columnData }: CellProps<GridRow, ResultKey>) {
       className={cn(
         "truncate px-2.5",
         columnData === "status" && rowData.tone && TONE_CLASSES[rowData.tone],
-        columnData === "zipcode" && "font-mono",
       )}
       title={value || undefined}
     >
@@ -215,9 +214,7 @@ function measureText(text: string, font: string) {
 function fitColumnWidth(grid: HTMLElement, key: ColumnKey, title: string, values: string[]) {
   const style = getComputedStyle(grid)
   const size = key === "input" ? "14px" : style.fontSize
-  const family =
-    key === "zipcode" ? style.getPropertyValue("--font-mono") || "monospace" : style.fontFamily
-  const font = `${size} ${family}`
+  const font = `${size} ${style.fontFamily}`
   const widest = Math.max(0, ...values.map((value) => measureText(value, font)))
   const header = measureText(title, `12px ${style.fontFamily}`) + HEADER_EXTRA
   return clampColumnWidth(Math.ceil(Math.max(widest + CELL_PADDING, header)))

@@ -64,7 +64,7 @@ export function RecentLookups() {
               >
                 {/* The zipcode leads, so the codes line up in a column and the
                     right end is left to the arrow and the delete button. */}
-                <span className="shrink-0 font-mono text-[0.8125rem] text-muted-foreground tabular-nums">
+                <span className="shrink-0 text-[0.8125rem] text-muted-foreground tabular-nums">
                   {lookup.zipcode}
                 </span>
                 <span className="min-w-0 flex-1 truncate">

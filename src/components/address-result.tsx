@@ -132,7 +132,7 @@ function RecipientPicker({
                 className="min-h-10 gap-3 pl-3"
               >
                 <span className="min-w-0 flex-1 break-words">{label}</span>
-                <span className="font-mono text-[0.8125rem] text-muted-foreground tabular-nums">
+                <span className="text-[0.8125rem] text-muted-foreground tabular-nums">
                   {scope.zipcode}
                 </span>
               </DropdownMenuRadioItem>
@@ -148,7 +148,7 @@ function RecipientPicker({
 const FOOTER_BUTTON =
   "my-1.5 ml-1.5 font-semibold text-primary-foreground hover:bg-white/15 hover:text-primary-foreground dark:hover:bg-white/15 aria-expanded:bg-white/15 aria-expanded:text-primary-foreground"
 
-const META_VALUE = "min-w-0 font-mono text-[0.8125rem] break-words"
+const META_VALUE = "min-w-0 text-[0.8125rem] break-words"
 
 function MetaItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -225,7 +225,7 @@ function ScopeRules({
               >
                 <span
                   className={cn(
-                    "font-mono text-[0.8125rem]",
+                    "text-[0.8125rem]",
                     isCurrent ? "text-primary" : "text-muted-foreground",
                   )}
                 >
