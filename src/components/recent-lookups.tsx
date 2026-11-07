@@ -26,13 +26,12 @@ export function RecentLookups() {
   if (!lookups.length) return null
 
   return (
-    // Pulled up to overlap the home page's orange band (positioned, so it
-    // sits above the band's block rather than under it), and light in the
-    // dark theme too, like the search above it.
+    // Pulled up to overlap the home page's band (positioned, so it sits
+    // above the band's block rather than under it).
     <Card
       aria-labelledby="recent-title"
       role="region"
-      className="enter-rise relative -mt-12 shadow-[0_0_0_1px_oklch(0.2_0.02_60/0.06),0_24px_48px_-16px_oklch(0.4_0.1_45/0.35)] sm:-mt-14 sm:[--card-spacing:--spacing(5)] dark:light-scheme"
+      className="enter-rise relative -mt-12 shadow-[0_0_0_1px_oklch(0.2_0.02_60/0.06),0_24px_48px_-16px_oklch(0.4_0.1_45/0.35)] sm:-mt-14 sm:[--card-spacing:--spacing(5)] dark:shadow-[inset_0_0_0_1px_oklch(1_0_0/0.08),0_24px_48px_-16px_oklch(0_0_0/0.6)]"
     >
       <CardContent className="flex flex-col">
         <div className="flex items-center justify-between -mt-0.5 gap-3 pb-2">

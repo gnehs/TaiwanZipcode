@@ -257,12 +257,7 @@ export function AddressSearch({
               selectAddress(address)
             }}
           >
-            {/* On the band the search and its suggestions stay light in
-                the dark theme too. */}
-            <div
-              ref={comboboxAnchor}
-              className={cn("w-full", onBand && "dark:light-scheme")}
-            >
+            <div ref={comboboxAnchor} className="w-full">
               <ComboboxInput
                 ref={inputRef}
                 id="address-search"
@@ -270,7 +265,9 @@ export function AddressSearch({
                 className={cn(
                   "h-14 w-full rounded-full border-0 bg-card pr-2 pl-3 text-base text-foreground [&_input]:text-base",
                   onBand
-                    ? "shadow-[0_20px_40px_-12px_oklch(0.4_0.15_45/0.45)] sm:h-16"
+                    ? // Over the dark theme's photo, a tinted frosted glass
+                      // rather than a white slab outshining the result.
+                      "shadow-[0_20px_40px_-12px_oklch(0.4_0.15_45/0.45)] sm:h-16 dark:bg-[oklch(0.2_0.01_55/0.55)] dark:shadow-[inset_0_0_0_1px_oklch(1_0_0/0.14),0_20px_40px_-12px_oklch(0_0_0/0.5)] dark:backdrop-blur-xl dark:backdrop-saturate-150"
                     : "shadow-surface",
                 )}
                 placeholder="例如：中山北路一段100號3樓"
@@ -317,7 +314,7 @@ export function AddressSearch({
             <ComboboxContent
               anchor={comboboxAnchor}
               // Close to the pill search above: 26px, with 22px items 4px in.
-              className={cn("rounded-4xl", onBand && "dark:light-scheme")}
+              className="rounded-4xl"
             >
               <ComboboxEmpty>找不到符合的道路，請調整關鍵字</ComboboxEmpty>
               <ComboboxList>
