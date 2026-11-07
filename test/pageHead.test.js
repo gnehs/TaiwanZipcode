@@ -51,3 +51,13 @@ test('writePageHead points og:image at the page image and keeps the site image w
     assert.equal(contentOf(writePageHead(indexHtml, page), tag), contentOf(indexHtml, tag));
   }
 });
+
+test('writePageHead replaces the structured data and keeps the site data without it', () => {
+  const ldOf = (html) => html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1];
+  const data = { '@context': 'https://schema.org', '@type': 'WebPage', name: '</script><b>' };
+  const html = writePageHead(indexHtml, { ...page, structuredData: data });
+  assert.equal(html.match(/application\/ld\+json/g).length, 1);
+  assert.doesNotMatch(ldOf(html), /<\/script>/);
+  assert.deepEqual(JSON.parse(ldOf(html)), data);
+  assert.equal(ldOf(writePageHead(indexHtml, page)), ldOf(indexHtml));
+});

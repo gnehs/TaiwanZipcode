@@ -1,5 +1,5 @@
 import { currentSharePath } from "@/lib/address-path"
-import { addressMeta, lookupForPath } from "@/lib/page-meta"
+import { addressMeta, addressStructuredData, lookupForPath } from "@/lib/page-meta"
 import { HOME_META, SITE_ORIGIN } from "@/lib/site"
 import { writePageHead } from "@/utils/pageHead.js"
 
@@ -33,11 +33,13 @@ export default {
     // The body differs per path, so the index file's validator does not apply.
     headers.delete("ETag")
     // Unknown paths still get the app, which sends visitors home.
+    const image = lookup ? `${SITE_ORIGIN}${OG_PREFIX}${meta.path}` : undefined
     const html = writePageHead(await page.text(), {
       ...meta,
       url: `${SITE_ORIGIN}${meta.path}`,
-      image: lookup ? `${SITE_ORIGIN}${OG_PREFIX}${meta.path}` : undefined,
+      image,
       indexable: Boolean(lookup),
+      structuredData: lookup ? addressStructuredData(lookup, image) : undefined,
     })
     return new Response(html, { status: lookup ? 200 : 404, headers })
   },

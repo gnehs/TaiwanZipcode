@@ -4,6 +4,15 @@ export const SITE_TITLE = "閃電地址"
 export const SITE_INTRO =
   "免驗證碼、不上傳伺服器的臺灣 3+3 郵遞區號與英文地址極速查詢工具，支援智慧糾錯與 Excel 批次處理。"
 
+// The site as structured data, which address pages name as their home.
+export const WEBSITE_DATA = {
+  "@type": "WebSite",
+  "@id": `${SITE_ORIGIN}/#website`,
+  name: SITE_TITLE,
+  url: `${SITE_ORIGIN}/`,
+  inLanguage: "zh-TW",
+}
+
 export type PageMeta = {
   title: string
   description: string
