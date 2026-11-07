@@ -33,11 +33,18 @@ import {
   lookupCleanedAddress,
   subscribeCorrections,
 } from "@/lib/addresses"
+import {
+  getLoadedRoadsVersion,
+  peekRoadDoorplates,
+  requestRoadDoorplates,
+  subscribeLoadedRoads,
+} from "@/lib/doorplates"
 import { readColumnPrefs, writeColumnPrefs, type ColumnPrefs } from "@/lib/batch-columns"
 import { cn } from "@/lib/utils"
 import { runViewTransition } from "@/lib/view-transition"
 import { clampColumnWidth } from "@/utils/batchColumns.js"
 import { toCsv, toTsv } from "@/utils/batchTable.js"
+import { findDoor } from "@/utils/doorplates.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type Tone = "success" | "warning" | "destructive"
@@ -113,12 +120,24 @@ const MIN_ROWS = 12
 const ROW_HEIGHT = 40
 const MAX_GRID_HEIGHT = 600
 
-function resolveRow(input: string): BatchResult {
+// A row with a full zipcode still waits on the county's doorplates: the
+// house it names may not be on the list.
+type ResolvedRow = {
+  result: BatchResult
+  door: { road: string; addressSuffix: string } | null
+}
+
+const DOOR_UNLISTED = { tone: "warning", status: "門牌待確認" } as const
+
+function resolveRow(input: string): ResolvedRow {
   const text = input.trim()
-  if (!text) return EMPTY_RESULT
+  if (!text) return { result: EMPTY_RESULT, door: null }
   const lookup = lookupCleanedAddress(text)
   if (!lookup.road) {
-    return { ...EMPTY_RESULT, tone: "destructive", status: "無法辨識道路" }
+    return {
+      result: { ...EMPTY_RESULT, tone: "destructive", status: "無法辨識道路" },
+      door: null,
+    }
   }
 
   const { road, addressSuffix, scopeResolution, displayedZipcode } = lookup
@@ -139,7 +158,7 @@ function resolveRow(input: string): BatchResult {
           ? ["warning", "英文需確認"]
           : ["success", "完成"]
 
-  return {
+  const result = {
     tone,
     status,
     zipcode: displayedZipcode,
@@ -153,11 +172,20 @@ function resolveRow(input: string): BatchResult {
     district: fields?.district || "",
     city: fields?.city || "",
   }
+  return { result, door: isComplete ? { road, addressSuffix } : null }
+}
+
+function checkDoor({ result, door }: ResolvedRow): BatchResult {
+  if (!door) return result
+  const doorplates = peekRoadDoorplates(door.road)
+  return findDoor(doorplates, door.addressSuffix) === "missing"
+    ? { ...result, ...DOOR_UNLISTED }
+    : result
 }
 
 // Each input is resolved once per version of the correction tables; editing
 // one row leaves the others cached.
-const resultCache = new Map<string, BatchResult>()
+const resultCache = new Map<string, ResolvedRow>()
 let cachedVersion = -1
 function resolveCached(input: string, version: number) {
   if (version !== cachedVersion) {
@@ -300,19 +328,28 @@ export function BatchLookup() {
     subscribeCorrections,
     getCorrectionsVersion,
   )
+  const roadsVersion = useSyncExternalStore(subscribeLoadedRoads, getLoadedRoadsVersion)
   const [inputs, setInputs] = useState(() => padInputs([]))
   const gridRef = useRef<DataSheetGridRef>(null)
   const [showGuide, setShowGuide] = useState(() => !readGuideDismissed())
   const [prefs, setPrefs] = useState(() => readColumnPrefs(RESULT_KEYS))
   const gridBoxRef = useRef<HTMLDivElement>(null)
   useEffect(() => writeColumnPrefs(prefs), [prefs])
-  const rows = useMemo<GridRow[]>(
+  const resolved = useMemo(
     () =>
       Array.from({ length: Math.max(inputs.length, MIN_ROWS) }, (_, index) => {
         const input = inputs[index] ?? ""
-        return { input, ...resolveCached(input, correctionsVersion) }
+        return { input, row: resolveCached(input, correctionsVersion) }
       }),
     [inputs, correctionsVersion],
+  )
+  useEffect(() => {
+    requestRoadDoorplates(resolved.flatMap(({ row }) => (row.door ? [row.door.road] : [])))
+  }, [resolved])
+  const rows = useMemo<GridRow[]>(
+    () => resolved.map(({ input, row }) => ({ input, ...checkDoor(row) })),
+    // roadsVersion stands for the roads checkDoor reads.
+    [resolved, roadsVersion],
   )
   // Every row up to the last one with an address, keeping blank rows between.
   const filledRows = useMemo(() => rows.slice(0, inputs.length - 1), [rows, inputs.length])

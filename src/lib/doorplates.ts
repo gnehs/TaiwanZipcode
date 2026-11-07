@@ -46,6 +46,44 @@ async function loadRoad(road: string) {
   return (await file)[road.slice(district.length)] ?? null
 }
 
+// Roads loaded for the batch table, read during render without a hook per row.
+const loadedRoads = new Map<string, RoadDoorplates | null>()
+const requestedRoads = new Set<string>()
+const roadListeners = new Set<() => void>()
+let roadsVersion = 0
+
+export function subscribeLoadedRoads(listener: () => void) {
+  roadListeners.add(listener)
+  return () => {
+    roadListeners.delete(listener)
+  }
+}
+
+export function getLoadedRoadsVersion() {
+  return roadsVersion
+}
+
+/** Loads each road's doorplates once; listeners hear as each arrives. */
+export function requestRoadDoorplates(roads: Iterable<string>) {
+  for (const road of roads) {
+    if (requestedRoads.has(road)) continue
+    requestedRoads.add(road)
+    loadRoad(road).then(
+      (doorplates) => {
+        loadedRoads.set(road, doorplates)
+        roadsVersion++
+        roadListeners.forEach((listener) => listener())
+      },
+      () => requestedRoads.delete(road),
+    )
+  }
+}
+
+/** A requested road's doorplates (null without data), undefined until loaded. */
+export function peekRoadDoorplates(road: string) {
+  return loadedRoads.get(road)
+}
+
 /**
  * The road's lanes, alleys and house numbers (null without data), and
  * whether they are still loading.
