@@ -281,8 +281,11 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
 
 export async function ogImageResponse(lookup: AddressLookup) {
   return new ImageResponse(<OgImage screen={phoneScreen(lookup)} />, {
-    width: 1200,
-    height: 630,
+    // The 1200×630 card at 1.5×, sharp on high-density screens without
+    // the weight of 2×.
+    width: 1800,
+    height: 945,
+    devicePixelRatio: 1.5,
     format: "jpeg",
     quality: 85,
     fonts: await (fonts ??= googleFonts([{ name: "Noto Sans TC", weight: "100..900" }])),

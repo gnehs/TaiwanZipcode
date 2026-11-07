@@ -27,7 +27,7 @@ const { render } = await import("takumi-js")
 
 const fonts = await googleFonts([{ name: "Noto Sans TC", weight: "100..900" }])
 const frameAt = (time, format) =>
-  render(createElement(scene.Scene, { time }), { width: 2400, height: 1260, devicePixelRatio: 2, format, fonts })
+  render(createElement(scene.Scene, { time }), { width: 1800, height: 945, devicePixelRatio: 1.5, format, fonts })
 
 const peek = process.argv.indexOf("--peek")
 if (peek !== -1) {
@@ -42,10 +42,11 @@ const ffmpeg = spawn(
   "ffmpeg",
   [
     "-y", "-loglevel", "error",
-    "-f", "rawvideo", "-pixel_format", "rgba", "-video_size", "2400x1260", "-framerate", String(FPS), "-i", "-",
-    // Drawn at twice the size and scaled down, for crisper text.
-    "-vf", "scale=1200:630:flags=lanczos,format=yuv420p",
-    "-c:v", "libx264", "-preset", "veryslow", "-crf", "24", "-tune", "animation",
+    "-f", "rawvideo", "-pixel_format", "rgba", "-video_size", "1800x945", "-framerate", String(FPS), "-i", "-",
+    // The card at 1.5×, like the address images. H.264 wants even sides, so
+    // the last row goes.
+    "-vf", "crop=1800:944:0:0,format=yuv420p",
+    "-c:v", "libx264", "-preset", "veryslow", "-crf", "20", "-tune", "animation",
     "-movflags", "+faststart", "-an",
     output,
   ],
