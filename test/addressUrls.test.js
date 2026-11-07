@@ -53,9 +53,13 @@ test('a link shared as one segment moves to the district form', () => {
   assert.equal(urls.currentSharePath('/batch'), null);
 });
 
-test('the hash holds the slug, and only a real address reads back', () => {
-  assert.equal(urls.hashOfSlug(slug), slug);
-  assert.equal(urls.hashOfSlug(`${slug} 3樓#?%`), `${slug}%203樓%23%3F%25`);
+test('the hash holds the district code and the rest, and only a real address reads back', () => {
+  const rest = slug.slice('臺北市大安區'.length);
+  assert.equal(urls.hashOfSlug(slug), `106/${rest}`);
+  assert.equal(urls.hashOfSlug(`${slug} 3樓#?%`), `106/${rest}%203樓%23%3F%25`);
+  assert.equal(urls.slugOfHash(`#106/${rest}`), slug);
+  assert.equal(urls.slugOfHash(`#臺北市大安區/${rest}`), slug);
+  assert.equal(urls.slugOfHash(`#100/${rest}`), null);
   assert.equal(urls.slugOfHash(`#${slug}`), slug);
   assert.equal(urls.slugOfHash('#batch'), null);
   assert.equal(urls.slugOfHash(''), null);

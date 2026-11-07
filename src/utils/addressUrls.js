@@ -3,7 +3,7 @@ import { buildDistrictCodes } from './districtCodes.js';
 // An address is named by a slug: a road as the database spells it, with its
 // city and district, then the house number as typed. Where the slug goes in
 // a URL depends on whether the address is being looked up or shared.
-//   in the app   /#<slug>             the hash never reaches a server
+//   in the app   /#<district>/<rest>  the hash never reaches a server
 //   shared       /a/<district>/<rest>  <rest> is the slug after the district
 //   shared once  /a/<slug>             redirected to the form above
 
@@ -84,12 +84,18 @@ export function createAddressUrls(database) {
     return slug === null ? null : sharePath(slug);
   }
 
-  const hashOfSlug = readable;
+  function hashOfSlug(slug) {
+    const parts = splitSlug(slug);
+    return parts ? `${readable(parts.segment)}/${readable(parts.rest)}` : readable(slug);
+  }
 
-  // The router hands the hash over already decoded.
+  // The router hands the hash over already decoded. A hash made before the
+  // district was shortened holds the whole slug.
   function slugOfHash(hash) {
-    const slug = hash.replace(/^#/, '');
-    return parseAddressSlug(slug) ? slug : null;
+    const text = hash.replace(/^#/, '');
+    const split = text.indexOf('/');
+    if (split > 0) return slugOfShareParts(text.slice(0, split), text.slice(split + 1));
+    return parseAddressSlug(text) ? text : null;
   }
 
   // Links made before the address moved into the hash, either #z=…&a=…&s=…
