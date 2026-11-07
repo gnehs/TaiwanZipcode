@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import { useLocation, useNavigate, useParams, useRouter } from "@tanstack/react-router"
 
 import { AddressResult } from "@/components/address-result"
@@ -26,6 +26,16 @@ import { placePhoto } from "@/lib/place-photos"
 import { rememberLookup } from "@/lib/recent-lookups"
 import { getIsDark, subscribeTheme } from "@/lib/theme"
 import { cn } from "@/lib/utils"
+
+// The element's distance from the page top, ignoring transforms, so a card
+// still rising into place measures where it will settle.
+function pageTop(element: HTMLElement) {
+  let top = 0
+  for (let node: HTMLElement | null = element; node; node = node.offsetParent as HTMLElement | null) {
+    top += node.offsetTop
+  }
+  return top
+}
 
 export function SingleLookup() {
   const router = useRouter()
@@ -59,6 +69,11 @@ export function SingleLookup() {
       ? lookupForRecipient(typedLookup, recipient.scope)
       : typedLookup
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const bandBlockRef = useRef<HTMLDivElement>(null)
+  const resultsRef = useRef<HTMLDivElement>(null)
+  // How far past its block the band runs to end on the zipcode card's
+  // footer line; only measured while there is a result.
+  const [bandOverhang, setBandOverhang] = useState<number | null>(null)
   const [isSuggesting, setIsSuggesting] = useState(false)
   const {
     road,
@@ -141,6 +156,28 @@ export function SingleLookup() {
     input.setSelectionRange(input.value.length, input.value.length)
   }, [])
 
+  // Measured before paint, and again whenever the band's block or the card
+  // changes size, as the headline folds away or the card gains a row.
+  useLayoutEffect(() => {
+    const block = bandBlockRef.current
+    const results = resultsRef.current
+    if (!road || !block || !results) {
+      setBandOverhang(null)
+      return
+    }
+    const measure = () => {
+      const divider = results.querySelector<HTMLElement>("[data-zipcode-divider]")
+      setBandOverhang(
+        divider ? pageTop(divider) - (pageTop(block) + block.offsetHeight) : null,
+      )
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(block)
+    observer.observe(results)
+    return () => observer.disconnect()
+  }, [road])
+
   return (
     <PageShell
       page="single"
@@ -152,16 +189,18 @@ export function SingleLookup() {
     >
       {/* The band runs edge to edge and up behind the header to the page top
           (the header's height plus the page's top padding), and ends with
-          this block. It stays mounted so the search never loses focus. */}
-      <div className="relative pb-16 sm:pb-18">
+          this block, or on the zipcode card's footer line once there is a
+          result. It stays mounted so the search never loses focus. */}
+      <div ref={bandBlockRef} className="relative pb-16 sm:pb-18">
         <div
           aria-hidden="true"
           className={cn(
-            "hero-band pointer-events-none absolute inset-x-[calc(50%-50vw)] bottom-0 -z-10 overflow-hidden transition-[top] duration-500 ease-out motion-reduce:transition-none",
+            "hero-band pointer-events-none absolute inset-x-[calc(50%-50vw)] bottom-0 -z-10 overflow-hidden transition-[top,bottom] duration-500 ease-out motion-reduce:transition-none",
             road
               ? "-top-[calc(3.5rem+--spacing(6))] sm:-top-[calc(4rem+--spacing(8))]"
               : "-top-[calc(3.5rem+--spacing(10))] sm:-top-[calc(4rem+9vh)]",
           )}
+          style={road && bandOverhang !== null ? { bottom: -bandOverhang } : undefined}
         >
           {/* The address's city, spelled out in its English address, or the
               whole island before one is typed. Blurred at the top so the
@@ -209,6 +248,7 @@ export function SingleLookup() {
       </div>
       {/* Fades back while suggestions are open so the list reads on its own. */}
       <div
+        ref={resultsRef}
         className={cn(
           "flex flex-col gap-3 transition-opacity duration-200 ease-out motion-reduce:transition-none",
           isSuggesting && "opacity-40",

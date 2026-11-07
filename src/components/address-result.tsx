@@ -484,7 +484,7 @@ export function AddressResult({
 
         </CardContent>
         {/* Footer: the rule summary on the left (wider screens), actions on the right. */}
-        <div className="relative -mb-(--card-spacing) flex border-t border-white/25">
+        <div data-zipcode-divider className="relative -mb-(--card-spacing) flex border-t border-white/25">
           <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1 py-3 pl-(--card-spacing) sm:flex">
             {metaItems("start")}
           </div>
