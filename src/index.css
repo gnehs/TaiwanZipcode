@@ -196,7 +196,9 @@
     text-spacing-trim: trim-start;
     line-break: strict;
     hanging-punctuation: allow-end;
-    font-feature-settings: "halt";
+    /* liga and calt restate Inter's defaults, which Chrome drops once any feature is set.
+       cv05 (tailed l) and cv08 (serifed I) keep l and I apart in romanized addresses. */
+    font-feature-settings: "liga", "calt", "cv05", "cv08", "palt";
     font-variant-numeric: lining-nums tabular-nums;
     font-synthesis-style: none;
     }
