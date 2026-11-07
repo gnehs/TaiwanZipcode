@@ -1,8 +1,10 @@
+import { addressIndex, type AddressLookup } from "@/lib/addresses"
 import { currentSharePath } from "@/lib/address-path"
 import { addressMeta, addressStructuredData, lookupForPath } from "@/lib/page-meta"
 import { HOME_META, SITE_ORIGIN } from "@/lib/site"
 import { writePageHead } from "@/utils/pageHead.js"
 
+import { addressPageContent, type RoadDoorplates } from "./address-page"
 import { ogImageResponse } from "./og-image"
 
 const OG_PREFIX = "/og"
@@ -40,6 +42,9 @@ export default {
       image,
       indexable: Boolean(lookup),
       structuredData: lookup ? addressStructuredData(lookup, image) : undefined,
+      content: lookup
+        ? addressPageContent(lookup, await roadDoorplates(env, url, lookup))
+        : undefined,
     })
     return new Response(html, { status: lookup ? 200 : 404, headers })
   },
@@ -56,4 +61,28 @@ async function ogImage(request: Request, ctx: ExecutionContext) {
   await response.ready
   ctx.waitUntil(caches.default.put(request, response.clone()))
   return response
+}
+
+type DistrictDoorplates = Record<string, RoadDoorplates>
+
+// Each district's doorplates are read once per isolate. A district without a
+// file gets the app instead of JSON, so it has none.
+const districtFiles = new Map<string, Promise<DistrictDoorplates | null>>()
+
+async function roadDoorplates(env: Env, url: URL, lookup: AddressLookup) {
+  const place = addressIndex.placeByAddress[lookup.road]
+  if (!place) return null
+  const district = `${place.city}${place.area}`
+  let file = districtFiles.get(district)
+  if (!file) {
+    file = env.ASSETS.fetch(new URL(`/doorplates/${encodeURIComponent(district)}.json`, url)).then(
+      (response) =>
+        response.ok && response.headers.get("Content-Type")?.includes("json")
+          ? response.json<DistrictDoorplates>()
+          : null,
+    )
+    file.catch(() => districtFiles.delete(district))
+    districtFiles.set(district, file)
+  }
+  return (await file.catch(() => null))?.[place.road] ?? null
 }

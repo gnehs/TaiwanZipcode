@@ -92,7 +92,7 @@ export function AddressSearch({
   const keepOpenAfterPick = useRef(false)
   // Examples only help first-time visitors; returning ones get their history.
   const hasHistory =
-    useSyncExternalStore(subscribeRecentLookups, getRecentLookups).length > 0
+    useSyncExternalStore(subscribeRecentLookups, getRecentLookups, getRecentLookups).length > 0
   const [highlightedAddress, setHighlightedAddress] = useState<string | null>(
     null,
   )

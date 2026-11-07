@@ -61,3 +61,12 @@ test('writePageHead replaces the structured data and keeps the site data without
   assert.deepEqual(JSON.parse(ldOf(html)), data);
   assert.equal(ldOf(writePageHead(indexHtml, page)), ldOf(indexHtml));
 });
+
+test('writePageHead fills the app root and replaces content written before', () => {
+  const appOf = (html) => html.match(/<div id="app">([\s\S]*?)<\/div>\s*<script/)[1];
+  const home = writePageHead(indexHtml, { ...page, content: '<p>home</p>' });
+  assert.equal(appOf(home), '<!--content--><p>home</p><!--/content-->');
+  const address = writePageHead(home, { ...page, content: '<p>address</p>' });
+  assert.equal(appOf(address), '<!--content--><p>address</p><!--/content-->');
+  assert.equal(appOf(writePageHead(home, page)), appOf(home));
+});

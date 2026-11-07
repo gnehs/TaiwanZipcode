@@ -19,7 +19,7 @@ const REVEAL =
   "transition-[opacity,filter,scale,color,background-color] duration-200 ease-out motion-reduce:scale-100 motion-reduce:blur-none"
 
 export function RecentLookups() {
-  const lookups = useSyncExternalStore(subscribeRecentLookups, getRecentLookups)
+  const lookups = useSyncExternalStore(subscribeRecentLookups, getRecentLookups, getRecentLookups)
     .map((lookup) => ({ ...lookup, address: addressSlug(lookup.road, lookup.suffix) }))
     // A road the database has since dropped has no page to link to.
     .filter((lookup) => lookup.address)

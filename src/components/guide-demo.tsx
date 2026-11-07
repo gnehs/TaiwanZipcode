@@ -29,6 +29,7 @@ function usePrefersReducedMotion() {
       return () => query.removeEventListener("change", listener)
     },
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false,
   )
 }
 
@@ -51,7 +52,7 @@ function useCleanedLookup(text: string) {
   useEffect(() => {
     void loadCorrections()
   }, [])
-  useSyncExternalStore(subscribeCorrections, getCorrectionsVersion)
+  useSyncExternalStore(subscribeCorrections, getCorrectionsVersion, getCorrectionsVersion)
   return lookupCleanedAddress(text)
 }
 

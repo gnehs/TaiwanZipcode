@@ -95,7 +95,11 @@ export function CopyButton({
     status: "pending" | "copied" | "failed"
   } | null>(null)
   const id = useId()
-  const isLatest = useSyncExternalStore(subscribeLatestCopy, () => latestCopy === id)
+  const isLatest = useSyncExternalStore(
+    subscribeLatestCopy,
+    () => latestCopy === id,
+    () => false,
+  )
   const ownStatus = feedback?.text === text ? feedback.status : null
   const status = ownStatus === "copied" && !isLatest ? null : ownStatus
   const iconOnly = !visibleLabel

@@ -315,8 +315,13 @@ export function BatchLookup() {
   const correctionsVersion = useSyncExternalStore(
     subscribeCorrections,
     getCorrectionsVersion,
+    getCorrectionsVersion,
   )
-  const roadsVersion = useSyncExternalStore(subscribeLoadedRoads, getLoadedRoadsVersion)
+  const roadsVersion = useSyncExternalStore(
+    subscribeLoadedRoads,
+    getLoadedRoadsVersion,
+    getLoadedRoadsVersion,
+  )
   const [inputs, setInputs] = useState(() => padInputs([]))
   const gridRef = useRef<DataSheetGridRef>(null)
   const [showGuide, setShowGuide] = useState(() => !readGuideDismissed())

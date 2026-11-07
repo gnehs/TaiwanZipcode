@@ -228,6 +228,10 @@
       transform: translateY(8px) scale(0.98);
     }
   }
+  /* Taking over a page the server already drew, nothing rises again. */
+  :root[data-prerendered] .enter-rise {
+    transition: none;
+  }
 
   /* A digit slides up into its cell whenever it changes (the cell is re-keyed). */
   .digit-in {

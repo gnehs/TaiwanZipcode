@@ -33,33 +33,43 @@ export function addressMeta(lookup: AddressLookup): PageMeta {
   }
 }
 
-// What search engines read about an address page: the page, the place it
-// names with its postal address, and the trail from the road down through
-// each lane and alley, every step a page of its own.
-export function addressStructuredData(lookup: AddressLookup, image?: string) {
+// What an address page names: the address in full, its place, and the trail
+// from the road down through each lane and alley, every step a page of its own.
+export function addressPage(lookup: AddressLookup) {
   const { road, addressSuffix, displayedZipcode } = lookup
   const place = addressIndex.placeByAddress[road]
-  if (!place) return undefined
+  if (!place) return null
   const meta = addressMeta(lookup)
-  const url = `${SITE_ORIGIN}${meta.path}`
   const suffix = addressSuffix.trim()
   const { zh, en, form } = formatAddress(road, suffix, displayedZipcode)
   const name = suffix ? zh : road
-  const district = `${place.city}${place.area}`
 
-  const steps = [
-    { name: SITE_TITLE, url: `${SITE_ORIGIN}/` },
-    { name: `${place.area}${place.road}`, url: `${SITE_ORIGIN}${sharePath(road)}` },
+  const trail = [
+    { name: SITE_TITLE, path: "/" },
+    { name: `${place.area}${place.road}`, path: sharePath(road) },
   ]
   let parent = road
   const lane = form.ln ? `${form.ln}巷` : ""
   for (const rest of [lane, form.aly ? `${lane}${form.aly}弄` : ""]) {
     const address = `${road}${rest}`
     if (!rest || !name.startsWith(address) || name === address) continue
-    steps.push({ name: address.slice(parent.length), url: `${SITE_ORIGIN}${sharePath(address)}` })
+    trail.push({ name: address.slice(parent.length), path: sharePath(address) })
     parent = address
   }
-  if (suffix) steps.push({ name: name.slice(parent.length) || suffix, url })
+  if (suffix) trail.push({ name: name.slice(parent.length) || suffix, path: meta.path })
+
+  return { meta, place, name, en, form, trail }
+}
+
+// What search engines read about an address page: the page, the place it
+// names with its postal address, and its trail.
+export function addressStructuredData(lookup: AddressLookup, image?: string) {
+  const page = addressPage(lookup)
+  if (!page) return undefined
+  const { meta, place, name, en, trail } = page
+  const { displayedZipcode } = lookup
+  const url = `${SITE_ORIGIN}${meta.path}`
+  const district = `${place.city}${place.area}`
 
   return {
     "@context": "https://schema.org",
@@ -94,11 +104,11 @@ export function addressStructuredData(lookup: AddressLookup, image?: string) {
       {
         "@type": "BreadcrumbList",
         "@id": `${url}#breadcrumb`,
-        itemListElement: steps.map((step, index) => ({
+        itemListElement: trail.map((step, index) => ({
           "@type": "ListItem",
           position: index + 1,
           name: step.name,
-          item: step.url,
+          item: `${SITE_ORIGIN}${step.path}`,
         })),
       },
     ],

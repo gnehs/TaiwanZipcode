@@ -23,7 +23,7 @@ const THEME_OPTIONS = [
 
 // All three choices sit in view, so the current one needs no menu to find.
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribeTheme, getTheme)
+  const theme = useSyncExternalStore(subscribeTheme, getTheme, getTheme)
 
   return (
     <ToggleGroup

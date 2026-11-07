@@ -13,7 +13,7 @@ const DESCRIPTION_TAGS = [
 const URL_TAGS = ['property="og:url"', 'property="twitter:url"'];
 const IMAGE_TAGS = ['property="og:image"', 'property="twitter:image"'];
 
-function escapeHtml(value) {
+export function escapeHtml(value) {
   return value
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -31,11 +31,12 @@ function setContent(html, tags, value) {
 
 /**
  * @param {string} html
- * Without an image or structured data the page keeps the site's own.
+ * Without an image or structured data the page keeps the site's own. The
+ * content, already HTML, fills the app's root until the app replaces it.
  *
- * @param {{ title: string, description: string, url: string, image?: string, indexable: boolean, structuredData?: object }} page
+ * @param {{ title: string, description: string, url: string, image?: string, indexable: boolean, structuredData?: object, content?: string }} page
  */
-export function writePageHead(html, { title, description, url, image, indexable, structuredData }) {
+export function writePageHead(html, { title, description, url, image, indexable, structuredData, content }) {
   const safeTitle = escapeHtml(title);
   const safeUrl = escapeHtml(url);
   let result = html.replace(/<title>[^<]*<\/title>/, () => `<title>${safeTitle}</title>`);
@@ -49,6 +50,14 @@ export function writePageHead(html, { title, description, url, image, indexable,
     result = result.replace(
       /(<script type="application\/ld\+json">)[\s\S]*?(<\/script>)/,
       (_, start, end) => start + json + end,
+    );
+  }
+  // The home page's own content is replaced too, since the Worker writes
+  // address pages over the built home page.
+  if (content) {
+    result = result.replace(
+      /<div id="app">(?:<!--content-->[\s\S]*?<!--\/content-->)?<\/div>/,
+      () => `<div id="app"><!--content-->${content}<!--/content--></div>`,
     );
   }
   // A page that does not exist names no canonical address and stays out of

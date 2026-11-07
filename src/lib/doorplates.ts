@@ -20,7 +20,20 @@ export type DoorplateDate = { date: string; kind: "data" | "updated" }
  * ("115-10", "115-9-14"): named by the county, or only the upload date.
  */
 export function loadDoorplateDates() {
-  return fetchJson<Record<string, DoorplateDate>>("/doorplates/dates.json")
+  return fetchJson<Record<string, DoorplateDate>>("/doorplates/dates.json").then(
+    (dates) => (doorplateDates = dates),
+  )
+}
+
+let doorplateDates: Record<string, DoorplateDate> | null = null
+
+/** The dates once loaded (or given, when the build renders a page), else null. */
+export function knownDoorplateDates() {
+  return doorplateDates
+}
+
+export function setDoorplateDates(dates: Record<string, DoorplateDate>) {
+  doorplateDates = dates
 }
 
 /** The districts with a doorplate file, as "臺北市北投區". */

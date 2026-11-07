@@ -52,6 +52,7 @@ export function SingleLookup() {
   const correctionsVersion = useSyncExternalStore(
     subscribeCorrections,
     getCorrectionsVersion,
+    getCorrectionsVersion,
   )
   const typedLookup = useMemo(
     () => lookupCleanedAddress(query),
@@ -115,7 +116,7 @@ export function SingleLookup() {
     })
   }, [targetQuery])
 
-  const isDark = useSyncExternalStore(subscribeTheme, getIsDark)
+  const isDark = useSyncExternalStore(subscribeTheme, getIsDark, () => false)
   const photo = placePhoto(road, isDark)
   // Only the words, so the band spells names rather than numbers and commas.
   const englishAddress = road

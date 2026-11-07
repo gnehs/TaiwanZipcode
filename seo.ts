@@ -1,9 +1,18 @@
 import { readFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
 import { gzipSync } from "node:zlib"
 
-import type { Plugin } from "vite"
+import { createServer, type Plugin } from "vite"
 
-import { ABOUT_META, BATCH_META, FAQ_META, GUIDE_META, SITE_ORIGIN } from "./src/lib/site.ts"
+import {
+  ABOUT_META,
+  BATCH_META,
+  FAQ_META,
+  GUIDE_META,
+  HOME_META,
+  SITE_ORIGIN,
+  WEBSITE_DATA,
+} from "./src/lib/site.ts"
 import { createAddressUrls } from "./src/utils/addressUrls.js"
 import { writePageHead } from "./src/utils/pageHead.js"
 import { decodeZipcodeData } from "./src/utils/zipcodeCodec.js"
@@ -22,17 +31,48 @@ export function seoFiles(): Plugin {
     generateBundle: {
       // index.html is emitted by Vite's own post step.
       order: "post",
-      handler(_, bundle) {
+      async handler(_, bundle) {
         const index = bundle["index.html"]
         if (index?.type !== "asset") throw new Error("index.html was not built")
+        const template = String(index.source)
+        const pages = await renderPages()
+        const faqUrl = `${SITE_ORIGIN}${FAQ_META.path}`
+        const faqData = {
+          "@context": "https://schema.org",
+          "@graph": [
+            WEBSITE_DATA,
+            {
+              "@type": "FAQPage",
+              "@id": faqUrl,
+              url: faqUrl,
+              name: FAQ_META.title,
+              inLanguage: "zh-TW",
+              isPartOf: { "@id": WEBSITE_DATA["@id"] },
+              mainEntity: pages.faq.map(({ id, question, answer }) => ({
+                "@type": "Question",
+                "@id": `${faqUrl}#${id}`,
+                name: question,
+                acceptedAnswer: { "@type": "Answer", text: answer },
+              })),
+            },
+          ],
+        }
+        index.source = writePageHead(template, {
+          ...HOME_META,
+          url: `${SITE_ORIGIN}/`,
+          indexable: true,
+          content: pages.html.get("/"),
+        })
         for (const meta of [BATCH_META, GUIDE_META, FAQ_META, ABOUT_META]) {
           this.emitFile({
             type: "asset",
             fileName: `${meta.path.slice(1)}.html`,
-            source: writePageHead(String(index.source), {
+            source: writePageHead(template, {
               ...meta,
               url: `${SITE_ORIGIN}${meta.path}`,
               indexable: true,
+              content: pages.html.get(meta.path),
+              structuredData: meta === FAQ_META ? faqData : undefined,
             }),
           })
         }
@@ -122,6 +162,39 @@ export function seoFiles(): Plugin {
         })
       },
     },
+  }
+}
+
+// What src/prerender.tsx exports, which this config's TypeScript cannot read.
+type Prerender = {
+  setPageData(data: { doorplateDates: unknown }): void
+  renderPage(path: string): Promise<string>
+  faqEntries(): { id: string; question: string; answer: string }[]
+}
+
+// Renders the fixed pages with the app's own components, loaded through a
+// bare Vite server since the build itself only bundles for the browser.
+async function renderPages() {
+  const server = await createServer({
+    configFile: false,
+    root: fileURLToPath(new URL(".", import.meta.url)),
+    logLevel: "error",
+    resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
+    server: { middlewareMode: true, hmr: false, ws: false },
+    appType: "custom",
+  })
+  try {
+    const { setPageData, renderPage, faqEntries } = (await server.ssrLoadModule(
+      "/src/prerender.tsx",
+    )) as Prerender
+    setPageData({ doorplateDates: readDoorplates("dates.json") })
+    const html = new Map<string, string>()
+    for (const path of ["/", BATCH_META.path, GUIDE_META.path, FAQ_META.path, ABOUT_META.path]) {
+      html.set(path, await renderPage(path))
+    }
+    return { html, faq: faqEntries() }
+  } finally {
+    await server.close()
   }
 }
 

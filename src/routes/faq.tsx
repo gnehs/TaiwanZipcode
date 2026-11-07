@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { PageShell } from "@/components/page-shell"
 import { Card, CardContent } from "@/components/ui/card"
 import { addressIndex } from "@/lib/addresses"
-import { loadDoorplateDates, type DoorplateDate } from "@/lib/doorplates"
+import { knownDoorplateDates, loadDoorplateDates, type DoorplateDate } from "@/lib/doorplates"
 import { FAQ_META } from "@/lib/site"
 
 export const Route = createFileRoute("/faq")({
@@ -31,11 +31,11 @@ const CITIES = [...new Set(addressIndex.places.map(({ city }) => city))].sort(
 // Which counties have doorplates and how old they are, read from the files
 // the site ships.
 function useDoorplateDates() {
-  const [dates, setDates] = useState<Record<string, DoorplateDate> | null>(null)
+  const [dates, setDates] = useState(knownDoorplateDates)
   useEffect(() => {
     loadDoorplateDates()
       .then(setDates)
-      .catch(() => setDates(null))
+      .catch(() => {})
   }, [])
   return dates
 }
@@ -48,7 +48,7 @@ function formatDoorplateDate({ date, kind }: DoorplateDate) {
 
 type Question = { id: string; question: string; answer: ReactNode }
 
-function questions(dates: Record<string, DoorplateDate> | null): Question[] {
+export function questions(dates: Record<string, DoorplateDate> | null): Question[] {
   const uncovered = dates ? CITIES.filter((city) => !dates[city]) : null
   const covered = dates ? CITIES.filter((city) => dates[city]) : []
   return [
