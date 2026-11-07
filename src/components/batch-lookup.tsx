@@ -8,7 +8,7 @@ import {
   type DataSheetGridRef,
 } from "react-datasheet-grid"
 import "react-datasheet-grid/dist/style.css"
-import { ChevronDownIcon, CircleHelpIcon } from "lucide-react"
+import { ChevronDownIcon, CircleHelpIcon, DownloadIcon } from "lucide-react"
 
 import { BatchColumnsMenu } from "@/components/batch-columns-menu"
 import { BatchContextMenu } from "@/components/batch-context-menu"
@@ -17,7 +17,6 @@ import {
   readGuideDismissed,
   writeGuideDismissed,
 } from "@/components/batch-guide"
-import { CopyButton } from "@/components/copy-button"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -43,7 +42,7 @@ import { readColumnPrefs, writeColumnPrefs, type ColumnPrefs } from "@/lib/batch
 import { cn } from "@/lib/utils"
 import { runViewTransition } from "@/lib/view-transition"
 import { clampColumnWidth } from "@/utils/batchColumns.js"
-import { toCsv, toTsv } from "@/utils/batchTable.js"
+import { toCsv } from "@/utils/batchTable.js"
 import { findDoor } from "@/utils/doorplates.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
@@ -224,10 +223,8 @@ function ResultCell({ rowData, columnData }: CellProps<GridRow, ResultKey>) {
   )
 }
 
-// Room beside the text: a cell pads 10px a side plus its border; a header
-// also holds its copy button and gaps.
+// Room beside the text: a cell pads 10px a side plus its border.
 const CELL_PADDING = 24
-const HEADER_EXTRA = 48
 
 let measureContext: CanvasRenderingContext2D | null = null
 function measureText(text: string, font: string) {
@@ -244,31 +241,22 @@ function fitColumnWidth(grid: HTMLElement, key: ColumnKey, title: string, values
   const size = key === "input" ? "14px" : style.fontSize
   const font = `${size} ${style.fontFamily}`
   const widest = Math.max(0, ...values.map((value) => measureText(value, font)))
-  const header = measureText(title, `12px ${style.fontFamily}`) + HEADER_EXTRA
+  const header = measureText(title, `12px ${style.fontFamily}`) + CELL_PADDING
   return clampColumnWidth(Math.ceil(Math.max(widest + CELL_PADDING, header)))
 }
 
 function ColumnTitle({
   title,
-  text,
   onResize,
   onAutoFit,
 }: {
   title: string
-  text: string
   onResize: (width: number) => void
   onAutoFit: () => void
 }) {
   return (
     <span className="flex w-full items-center justify-between gap-1 pl-1.5 text-xs">
       <span className="truncate">{title}</span>
-      <CopyButton
-        text={text}
-        label={`複製「${title}」欄`}
-        visibleLabel=""
-        variant="ghost"
-        className="size-7"
-      />
       <span
         role="separator"
         aria-orientation="vertical"
@@ -375,7 +363,6 @@ export function BatchLookup() {
     const title = ({ key, title }: (typeof tableColumns)[number]) => (
       <ColumnTitle
         title={title}
-        text={toTsv(filledRows.map((row) => [cellText(row, key)]))}
         onResize={(width) =>
           setPrefs((current) => ({ ...current, widths: { ...current.widths, [key]: width } }))
         }
@@ -415,7 +402,6 @@ export function BatchLookup() {
     tableColumns.map((column) => column.title),
     ...filledRows.map((row) => tableColumns.map((column) => cellText(row, column.key))),
   ]
-  const tableText = toTsv(tableRows)
   const isDefaultPrefs = JSON.stringify(prefs) === JSON.stringify(DEFAULT_PREFS)
 
   async function downloadXlsx() {
@@ -443,7 +429,7 @@ export function BatchLookup() {
           <p className="text-sm text-muted-foreground" aria-live="polite">
             {filledCount ? `${completeCount} / ${filledCount} 筆完成` : "貼上地址"}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
             {showGuide ? null : (
               <Button
                 type="button"
@@ -459,16 +445,6 @@ export function BatchLookup() {
                 <CircleHelpIcon className="size-[1.125rem]" aria-hidden="true" />
               </Button>
             )}
-            {filledCount ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="min-h-11 px-4"
-                onClick={() => setInputs(padInputs([]))}
-              >
-                清除
-              </Button>
-            ) : null}
             <BatchColumnsMenu
               columns={RESULT_COLUMNS}
               order={prefs.order}
@@ -483,12 +459,12 @@ export function BatchLookup() {
                 render={
                   <Button
                     type="button"
-                    variant="ghost"
-                    className="min-h-11 gap-1 pr-3 pl-4"
+                    className="h-10 gap-1.5 pr-3 pl-3.5 font-semibold text-shadow-[0_1px_2px_oklch(0.4_0.13_48/0.35)] [&_svg]:drop-shadow-[0_1px_2px_oklch(0.4_0.13_48/0.35)]"
                     disabled={!filledCount}
                   />
                 }
               >
+                <DownloadIcon className="icon-optical size-4 max-sm:hidden" aria-hidden="true" />
                 下載
                 <ChevronDownIcon className="icon-optical size-4" aria-hidden="true" />
               </DropdownMenuTrigger>
@@ -506,10 +482,6 @@ export function BatchLookup() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <CopyButton
-              text={filledCount ? tableText : ""}
-              label="複製表格"
-            />
           </div>
         </div>
         <div className="batch-grid" ref={gridBoxRef}>

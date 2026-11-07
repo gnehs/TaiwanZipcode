@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { Columns3Icon, GripVerticalIcon } from "lucide-react"
+import { GripVerticalIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -61,10 +61,10 @@ export function BatchColumnsMenu<K extends string>({
     <Popover>
       <PopoverTrigger
         render={
-          <Button type="button" variant="ghost" size="icon" className="size-11" aria-label="欄位" />
+          <Button type="button" variant="ghost" className="min-h-11 px-4" />
         }
       >
-        <Columns3Icon className="size-[1.125rem]" aria-hidden="true" />
+        欄位
       </PopoverTrigger>
       <PopoverContent align="end" className="w-60 gap-1 rounded-2xl p-1">
         <ul ref={listRef} className="flex flex-col" aria-label="欄位">
