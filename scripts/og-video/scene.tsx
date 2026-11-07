@@ -11,9 +11,9 @@ import { addressIndex, formatAddress, loadCorrections, lookupCleanedAddress } fr
 // first-tone space), then Enter; digits go straight in. 中歷 is the classic
 // slip of picking the wrong ㄌㄧˋ.
 const INPUTS = [
-  "北市:ㄅㄟˇ ㄕˋ|中正區:ㄓㄨㄥ_ ㄓㄥˋ ㄑㄩ_|丹陽:ㄉㄢ_ ㄧㄤˊ|3",
+  "北市:ㄅㄟˇ ㄕˋ|中正區:ㄓㄨㄥ_ ㄓㄥˋ ㄑㄩ_|丹陽:ㄉㄢ_ ㄧㄤˊ|6",
   "冬山鄉:ㄉㄨㄥ_ ㄕㄢ_ ㄒㄧㄤ_|九分路:ㄐㄧㄡˇ ㄈㄣ_ ㄌㄨˋ|8|號:ㄏㄠˋ",
-  "桃園市:ㄊㄠˊ ㄩㄢˊ ㄕˋ|中歷區:ㄓㄨㄥ_ ㄌㄧˋ ㄑㄩ_|七和路:ㄑㄧ_ ㄏㄜˊ ㄌㄨˋ|1|號:ㄏㄠˋ",
+  "桃園市:ㄊㄠˊ ㄩㄢˊ ㄕˋ|中歷區:ㄓㄨㄥ_ ㄌㄧˋ ㄑㄩ_|七和路:ㄑㄧ_ ㄏㄜˊ ㄌㄨˋ|99|號:ㄏㄠˋ",
 ]
 const TYPE_START_S = 0.25
 // Every address takes the same time to type, however many keys it needs.
