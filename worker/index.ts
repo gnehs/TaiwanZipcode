@@ -4,7 +4,7 @@ import { addressMeta, addressStructuredData, lookupForPath } from "@/lib/page-me
 import { HOME_META, SITE_ORIGIN } from "@/lib/site"
 import { writePageHead } from "@/utils/pageHead.js"
 
-import { addressPageContent, type RoadDoorplates } from "./address-page"
+import { addressPageHtml, addressPageMarkdown, type RoadDoorplates } from "./address-page"
 import { ogImageResponse } from "./og-image"
 
 const OG_PREFIX = "/og"
@@ -29,9 +29,26 @@ export default {
 
     const lookup = lookupForPath(url.pathname)
     const meta = lookup ? addressMeta(lookup) : HOME_META
+    const doorplates = lookup && (await roadDoorplates(env, url, lookup))
+
+    // Agents that ask for Markdown get the page's text without the app.
+    const markdown =
+      lookup && wantsMarkdown(request) ? addressPageMarkdown(lookup, doorplates) : null
+    if (markdown) {
+      return new Response(markdown, {
+        headers: {
+          "Content-Type": "text/markdown; charset=utf-8",
+          Link: `<${SITE_ORIGIN}${meta.path}>; rel="canonical"`,
+          Vary: "Accept",
+          "Referrer-Policy": REFERRER_POLICY,
+        },
+      })
+    }
+
     const page = await env.ASSETS.fetch(new URL("/", url))
     const headers = new Headers(page.headers)
     headers.set("Referrer-Policy", REFERRER_POLICY)
+    headers.set("Vary", "Accept")
     // The body differs per path, so the index file's validator does not apply.
     headers.delete("ETag")
     // Unknown paths still get the app, which sends visitors home.
@@ -42,9 +59,7 @@ export default {
       image,
       indexable: Boolean(lookup),
       structuredData: lookup ? addressStructuredData(lookup, image) : undefined,
-      content: lookup
-        ? addressPageContent(lookup, await roadDoorplates(env, url, lookup))
-        : undefined,
+      content: lookup ? addressPageHtml(lookup, doorplates) : undefined,
     })
     return new Response(html, { status: lookup ? 200 : 404, headers })
   },
@@ -61,6 +76,13 @@ async function ogImage(request: Request, ctx: ExecutionContext) {
   await response.ready
   ctx.waitUntil(caches.default.put(request, response.clone()))
   return response
+}
+
+// Browsers never list text/markdown, so naming it at all is asking for it.
+function wantsMarkdown(request: Request) {
+  return /(^|,)\s*text\/markdown\b(?!\s*;\s*q=0(\.0*)?\s*(,|$))/i.test(
+    request.headers.get("Accept") ?? "",
+  )
 }
 
 type DistrictDoorplates = Record<string, RoadDoorplates>

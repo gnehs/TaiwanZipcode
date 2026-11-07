@@ -10,7 +10,9 @@ import {
   FAQ_META,
   GUIDE_META,
   HOME_META,
+  SITE_INTRO,
   SITE_ORIGIN,
+  SITE_TITLE,
   WEBSITE_DATA,
 } from "./src/lib/site.ts"
 import { createAddressUrls } from "./src/utils/addressUrls.js"
@@ -155,6 +157,7 @@ export function seoFiles(): Plugin {
             "",
           ].join("\n"),
         })
+        this.emitFile({ type: "asset", fileName: "llms.txt", source: llmsText(urls) })
         this.emitFile({
           type: "asset",
           fileName: "robots.txt",
@@ -163,6 +166,45 @@ export function seoFiles(): Plugin {
       },
     },
   }
+}
+
+// The site in brief for language models (llmstxt.org): what it answers, how
+// an address's page is named, and where to start.
+function llmsText(urls: ReturnType<typeof createAddressUrls>) {
+  const page = (slug: string) => {
+    const url = urls.shareUrl(SITE_ORIGIN, slug)
+    if (!url) throw new Error(`${slug} is not an address in the database`)
+    return url
+  }
+  const examples = [
+    ["臺北市信義區信義路五段7號", "門牌，列出 3+3 郵遞區號與英文地址"],
+    ["臺北市信義區信義路五段150巷", "巷，列出範圍與巷內各弄、門牌"],
+    ["臺北市信義區信義路五段", "道路，列出整條路的郵遞區號範圍"],
+  ]
+  return [
+    `# ${SITE_TITLE}`,
+    "",
+    `> ${SITE_INTRO}`,
+    "",
+    "郵遞區號來自中華郵政 3+3 郵遞區號資料，門牌來自各縣市公開的門牌資料，皆每月同步。查詢結果僅供參考，正確資料以中華郵政公告為準。",
+    "",
+    `每條道路、巷弄與門牌都有自己的頁面，網址為 \`${SITE_ORIGIN}/a/<區段>/<道路與門牌>\`。<區段> 是行政區常用的郵遞區號前三碼，與其他行政區共用時改用縣市加行政區名稱（如「臺北市大安區」）；<道路與門牌> 是去掉縣市與行政區後的地址，使用阿拉伯數字（如「信義路五段7號」）。頁面列出 3+3 郵遞區號、英文地址、該路的郵遞區號範圍，以及往下各巷弄與門牌的連結。只有道路或巷弄時，後三碼依門牌而定。請求時帶上 \`Accept: text/markdown\`，地址頁會改回傳 Markdown。`,
+    "",
+    "## 頁面",
+    "",
+    ...[GUIDE_META, FAQ_META, BATCH_META, ABOUT_META].map(
+      (meta) => `- [${meta.title.split("｜")[0]}](${SITE_ORIGIN}${meta.path}): ${meta.description}`,
+    ),
+    "",
+    "## 地址頁範例",
+    "",
+    ...examples.map(([slug, note]) => `- [${slug}](${page(slug)}): ${note}`),
+    "",
+    "## Optional",
+    "",
+    `- [Sitemap](${SITE_ORIGIN}/sitemap.xml): 所有道路、巷弄與門牌頁面`,
+    "",
+  ].join("\n")
 }
 
 // What src/prerender.tsx exports, which this config's TypeScript cannot read.

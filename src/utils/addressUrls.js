@@ -9,7 +9,7 @@ import { buildDistrictCodes } from './districtCodes.js';
 
 // Chinese stays readable, and only characters that would end or break a link
 // (spaces, #, ?, %) are escaped.
-const readable = (text) => text.replace(/[^\p{L}\p{N}\-._~]/gu, encodeURIComponent);
+export const readable = (text) => text.replace(/[^\p{L}\p{N}\-._~]/gu, encodeURIComponent);
 
 export function createAddressUrls(database) {
   const codes = buildDistrictCodes(database);
