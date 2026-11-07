@@ -132,7 +132,7 @@ function GuidePage() {
           <ol className="flex flex-col gap-3">
             {BATCH_STEPS.map(({ title, description }, index) => (
               <li key={title} className="flex items-baseline gap-3">
-                <span className="flex size-5 shrink-0 translate-y-[calc(var(--text-sm)*0.05)] items-center justify-center self-start rounded-full bg-primary pb-[0.1em] text-[0.6875rem] font-semibold text-primary-foreground tabular-nums">
+                <span className="flex size-5 shrink-0 items-center justify-center self-start rounded-full bg-primary text-[0.6875rem] font-semibold text-primary-foreground tabular-nums">
                   {index + 1}
                 </span>
                 <span className="text-sm">
@@ -147,7 +147,7 @@ function GuidePage() {
             className={cn(buttonVariants(), "min-h-11 self-start px-5")}
           >
             開始批次查詢
-            <ArrowRightIcon className="icon-optical" aria-hidden="true" />
+            <ArrowRightIcon aria-hidden="true" />
           </Link>
         </CardContent>
       </Card>

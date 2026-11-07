@@ -464,9 +464,9 @@ export function BatchLookup() {
                   />
                 }
               >
-                <DownloadIcon className="icon-optical size-4 max-sm:hidden" aria-hidden="true" />
+                <DownloadIcon className="size-4 max-sm:hidden" aria-hidden="true" />
                 下載
-                <ChevronDownIcon className="icon-optical size-4" aria-hidden="true" />
+                <ChevronDownIcon className="size-4" aria-hidden="true" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-auto">
                 <DropdownMenuItem

@@ -131,7 +131,7 @@ export function BatchContextMenu({
                   close()
                 }}
               >
-                <Icon className="icon-optical size-4 shrink-0" aria-hidden="true" />
+                <Icon className="size-4 shrink-0" aria-hidden="true" />
                 <span className="flex-1">{label}</span>
                 {shortcut ? (
                   <kbd className="font-sans text-xs text-muted-foreground">

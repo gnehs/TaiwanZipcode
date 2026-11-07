@@ -297,7 +297,7 @@ export function AddressSearch({
                 }}
               >
                 <InputGroupAddon align="inline-start">
-                  <SearchIcon className="icon-optical" aria-hidden="true" />
+                  <SearchIcon aria-hidden="true" />
                 </InputGroupAddon>
                 {query ? (
                   <InputGroupAddon align="inline-end">

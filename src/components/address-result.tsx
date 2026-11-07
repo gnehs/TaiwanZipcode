@@ -72,11 +72,11 @@ function StatusPill({ status }: { status: keyof typeof STATUS }) {
   return (
     <span
       className={cn(
-        "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-paper px-2.5 pb-[0.1em] text-xs font-medium shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] transition-colors duration-200 ease-out",
+        "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-paper px-2.5 text-xs font-medium shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] transition-colors duration-200 ease-out",
         ink,
       )}
     >
-      <span className="icon-optical size-1.5 rounded-full bg-current" aria-hidden="true" />
+      <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
       {label}
     </span>
   )
@@ -111,10 +111,10 @@ function RecipientPicker({
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label={`收件對象：${options[index].label}`}
-          className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-full bg-paper pr-2 pb-[0.1em] pl-3 text-xs font-medium text-paper-ink shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] outline-none transition-colors duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--paper),var(--paper-ink)_8%)] focus-visible:ring-3 focus-visible:ring-white/50"
+          className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-full bg-paper pr-2 pl-3 text-xs font-medium text-paper-ink shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] outline-none transition-colors duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--paper),var(--paper-ink)_8%)] focus-visible:ring-3 focus-visible:ring-white/50"
         >
           <span className="truncate">{options[index].label}</span>
-          <ChevronDownIcon className="icon-optical size-3.5 shrink-0" aria-hidden="true" />
+          <ChevronDownIcon className="size-3.5 shrink-0" aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" className="w-auto max-w-[min(22rem,calc(100vw-2rem))]">
           <DropdownMenuRadioGroup
@@ -273,7 +273,7 @@ function ZipcodeCells({ digits }: { digits: string }) {
             {[0, 1, 2].map((index) => (
               <span
                 key={index}
-                className="flex h-12 w-9 items-center justify-center overflow-hidden rounded-lg bg-white/16 pb-[0.1em] text-3xl font-semibold tabular-nums shadow-[inset_0_1px_0_oklch(1_0_0/0.35),inset_0_0_0_1px_oklch(1_0_0/0.18),0_4px_10px_-4px_oklch(0.4_0.13_48/0.35)] backdrop-blur-sm sm:h-18 sm:w-13 sm:rounded-xl sm:text-5xl"
+                className="flex h-12 w-9 items-center justify-center overflow-hidden rounded-lg bg-white/16 text-3xl font-semibold tabular-nums shadow-[inset_0_1px_0_oklch(1_0_0/0.35),inset_0_0_0_1px_oklch(1_0_0/0.18),0_4px_10px_-4px_oklch(0.4_0.13_48/0.35)] backdrop-blur-sm sm:h-18 sm:w-13 sm:rounded-xl sm:text-5xl"
               >
                 {digits[group * 3 + index] ? (
                   // Re-keyed per digit so a change replays the slide-in.
@@ -458,12 +458,12 @@ export function AddressResult({
               >
                 {isUnmatched ? (
                   <CircleAlertIcon
-                    className="icon-optical mt-0.5 size-4 shrink-0"
+                    className="mt-0.5 size-4 shrink-0"
                     aria-hidden="true"
                   />
                 ) : (
                   <InfoIcon
-                    className="icon-optical mt-0.5 size-4 shrink-0"
+                    className="mt-0.5 size-4 shrink-0"
                     aria-hidden="true"
                   />
                 )}
@@ -577,7 +577,7 @@ export function AddressResult({
                   )}
                 >
                   <CircleAlertIcon
-                    className="icon-optical mt-0.5 size-4 shrink-0"
+                    className="mt-0.5 size-4 shrink-0"
                     aria-hidden="true"
                   />
                   {parsedAddress.warns.join("；")}。請修正後再複製英文地址。

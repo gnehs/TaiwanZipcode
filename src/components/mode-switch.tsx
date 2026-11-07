@@ -44,7 +44,7 @@ export function ModeSwitch({ page, onBand }: { page: Page; onBand: boolean }) {
               to={mode.to}
               aria-current={isCurrent ? "page" : undefined}
               className={cn(
-                "relative flex h-8 items-center justify-center rounded-full px-4 pb-[0.1em] text-sm font-medium outline-none transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
+                "relative flex h-8 items-center justify-center rounded-full px-4 text-sm font-medium outline-none transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
                 mode.page === "batch"
                   ? "[view-transition-name:mode-batch]"
                   : "[view-transition-name:mode-single]",

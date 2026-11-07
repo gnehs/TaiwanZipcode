@@ -204,15 +204,6 @@
     }
 }
 
-/* Text sits about 0.05em below the middle of its line box (Noto Sans TC's metrics, which
-   Inter's are matched to). Boxes that centre a label take pb-[0.1em] to lift it 0.05em back
-   to their middle; an icon centred beside a label reads high, so this drops it to meet the
-   text, and composes with any translate-x on the icon. */
-@utility icon-optical {
-  --tw-translate-y: 0.05em;
-  translate: var(--tw-translate-x) var(--tw-translate-y);
-}
-
 /* The icon's "+" texture. Painted in currentColor and faded toward the bottom. */
 @utility plus-grid {
   background-color: currentColor;

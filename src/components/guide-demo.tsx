@@ -107,7 +107,7 @@ export function TypingDemo({ examples }: { examples: string[] }) {
   return (
     <div ref={ref} className="flex flex-col gap-2 rounded-3xl bg-muted p-2">
       <div aria-hidden="true" className="flex h-12 items-center gap-2.5 rounded-xl bg-card px-3.5 text-base shadow-control">
-        <SearchIcon className="icon-optical size-4.5 shrink-0 text-muted-foreground" />
+        <SearchIcon className="size-4.5 shrink-0 text-muted-foreground" />
         <span className="min-w-0 truncate">
           {text}
           <span className="guide-caret ml-px inline-block h-[1.1em] w-0.5 translate-y-[0.15em] bg-primary" />
@@ -149,7 +149,7 @@ export function TypingDemo({ examples }: { examples: string[] }) {
         )}
       >
         開啟這筆查詢
-        <ArrowRightIcon className="icon-optical size-3.5" aria-hidden="true" />
+        <ArrowRightIcon className="size-3.5" aria-hidden="true" />
       </Link>
     </div>
   )
