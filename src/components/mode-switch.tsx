@@ -21,15 +21,17 @@ export function ModeSwitch({ page, onBand }: { page: Page; onBand: boolean }) {
       <div
         className={cn(
           "relative grid grid-cols-2 rounded-full p-1 transition-[background-color,box-shadow] duration-500 ease-out [view-transition-name:mode-switch]",
-          // On the band it looks the same in both themes.
-          onBand ? "bg-white/20 dark:light-scheme" : "bg-card shadow-surface",
+          // A recessed track with a lit lip below. On the band it stays flat
+          // and looks the same in both themes.
+          onBand ? "bg-white/20 dark:light-scheme" : "bg-muted shadow-well",
         )}
       >
         <span
           aria-hidden="true"
           className={cn(
             "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full transition-[translate,background-color] duration-300 ease-out [view-transition-name:mode-pill] motion-reduce:transition-none",
-            onBand ? "bg-card" : "bg-secondary",
+            // The current mode stands out of the track as a raised control.
+            onBand ? "bg-card" : "control-surface shadow-control",
             isBatch && "translate-x-full",
             page !== "single" && !isBatch && "opacity-0",
           )}

@@ -56,9 +56,9 @@ export function BatchGuide({ onDismiss }: { onDismiss: () => void }) {
       <ol className="grid gap-4 px-(--card-spacing) sm:grid-cols-3">
         {BATCH_STEPS.map(({ icon: Icon, title, description }, index) => (
           <li key={title} className="flex items-center gap-3.5">
-            <span className="relative flex size-10 shrink-0 items-center justify-center rounded-2xl bg-secondary">
+            <span className="control-surface relative flex size-10 shrink-0 items-center justify-center rounded-2xl shadow-control">
               <Icon className="size-5 text-muted-foreground" aria-hidden="true" />
-              <span className="absolute -top-1 -right-1 flex size-4.5 items-center justify-center rounded-full bg-primary text-[0.6875rem] font-semibold text-primary-foreground tabular-nums">
+              <span className="absolute -top-1 -right-1 flex size-4.5 items-center justify-center rounded-full bg-primary text-[0.6875rem] font-semibold text-primary-foreground tabular-nums shadow-primary">
                 {index + 1}
               </span>
             </span>

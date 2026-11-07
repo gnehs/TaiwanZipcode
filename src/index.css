@@ -269,6 +269,14 @@
   --popover-shadow: 0 0 0 1px oklch(0.2 0.02 60 / 0.08), 0 4px 8px -2px oklch(0.2 0.02 60 / 0.06), 0 16px 36px -8px oklch(0.2 0.02 60 / 0.16);
 }
 
+/* A raised control's face: lit from above, with a 1px gradient edge. */
+@utility control-surface {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(to bottom, var(--control-top), var(--control-bottom)) padding-box,
+    linear-gradient(to bottom, var(--control-edge-top), var(--control-edge-bottom)) border-box;
+}
+
 @utility hero-band {
   background: var(--band);
 }

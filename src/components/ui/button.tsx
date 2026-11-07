@@ -11,7 +11,7 @@ const buttonVariants = cva(
         default:
           "border-0 bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary),var(--primary-gold)_25%),var(--primary))] text-primary-foreground shadow-primary hover:bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary),var(--primary-gold)_40%),color-mix(in_oklab,var(--primary),var(--primary-gold)_10%))]",
         outline:
-          "[background:linear-gradient(to_bottom,var(--control-top),var(--control-bottom))_padding-box,linear-gradient(to_bottom,var(--control-edge-top),var(--control-edge-bottom))_border-box] shadow-control hover:text-foreground hover:[--control-bottom:var(--control-top)] aria-expanded:text-foreground aria-expanded:[--control-bottom:var(--control-top)]",
+          "control-surface shadow-control hover:text-foreground hover:[--control-bottom:var(--control-top)] aria-expanded:text-foreground aria-expanded:[--control-bottom:var(--control-top)]",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
