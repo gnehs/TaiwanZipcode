@@ -66,11 +66,21 @@ function blurTopEdge(canvas: HTMLCanvasElement, reach: number, ratio: number) {
 // parts. Given `text`, the glyphs spell it out row by row instead, still only
 // where the photo is light. The canvas's CSS `color` washes the photo under
 // the glyphs. Given `blurTop`, its top that many CSS pixels fade into blur.
+// `focus` is the point of the photo, as shares of its width and height, that
+// the crop keeps as near its middle as the photo allows.
 type AsciiPhotoProps = {
   src: string
+  focus?: Focus
   text?: string
   blurTop?: number
   className?: string
+}
+
+export type Focus = readonly [x: number, y: number]
+const CENTER: Focus = [0.5, 0.5]
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
 }
 
 // The photo and its glyphs, drawn once at a width. It covers more height than
@@ -79,8 +89,10 @@ type Rendering = {
   bitmap: HTMLCanvasElement
   width: number
   scale: number
-  // CSS pixels of photo it holds, centred on the photo like the crop.
+  // CSS pixels of photo it holds, centred on the focus where the photo allows.
   height: number
+  // Where the focus falls in it, in CSS pixels from its top.
+  focusTop: number
   ratio: number
 }
 
@@ -91,14 +103,15 @@ function renderPhoto(
   ratio: number,
   color: string,
   text: string | undefined,
+  [focusX, focusY]: Focus,
 ): Rendering | null {
   const scale = Math.max(width / image.width, height / image.height)
   const drawWidth = image.width * scale
   const drawHeight = image.height * scale
   // Room for the band to grow to twice its height before drawing again.
   const renderHeight = Math.min(drawHeight, height * 2)
-  const left = (width - drawWidth) / 2
-  const top = (renderHeight - drawHeight) / 2
+  const left = clamp(width / 2 - focusX * drawWidth, width - drawWidth, 0)
+  const top = clamp(renderHeight / 2 - focusY * drawHeight, renderHeight - drawHeight, 0)
 
   const bitmap = document.createElement("canvas")
   bitmap.width = Math.round(width * ratio)
@@ -158,10 +171,10 @@ function renderPhoto(
       )
     }
   }
-  return { bitmap, width, scale, height: renderHeight, ratio }
+  return { bitmap, width, scale, height: renderHeight, focusTop: top + focusY * drawHeight, ratio }
 }
 
-function AsciiCanvas({ src, text, blurTop, className }: AsciiPhotoProps) {
+function AsciiCanvas({ src, focus = CENTER, text, blurTop, className }: AsciiPhotoProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawn, setIsDrawn] = useState(false)
   // Read when drawing, so a new blur reach re-crops instead of redrawing glyphs.
@@ -189,7 +202,7 @@ function AsciiCanvas({ src, text, blurTop, className }: AsciiPhotoProps) {
         rendering.scale !== scale ||
         rendering.height < height
       ) {
-        rendering = renderPhoto(image, width, height, ratio, getComputedStyle(canvas).color, text)
+        rendering = renderPhoto(image, width, height, ratio, getComputedStyle(canvas).color, text, focus)
         if (!rendering) return
       }
 
@@ -197,8 +210,10 @@ function AsciiCanvas({ src, text, blurTop, className }: AsciiPhotoProps) {
       canvas.height = Math.round(height * ratio)
       const context = canvas.getContext("2d")
       if (!context) return
-      // The middle of the rendering, as the photo is cropped to cover the box.
-      const offset = Math.round(((rendering.height - height) / 2) * ratio)
+      // The focus as near the middle as the rendering reaches.
+      const offset = Math.round(
+        clamp(rendering.focusTop - height / 2, 0, rendering.height - height) * ratio,
+      )
       context.drawImage(rendering.bitmap, 0, -offset)
       const reach = blurTopRef.current
       if (reach) blurTopEdge(canvas, Math.round(reach * ratio), ratio)
@@ -222,7 +237,7 @@ function AsciiCanvas({ src, text, blurTop, className }: AsciiPhotoProps) {
       redrawRef.current = null
       observer.disconnect()
     }
-  }, [src, text])
+  }, [src, focus, text])
 
   useEffect(() => {
     if (blurTopRef.current === blurTop) return
@@ -248,14 +263,14 @@ function AsciiCanvas({ src, text, blurTop, className }: AsciiPhotoProps) {
 // The outgoing photo keeps the text it was drawn with: it is fading away, and
 // spelling the new address on it would mean drawing all its glyphs again.
 export function AsciiPhoto(props: AsciiPhotoProps) {
-  const [layers, setLayers] = useState([{ src: props.src, text: props.text }])
+  const [layers, setLayers] = useState([{ src: props.src, focus: props.focus, text: props.text }])
   const current = layers.at(-1)!
   if (current.src !== props.src) {
-    setLayers([current, { src: props.src, text: props.text }])
+    setLayers([current, { src: props.src, focus: props.focus, text: props.text }])
   } else if (current.text !== props.text) {
-    setLayers([...layers.slice(0, -1), { src: props.src, text: props.text }])
+    setLayers([...layers.slice(0, -1), { ...current, text: props.text }])
   }
   return layers.map((layer) => (
-    <AsciiCanvas key={layer.src} {...props} src={layer.src} text={layer.text} />
+    <AsciiCanvas key={layer.src} {...props} {...layer} />
   ))
 }

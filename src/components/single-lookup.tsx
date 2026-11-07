@@ -167,7 +167,8 @@ export function SingleLookup() {
               whole island before one is typed. Blurred at the top so the
               header reads over it. */}
           <AsciiPhoto
-            src={photo}
+            src={photo.src}
+            focus={photo.focus}
             text={englishAddress}
             blurTop={road ? 80 : 112}
             className="absolute inset-0 size-full"
