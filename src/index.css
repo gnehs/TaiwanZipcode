@@ -228,9 +228,18 @@
       transform: translateY(8px) scale(0.98);
     }
   }
-  /* Taking over a page the server already drew, nothing rises again. */
-  :root[data-prerendered] .enter-rise {
-    transition: none;
+  /* The server's copy of a page is for readers that do not run the app, so
+     visitors see only the app take its place, unless it has not started
+     within a few seconds. Hidden rather than transparent, so its links
+     cannot be clicked unseen. */
+  [data-prerender] {
+    visibility: hidden;
+    animation: prerender-reveal 0s 4s forwards;
+  }
+  @keyframes prerender-reveal {
+    to {
+      visibility: visible;
+    }
   }
 
   /* A digit slides up into its cell whenever it changes (the cell is re-keyed). */

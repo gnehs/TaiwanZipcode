@@ -71,8 +71,8 @@ test('writePageHead replaces the structured data and keeps the site data without
 test('writePageHead fills the app root and replaces content written before', () => {
   const appOf = (html) => html.match(/<div id="app">([\s\S]*?)<\/div>\s*<script/)[1];
   const home = writePageHead(indexHtml, { ...page, content: '<p>home</p>' });
-  assert.equal(appOf(home), '<!--content--><p>home</p><!--/content-->');
+  assert.equal(appOf(home), '<!--content--><div data-prerender><p>home</p></div><!--/content-->');
   const address = writePageHead(home, { ...page, content: '<p>address</p>' });
-  assert.equal(appOf(address), '<!--content--><p>address</p><!--/content-->');
+  assert.equal(appOf(address), '<!--content--><div data-prerender><p>address</p></div><!--/content-->');
   assert.equal(appOf(writePageHead(home, page)), appOf(home));
 });

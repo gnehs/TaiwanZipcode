@@ -35,11 +35,7 @@ declare module "@tanstack/react-router" {
 const disposeTheme = initializeTheme()
 if (import.meta.hot) import.meta.hot.dispose(disposeTheme)
 
-const app = document.getElementById("app")!
-// The build or the Worker already drew this page; see RootLayout.
-if (app.hasChildNodes()) document.documentElement.dataset.prerendered = ""
-
-createRoot(app).render(
+createRoot(document.getElementById("app")!).render(
   <StrictMode>
     <RouterProvider router={router} />
   </StrictMode>,

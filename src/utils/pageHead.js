@@ -32,7 +32,8 @@ function setContent(html, tags, value) {
 /**
  * @param {string} html
  * Without an image or structured data the page keeps the site's own. The
- * content, already HTML, fills the app's root until the app replaces it.
+ * content, already HTML, fills the app's root until the app replaces it, and
+ * stays hidden meanwhile (see index.css).
  *
  * @param {{ title: string, description: string, url: string, image?: string, indexable: boolean, structuredData?: object, content?: string }} page
  */
@@ -62,7 +63,7 @@ export function writePageHead(html, { title, description, url, image, indexable,
   if (content) {
     result = result.replace(
       /<div id="app">(?:<!--content-->[\s\S]*?<!--\/content-->)?<\/div>/,
-      () => `<div id="app"><!--content-->${content}<!--/content--></div>`,
+      () => `<div id="app"><!--content--><div data-prerender>${content}</div><!--/content--></div>`,
     );
   }
   // A page that does not exist names no canonical address and stays out of
