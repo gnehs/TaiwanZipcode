@@ -1,5 +1,6 @@
-/* Composite face: Inter for Western text and digits, Noto Sans TC (linked in index.html) for Han.
- * Each Inter rule takes Noto Sans TC's line metrics, divided by its size-adjust, so line height and baseline match. */
+/* Composite face: Inter for Western text, Noto Sans TC for digits and (linked in index.html) Han.
+ * Each rule takes Noto Sans TC's line metrics, divided by its size-adjust, so line height and baseline match.
+ * The digits have no italic, so their italic rules reuse the upright files and stay upright. */
 
 /* ===== 100: Inter 160 ===== */
 @font-face {
@@ -80,9 +81,33 @@
   ascent-override: 118.37%;
   descent-override: 29.59%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz76Cz_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 100.5%;
+  ascent-override: 115.42%;
+  descent-override: 28.86%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz76CzzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 100.5%;
+  ascent-override: 115.42%;
+  descent-override: 28.86%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 @font-face {
   font-family: "TaiwanZipcode Composite";
@@ -162,9 +187,33 @@
   ascent-override: 118.37%;
   descent-override: 29.59%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz76Cz_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 100.5%;
+  ascent-override: 115.42%;
+  descent-override: 28.86%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz76CzzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 100.5%;
+  ascent-override: 115.42%;
+  descent-override: 28.86%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 
 /* ===== 200: Inter 220 ===== */
@@ -246,9 +295,33 @@
   ascent-override: 117.77%;
   descent-override: 29.44%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7yCy_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 101%;
+  ascent-override: 114.85%;
+  descent-override: 28.71%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7yCyzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 101%;
+  ascent-override: 114.85%;
+  descent-override: 28.71%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 @font-face {
   font-family: "TaiwanZipcode Composite";
@@ -328,9 +401,33 @@
   ascent-override: 117.77%;
   descent-override: 29.44%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7yCy_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 101%;
+  ascent-override: 114.85%;
+  descent-override: 28.71%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7yCyzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 101%;
+  ascent-override: 114.85%;
+  descent-override: 28.71%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 
 /* ===== 300: Inter 260 ===== */
@@ -412,9 +509,33 @@
   ascent-override: 117.17%;
   descent-override: 29.29%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7_6y_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 101.5%;
+  ascent-override: 114.29%;
+  descent-override: 28.57%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7_6yzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 101.5%;
+  ascent-override: 114.29%;
+  descent-override: 28.57%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 @font-face {
   font-family: "TaiwanZipcode Composite";
@@ -494,9 +615,33 @@
   ascent-override: 117.17%;
   descent-override: 29.29%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7_6y_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 101.5%;
+  ascent-override: 114.29%;
+  descent-override: 28.57%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7_6yzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 101.5%;
+  ascent-override: 114.29%;
+  descent-override: 28.57%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 
 /* ===== 400: Inter 400 ===== */
@@ -566,9 +711,33 @@
   ascent-override: 116%;
   descent-override: 29%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz76Cy_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 102.5%;
+  ascent-override: 113.17%;
+  descent-override: 28.29%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz76CyzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 102.5%;
+  ascent-override: 113.17%;
+  descent-override: 28.29%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 @font-face {
   font-family: "TaiwanZipcode Composite";
@@ -636,9 +805,33 @@
   ascent-override: 116%;
   descent-override: 29%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz76Cy_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 102.5%;
+  ascent-override: 113.17%;
+  descent-override: 28.29%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz76CyzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 102.5%;
+  ascent-override: 113.17%;
+  descent-override: 28.29%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 
 /* ===== 500: Inter 520 ===== */
@@ -720,9 +913,33 @@
   ascent-override: 114.85%;
   descent-override: 28.71%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz75Ky_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 103.5%;
+  ascent-override: 112.08%;
+  descent-override: 28.02%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz75KyzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 103.5%;
+  ascent-override: 112.08%;
+  descent-override: 28.02%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 @font-face {
   font-family: "TaiwanZipcode Composite";
@@ -802,9 +1019,33 @@
   ascent-override: 114.85%;
   descent-override: 28.71%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz75Ky_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 103.5%;
+  ascent-override: 112.08%;
+  descent-override: 28.02%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz75KyzC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 103.5%;
+  ascent-override: 112.08%;
+  descent-override: 28.02%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 
 /* ===== 600: Inter 600 ===== */
@@ -880,9 +1121,33 @@
   ascent-override: 114.29%;
   descent-override: 28.57%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7361_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 111.54%;
+  descent-override: 27.88%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7361zC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 111.54%;
+  descent-override: 27.88%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 @font-face {
   font-family: "TaiwanZipcode Composite";
@@ -956,9 +1221,33 @@
   ascent-override: 114.29%;
   descent-override: 28.57%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7361_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 111.54%;
+  descent-override: 27.88%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7361zC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 104%;
+  ascent-override: 111.54%;
+  descent-override: 27.88%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 
 /* ===== 700: Inter 680 ===== */
@@ -1040,9 +1329,33 @@
   ascent-override: 113.73%;
   descent-override: 28.43%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz70e1_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 104.5%;
+  ascent-override: 111%;
+  descent-override: 27.75%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz70e1zC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 104.5%;
+  ascent-override: 111%;
+  descent-override: 27.75%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 @font-face {
   font-family: "TaiwanZipcode Composite";
@@ -1122,9 +1435,33 @@
   ascent-override: 113.73%;
   descent-override: 28.43%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz70e1_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 104.5%;
+  ascent-override: 111%;
+  descent-override: 27.75%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz70e1zC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 104.5%;
+  ascent-override: 111%;
+  descent-override: 27.75%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 
 /* ===== 800: Inter 740 ===== */
@@ -1206,9 +1543,33 @@
   ascent-override: 113.17%;
   descent-override: 28.29%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7yC1_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 105%;
+  ascent-override: 110.48%;
+  descent-override: 27.62%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7yC1zC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 105%;
+  ascent-override: 110.48%;
+  descent-override: 27.62%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 @font-face {
   font-family: "TaiwanZipcode Composite";
@@ -1288,9 +1649,33 @@
   ascent-override: 113.17%;
   descent-override: 28.29%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7yC1_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 105%;
+  ascent-override: 110.48%;
+  descent-override: 27.62%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7yC1zC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 105%;
+  ascent-override: 110.48%;
+  descent-override: 27.62%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 
 /* ===== 900: Inter 800 ===== */
@@ -1366,9 +1751,33 @@
   ascent-override: 112.08%;
   descent-override: 28.02%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7wm1_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 105%;
+  ascent-override: 110.48%;
+  descent-override: 27.62%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7wm1zC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 105%;
+  ascent-override: 110.48%;
+  descent-override: 27.62%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
 @font-face {
   font-family: "TaiwanZipcode Composite";
@@ -1442,7 +1851,31 @@
   ascent-override: 112.08%;
   descent-override: 28.02%;
   line-gap-override: 0%;
-  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
-    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
-    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+  unicode-range: U+20-2F, U+3A-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6,
+    U+2DA, U+2DC, U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B,
+    U+201E-2024, U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7wm1_C9Otma2sNSJtzYHliyxLND4wBzNt2rB9nIRpa7KOq33sn8BIAlj5iM.123.woff2) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 105%;
+  ascent-override: 110.48%;
+  descent-override: 27.62%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
+}
+@font-face {
+  font-family: "TaiwanZipcode Composite";
+  src: url(https://fonts.gstatic.com/s/notosanstc/v40/-nFuOG829Oofr2wohFbTp9ifNAn722rq0MXz7wm1zC1Et0SyqNXbqQ.woff2) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 105%;
+  ascent-override: 110.48%;
+  descent-override: 27.62%;
+  line-gap-override: 0%;
+  unicode-range: U+30-39;
 }
