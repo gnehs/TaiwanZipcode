@@ -387,10 +387,11 @@ function Phone({ frame }: { frame: Frame }) {
       >
         <img src={PLUS_GRID} width={308} height={220} style={{ position: "absolute", left: 0, top: 0 }} />
         <div style={{ position: "relative", ...exit }}>
-          <div style={{ fontSize: 17, fontWeight: 600, whiteSpace: "nowrap" }}>
+          {/* Fixed line heights, so an empty card is as tall as a full one. */}
+          <div style={{ height: 24, fontSize: 17, lineHeight: "24px", fontWeight: 600, whiteSpace: "nowrap" }}>
             <Swap change={changeOf(frame, (s) => s.place, 0.5)} />
           </div>
-          <div style={{ marginTop: 2, fontSize: 13, color: "rgba(255, 255, 255, 0.78)" }}>
+          <div style={{ height: 18, marginTop: 2, fontSize: 13, lineHeight: "18px", color: "rgba(255, 255, 255, 0.78)" }}>
             <Swap change={changeOf(frame, (s) => s.house, 0.45)} />
           </div>
         </div>
