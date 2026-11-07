@@ -490,7 +490,7 @@ export function BatchLookup() {
                 }
               >
                 下載
-                <ChevronDownIcon className="size-4" aria-hidden="true" />
+                <ChevronDownIcon className="icon-optical size-4" aria-hidden="true" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-auto">
                 <DropdownMenuItem

@@ -72,7 +72,7 @@ function AboutPage() {
                       className="inline-flex items-center gap-0.5 font-medium underline-offset-4 hover:underline"
                     >
                       {value}
-                      <ArrowUpRightIcon className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                      <ArrowUpRightIcon className="icon-optical size-3.5 text-muted-foreground" aria-hidden="true" />
                     </a>
                   ) : (
                     value

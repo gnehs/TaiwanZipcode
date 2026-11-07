@@ -114,7 +114,7 @@ function RecipientPicker({
           className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-full bg-paper pr-2 pl-3 text-xs font-medium text-paper-ink shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] outline-none transition-colors duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--paper),var(--paper-ink)_8%)] focus-visible:ring-3 focus-visible:ring-white/50"
         >
           <span className="truncate">{options[index].label}</span>
-          <ChevronDownIcon className="size-3.5 shrink-0" aria-hidden="true" />
+          <ChevronDownIcon className="icon-optical size-3.5 shrink-0" aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" className="w-auto max-w-[min(22rem,calc(100vw-2rem))]">
           <DropdownMenuRadioGroup
@@ -458,12 +458,12 @@ export function AddressResult({
               >
                 {isUnmatched ? (
                   <CircleAlertIcon
-                    className="mt-0.5 size-4 shrink-0"
+                    className="icon-optical mt-0.5 size-4 shrink-0"
                     aria-hidden="true"
                   />
                 ) : (
                   <InfoIcon
-                    className="mt-0.5 size-4 shrink-0"
+                    className="icon-optical mt-0.5 size-4 shrink-0"
                     aria-hidden="true"
                   />
                 )}
@@ -577,7 +577,7 @@ export function AddressResult({
                   )}
                 >
                   <CircleAlertIcon
-                    className="mt-0.5 size-4 shrink-0"
+                    className="icon-optical mt-0.5 size-4 shrink-0"
                     aria-hidden="true"
                   />
                   {parsedAddress.warns.join("；")}。請修正後再複製英文地址。

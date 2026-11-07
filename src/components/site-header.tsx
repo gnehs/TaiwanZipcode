@@ -84,7 +84,7 @@ export function SiteHeader({
                 aria-current={page === to.slice(1) ? "page" : undefined}
                 className="min-h-10 gap-3 rounded-xl px-3 aria-[current=page]:font-medium"
               >
-                <Icon className="text-muted-foreground" aria-hidden="true" />
+                <Icon className="icon-optical text-muted-foreground" aria-hidden="true" />
                 {label}
               </DropdownMenuItem>
             ))}

@@ -91,7 +91,7 @@ export function BatchColumnsMenu<K extends string>({
                     onOrderChange(moveItem(order, index, to))
                   }}
                 >
-                  <GripVerticalIcon className="size-4" aria-hidden="true" />
+                  <GripVerticalIcon className="icon-optical size-4" aria-hidden="true" />
                 </button>
                 <label className="flex min-h-10 flex-1 cursor-pointer items-center justify-between gap-3 select-none">
                   <span className={cn("truncate", !visible && "text-muted-foreground")}>{title}</span>

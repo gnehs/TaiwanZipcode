@@ -44,7 +44,7 @@ export function RecentLookups() {
             className="-my-2 -mr-2 min-h-10 px-3 text-muted-foreground"
             onClick={clearRecentLookups}
           >
-            <Trash2Icon data-icon="inline-start" aria-hidden="true" />
+            <Trash2Icon data-icon="inline-start" className="icon-optical" aria-hidden="true" />
             全部清除
           </Button>
         </div>
@@ -74,7 +74,7 @@ export function RecentLookups() {
                 <ArrowRightIcon
                   aria-hidden="true"
                   className={cn(
-                    "size-4 shrink-0 -translate-x-1 text-foreground opacity-0",
+                    "icon-optical size-4 shrink-0 -translate-x-1 text-foreground opacity-0",
                     REVEAL,
                     "transition-[opacity,translate] motion-reduce:translate-x-0 [@media(hover:hover)]:group-hover/row:translate-x-0 [@media(hover:hover)]:group-hover/row:opacity-100 group-focus-visible/row:translate-x-0 group-focus-visible/row:opacity-100",
                   )}

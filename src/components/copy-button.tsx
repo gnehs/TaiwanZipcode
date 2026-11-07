@@ -56,13 +56,15 @@ function IconSwap({
   swapped,
   from,
   to,
+  className,
 }: {
   swapped: boolean
   from: React.ReactNode
   to: React.ReactNode
+  className?: string
 }) {
   return (
-    <span data-icon="inline-start" className="grid" aria-hidden="true">
+    <span data-icon="inline-start" className={cn("grid", className)} aria-hidden="true">
       <span className={cn(ICON_LAYER, swapped && "scale-75 opacity-0 blur-[3px]")}>
         {from}
       </span>
@@ -132,6 +134,7 @@ export function CopyButton({
           swapped={status === "copied"}
           from={icon}
           to={<CheckIcon />}
+          className={iconOnly ? undefined : "icon-optical"}
         />
         {/* The label stays put; the icon carries the feedback and the status
             region below announces it, so the button never changes width. */}

@@ -147,7 +147,7 @@ function GuidePage() {
             className={cn(buttonVariants(), "min-h-11 self-start px-5")}
           >
             開始批次查詢
-            <ArrowRightIcon aria-hidden="true" />
+            <ArrowRightIcon className="icon-optical" aria-hidden="true" />
           </Link>
         </CardContent>
       </Card>
