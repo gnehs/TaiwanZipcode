@@ -2,7 +2,6 @@ import { useEffect, type ReactNode } from "react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowRightIcon } from "lucide-react"
 
-import { BATCH_STEPS } from "@/components/batch-guide"
 import { BatchDemo, TypingDemo } from "@/components/guide-demo"
 import { PageShell } from "@/components/page-shell"
 import { buttonVariants } from "@/components/ui/button"
@@ -129,19 +128,6 @@ function GuidePage() {
             </p>
           </div>
           <BatchDemo addresses={BATCH_EXAMPLES} />
-          <ol className="flex flex-col gap-3">
-            {BATCH_STEPS.map(({ title, description }, index) => (
-              <li key={title} className="flex items-baseline gap-3">
-                <span className="flex size-5 shrink-0 items-center justify-center self-start rounded-full bg-primary text-[0.6875rem] font-semibold text-primary-foreground tabular-nums">
-                  {index + 1}
-                </span>
-                <span className="text-sm">
-                  <span className="font-medium">{title}</span>
-                  <span className="text-muted-foreground">，{description}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
           <Link
             to="/batch"
             className={cn(buttonVariants(), "min-h-11 self-start px-5")}

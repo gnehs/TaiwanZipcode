@@ -15,7 +15,6 @@ import {
 import {
   Popover,
   PopoverContent,
-  PopoverDescription,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
@@ -36,9 +35,7 @@ import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 type AddressResultProps = {
   address: string
   addressSuffix: string
-  baseZipcodePrefixes: string[]
   displayedZipcode: string
-  matchedRuleBasis: string
   resolvedScope: ZipcodeScope | null
   scopeResolution: ScopeResolution
   scopes: ZipcodeScope[]
@@ -46,44 +43,11 @@ type AddressResultProps = {
   onRecipientChange: (scope: ZipcodeScope | null) => void
 }
 
-type Tone = "success" | "warning" | "neutral" | "destructive"
+const DESTRUCTIVE_TONE =
+  "bg-[color-mix(in_oklab,var(--destructive)_12%,var(--card))] text-destructive"
 
-const TONE_CLASSES: Record<Tone, string> = {
-  success:
-    "bg-[color-mix(in_oklab,var(--success)_14%,var(--card))] text-success",
-  warning:
-    "bg-[color-mix(in_oklab,var(--warning)_16%,var(--card))] text-warning",
-  neutral: "bg-secondary text-muted-foreground",
-  destructive:
-    "bg-[color-mix(in_oklab,var(--destructive)_12%,var(--card))] text-destructive",
-}
-
-// Shown only when something is missing or wrong; a complete code needs no badge.
-// The pill sits on the orange card in both themes, so it uses paper with fixed inks.
-const STATUS = {
-  pending: { label: "尚未確認", ink: "text-[oklch(0.52_0.12_70)]" },
-  awaiting: { label: "待補門牌", ink: "text-paper-ink" },
-  unmatched: { label: "找不到範圍", ink: "text-[oklch(0.52_0.2_25)]" },
-  noDoor: { label: "門牌待確認", ink: "text-[oklch(0.52_0.12_70)]" },
-} as const
-
-function StatusPill({ status }: { status: keyof typeof STATUS }) {
-  const { label, ink } = STATUS[status]
-  return (
-    <span
-      className={cn(
-        "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-paper px-2.5 text-xs font-medium shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] transition-colors duration-200 ease-out",
-        ink,
-      )}
-    >
-      <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-      {label}
-    </span>
-  )
-}
-
-// An address shared with bulk recipients asks who the mail is for. Like the
-// status pill it sits on the orange card, so it uses paper with fixed inks.
+// An address shared with bulk recipients asks who the mail is for. It sits
+// on the orange card in both themes, so it uses paper with fixed inks.
 function RecipientPicker({
   general,
   recipients,
@@ -206,10 +170,7 @@ function ScopeRules({
         className="max-h-96 w-80 max-w-[calc(100vw-2rem)] gap-1 rounded-2xl p-0 sm:w-[26rem]"
       >
         <PopoverHeader className="px-4 pt-4">
-          <PopoverTitle>此道路的郵遞區號規則</PopoverTitle>
-          <PopoverDescription>
-            依巷弄、門牌範圍與樓層判斷，符合的規則會標示出來。
-          </PopoverDescription>
+          <PopoverTitle>郵遞區號規則</PopoverTitle>
         </PopoverHeader>
         <ul
           ref={scrollToCurrentRule}
@@ -221,7 +182,7 @@ function ScopeRules({
               <li
                 key={`${rule.zipcode}-${rule.scope}-${index}`}
                 data-current={isCurrent || undefined}
-                className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 py-2.5 text-sm"
+                className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 py-2.5 text-sm data-current:font-medium"
               >
                 <span
                   className={cn(
@@ -237,16 +198,6 @@ function ScopeRules({
                   ) : null}
                   <span>{formatScopeRule(rule.scope)}</span>
                 </div>
-                {isCurrent ? (
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                      TONE_CLASSES.success,
-                    )}
-                  >
-                    符合
-                  </span>
-                ) : null}
               </li>
             )
           })}
@@ -297,9 +248,7 @@ function ZipcodeCells({ digits }: { digits: string }) {
 export function AddressResult({
   address,
   addressSuffix,
-  baseZipcodePrefixes,
   displayedZipcode,
-  matchedRuleBasis,
   resolvedScope,
   scopeResolution,
   scopes,
@@ -308,7 +257,6 @@ export function AddressResult({
   const hasSuffix = Boolean(addressSuffix.trim())
   const isSuffixIncomplete =
     hasSuffix && !parseAddressSuffix(addressSuffix).complete
-  const isHouseIncomplete = !hasSuffix || isSuffixIncomplete
   const isComplete = displayedZipcode.length === 6
   const fullZipcode = isComplete ? displayedZipcode : ""
   const parsedAddress = formatAddress(address, addressSuffix, fullZipcode)
@@ -318,25 +266,16 @@ export function AddressResult({
   const { doorplates } = useRoadDoorplates(address)
   const isDoorUnlisted =
     isComplete && findDoor(doorplates, addressSuffix) === "missing"
-  const status = isComplete
-    ? isDoorUnlisted
-      ? "noDoor"
-      : null
-    : isUnmatched
-      ? "unmatched"
-      : hasSuffix
-        ? "pending"
-        : "awaiting"
   const message = !hasSuffix
     ? ""
     : isUnmatched
-      ? "找不到符合的門牌範圍。請確認道路、巷弄與門牌，或查看此道路的規則。"
+      ? "找不到符合的門牌範圍"
       : !resolvedScope && scopeResolution.status === "ambiguous"
-        ? "此地址對應多個區號，請補上附號或樓層，協助縮小範圍。"
+        ? "請補上附號或樓層"
         : !resolvedScope && scopeResolution.status === "incomplete"
-          ? "還需要更完整的門牌資訊。請確認已填寫「號」，並補上適用的附號或樓層。"
+          ? "請補上完整門牌"
           : isDoorUnlisted
-            ? "縣市門牌資料中找不到這個門牌，可能是門牌有誤或尚未收錄。"
+            ? "門牌資料查無此號"
             : ""
   const isStreetUnusable =
     isSuffixIncomplete || parsedAddress.warns.length > 0
@@ -369,27 +308,20 @@ export function AddressResult({
   const ruleSummary =
     isComplete && resolvedScope
       ? formatScopeRule(resolvedScope.scope)
-      : !hasSuffix && baseZipcodePrefixes.length === 1
-        ? "補上門牌後確認後三碼"
-        : "確認完整門牌後顯示"
+      : `${scopes.length} 條`
   const metaItems = (align: ScopeRulesProps["align"]) => (
-    <>
-      <MetaItem
-        label="規則"
-        value={
-          <ScopeRules
-            align={align}
-            isComplete={isComplete}
-            resolvedScope={resolvedScope}
-            scopes={scopes}
-            summary={ruleSummary}
-          />
-        }
-      />
-      {matchedRuleBasis && isComplete ? (
-        <MetaItem label="依據" value={matchedRuleBasis} />
-      ) : null}
-    </>
+    <MetaItem
+      label="規則"
+      value={
+        <ScopeRules
+          align={align}
+          isComplete={isComplete}
+          resolvedScope={resolvedScope}
+          scopes={scopes}
+          summary={ruleSummary}
+        />
+      }
+    />
   )
 
   return (
@@ -415,11 +347,7 @@ export function AddressResult({
         <CardContent className="relative flex flex-col gap-6">
           {/* The road already leads the search input, so it is only spoken here. */}
           <h2 className="sr-only">{address}的 3+3 郵遞區號</h2>
-          {status ? (
-            <div className="-mb-2 flex justify-center">
-              <StatusPill status={status} />
-            </div>
-          ) : scopeResolution.recipients?.length ? (
+          {scopeResolution.recipients?.length ? (
             <RecipientPicker
               general={scopeResolution.matches[0]}
               recipients={scopeResolution.recipients}
@@ -452,7 +380,7 @@ export function AddressResult({
                 className={cn(
                   "flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm",
                   isUnmatched
-                    ? TONE_CLASSES.destructive
+                    ? DESTRUCTIVE_TONE
                     : "bg-white/15 text-primary-foreground",
                 )}
               >
@@ -526,8 +454,7 @@ export function AddressResult({
           aria-hidden="true"
         />
         <CardContent className="relative flex flex-col">
-          <h2 className="pb-2 text-base font-semibold">地址資訊</h2>
-          <ul className="flex flex-col divide-y">
+          <ul className="-mt-4 flex flex-col divide-y">
             {resolvedScope?.department && isComplete ? (
               <li className="flex items-center gap-3.5 py-4">
                 <div className="flex min-w-0 flex-col gap-0.5">
@@ -539,11 +466,8 @@ export function AddressResult({
             <li className="flex flex-col gap-3 py-4">
               <div className="flex items-center gap-3.5">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <h3 className="text-xs text-muted-foreground">中文地址</h3>
+                  <h3 className="sr-only">中文地址</h3>
                   <p className="text-base font-medium break-words sm:text-lg">{chineseAddress}</p>
-                  {isHouseIncomplete ? (
-                    <p className="text-xs text-warning">門牌不完整</p>
-                  ) : null}
                 </div>
                 <CopyButton
                   text={chineseAddress}
@@ -556,7 +480,7 @@ export function AddressResult({
             <li className="flex flex-col gap-3 py-4 last:pb-0">
               <div className="flex items-center gap-3.5">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <h3 className="text-xs text-muted-foreground">英文地址</h3>
+                  <h3 className="sr-only">英文地址</h3>
                   <p lang="en" className="text-base font-medium break-words sm:text-lg">
                     {parsedAddress.en}
                   </p>
@@ -573,22 +497,16 @@ export function AddressResult({
                 <p
                   className={cn(
                     "flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm",
-                    TONE_CLASSES.destructive,
+                    DESTRUCTIVE_TONE,
                   )}
                 >
                   <CircleAlertIcon
                     className="mt-0.5 size-4 shrink-0"
                     aria-hidden="true"
                   />
-                  {parsedAddress.warns.join("；")}。請修正後再複製英文地址。
+                  {parsedAddress.warns.join("；")}
                 </p>
-              ) : (
-                <p className="pt-2 text-xs text-muted-foreground" role="status">
-                  {isSuffixIncomplete
-                    ? "門牌尚未辨識完整，補齊後即可複製英文地址。"
-                    : "依已辨識的內容轉換，使用前請與中文地址核對。"}
-                </p>
-              )}
+              ) : null}
             </li>
           </ul>
         </CardContent>

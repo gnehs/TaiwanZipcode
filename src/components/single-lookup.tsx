@@ -82,9 +82,7 @@ export function SingleLookup() {
     scopes,
     scopeResolution,
     resolvedScope,
-    baseZipcodePrefixes,
     displayedZipcode,
-    matchedRuleBasis,
   } = lookup
 
   // Typing replaces the URL as it goes; only a link, back or forward moves
@@ -259,9 +257,7 @@ export function SingleLookup() {
           <AddressResult
             address={road}
             addressSuffix={addressSuffix}
-            baseZipcodePrefixes={baseZipcodePrefixes}
             displayedZipcode={displayedZipcode}
-            matchedRuleBasis={matchedRuleBasis}
             resolvedScope={resolvedScope}
             scopeResolution={scopeResolution}
             scopes={scopes}

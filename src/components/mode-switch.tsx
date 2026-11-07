@@ -4,8 +4,8 @@ import type { Page } from "@/components/page-shell"
 import { cn } from "@/lib/utils"
 
 const MODES = [
-  { to: "/", label: "單筆查詢", page: "single" },
-  { to: "/batch", label: "批次查詢", page: "batch" },
+  { to: "/", label: "單筆", page: "single" },
+  { to: "/batch", label: "批次", page: "batch" },
 ] as const
 
 // Each mode has its own path, so each link is a real, shareable destination.

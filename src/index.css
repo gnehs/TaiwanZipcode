@@ -430,38 +430,6 @@
 }
 
 
-/* Dismissing the batch guide shrinks it away from its top edge while the
-   grid below moves up, and reopening it does the reverse. The two only
-   become layers for this change, so a mode switch still zooms the page whole. */
-:root:active-view-transition-type(guide) .batch-guide {
-  view-transition-name: batch-guide;
-}
-:root:active-view-transition-type(guide) .batch-sheet {
-  view-transition-name: batch-sheet;
-}
-::view-transition-old(batch-guide) {
-  transform-origin: top center;
-  animation: guide-leave 200ms cubic-bezier(0.4, 0, 1, 1) both;
-}
-::view-transition-new(batch-guide) {
-  transform-origin: top center;
-  animation: guide-arrive 320ms cubic-bezier(0.32, 0.72, 0, 1) 60ms both;
-}
-
-@keyframes guide-leave {
-  to {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-}
-
-@keyframes guide-arrive {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-}
-
 /* The typing demos on the guide page blink their caret like a real input. */
 .guide-caret {
   animation: guide-caret 1s steps(1) infinite;

@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
   Combobox,
   ComboboxContent,
-  ComboboxEmpty,
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
@@ -21,10 +19,6 @@ import {
 import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group"
 import { addressIndex, searchAddresses } from "@/lib/addresses"
 import { useRoadDoorplates } from "@/lib/doorplates"
-import {
-  getRecentLookups,
-  subscribeRecentLookups,
-} from "@/lib/recent-lookups"
 import {
   getAddressSelection,
   getMatchRanges,
@@ -74,7 +68,6 @@ type FloorChoice = {
   department: string | null
 }
 
-const ROAD_KEYWORD_EXAMPLES = ["中山北路", "忠孝東路", "和平東路"]
 const MIN_QUERY_LENGTH = 2
 
 export function AddressSearch({
@@ -90,9 +83,6 @@ export function AddressSearch({
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
   // A picked lane or alley keeps the list open for its house numbers.
   const keepOpenAfterPick = useRef(false)
-  // Examples only help first-time visitors; returning ones get their history.
-  const hasHistory =
-    useSyncExternalStore(subscribeRecentLookups, getRecentLookups, getRecentLookups).length > 0
   const [highlightedAddress, setHighlightedAddress] = useState<string | null>(
     null,
   )
@@ -169,7 +159,7 @@ export function AddressSearch({
       return "再輸入 1 個字元開始搜尋。"
     }
     if (!suggestions.length) {
-      return "找不到相符道路，請縮短關鍵字或確認縣市、行政區。"
+      return "找不到相符道路"
     }
     if (searchResult.hasMore) {
       return `顯示前 ${suggestions.length} 條相符道路，請加入縣市或行政區縮小範圍。`
@@ -270,7 +260,7 @@ export function AddressSearch({
                       "shadow-[0_20px_40px_-12px_oklch(0.4_0.15_45/0.45)] sm:h-16 dark:bg-[oklch(0.2_0.01_55/0.55)] dark:shadow-[inset_0_0_0_1px_oklch(1_0_0/0.14),0_20px_40px_-12px_oklch(0_0_0/0.5)] dark:backdrop-blur-xl dark:backdrop-saturate-150"
                     : "shadow-surface",
                 )}
-                placeholder="例如：中山北路一段100號3樓"
+                placeholder="搜尋地址"
                 aria-describedby="address-search-help"
                 aria-invalid={isUnmatched || undefined}
                 autoComplete="off"
@@ -316,7 +306,6 @@ export function AddressSearch({
               // Close to the pill search above: 26px, with 22px items 4px in.
               className="rounded-4xl"
             >
-              <ComboboxEmpty>找不到符合的道路，請調整關鍵字</ComboboxEmpty>
               <ComboboxList>
                 {(address: string) => {
                   const floor = floorByCompletion.get(address)
@@ -377,28 +366,6 @@ export function AddressSearch({
           >
             {helperText}
           </FieldDescription>
-          <div
-            className="flex flex-wrap items-center justify-center gap-2 pt-1"
-            hidden={Boolean(road) || hasHistory}
-          >
-            {ROAD_KEYWORD_EXAMPLES.map((keyword) => (
-              <Button
-                key={keyword}
-                type="button"
-                size="sm"
-                variant="secondary"
-                className={cn(
-                  "h-8 px-3.5",
-                  onBand
-                    ? "bg-white/22 text-white hover:bg-white/32"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-                onClick={() => updateQuery(keyword, true)}
-              >
-                {keyword}
-              </Button>
-            ))}
-          </div>
         </Field>
       </FieldGroup>
     </section>

@@ -8,15 +8,10 @@ import {
   type DataSheetGridRef,
 } from "react-datasheet-grid"
 import "react-datasheet-grid/dist/style.css"
-import { ChevronDownIcon, CircleHelpIcon, DownloadIcon } from "lucide-react"
+import { ChevronDownIcon, ClipboardPasteIcon, DownloadIcon } from "lucide-react"
 
 import { BatchColumnsMenu } from "@/components/batch-columns-menu"
 import { BatchContextMenu } from "@/components/batch-context-menu"
-import {
-  BatchGuide,
-  readGuideDismissed,
-  writeGuideDismissed,
-} from "@/components/batch-guide"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -40,7 +35,6 @@ import {
 } from "@/lib/doorplates"
 import { readColumnPrefs, writeColumnPrefs, type ColumnPrefs } from "@/lib/batch-columns"
 import { cn } from "@/lib/utils"
-import { runViewTransition } from "@/lib/view-transition"
 import { clampColumnWidth } from "@/utils/batchColumns.js"
 import { toCsv } from "@/utils/batchTable.js"
 import { findDoor } from "@/utils/doorplates.js"
@@ -324,10 +318,14 @@ export function BatchLookup() {
   )
   const [inputs, setInputs] = useState(() => padInputs([]))
   const gridRef = useRef<DataSheetGridRef>(null)
-  const [showGuide, setShowGuide] = useState(() => !readGuideDismissed())
   const [prefs, setPrefs] = useState(() => readColumnPrefs(RESULT_KEYS))
   const gridBoxRef = useRef<HTMLDivElement>(null)
   useEffect(() => writeColumnPrefs(prefs), [prefs])
+  // The first address cell starts selected, so a paste lands in it.
+  useEffect(() => {
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches)
+      gridRef.current?.setActiveCell({ col: 0, row: 0 })
+  }, [])
   const resolved = useMemo(
     () =>
       Array.from({ length: Math.max(inputs.length, MIN_ROWS) }, (_, index) => {
@@ -409,6 +407,17 @@ export function BatchLookup() {
   ]
   const isDefaultPrefs = JSON.stringify(prefs) === JSON.stringify(DEFAULT_PREFS)
 
+  async function pasteAddresses() {
+    try {
+      const text = await navigator.clipboard.readText()
+      // One address per line; a copied table keeps only its first column.
+      setInputs(padInputs(text.split(/\r?\n/u).map((line) => line.split("\t")[0])))
+    } catch {
+      // Without clipboard access, the keyboard paste still works.
+      gridRef.current?.setActiveCell({ col: 0, row: 0 })
+    }
+  }
+
   async function downloadXlsx() {
     const { toXlsx } = await import("@/utils/xlsx.js")
     const widths = tableColumns.map((column) => prefs.widths[column.key] ?? column.basis)
@@ -421,35 +430,24 @@ export function BatchLookup() {
 
   return (
     <section className="flex flex-col gap-3" aria-label="批次查詢">
-      {showGuide ? (
-        <BatchGuide
-          onDismiss={() => {
-            writeGuideDismissed(true)
-            runViewTransition("guide", () => setShowGuide(false))
-          }}
-        />
-      ) : null}
       <Card className="batch-sheet enter-rise gap-0 py-0">
         <div className="flex flex-wrap items-center justify-between gap-3 py-2 pr-2 pl-(--card-spacing)">
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {filledCount ? `${completeCount} / ${filledCount} 筆完成` : "貼上地址"}
-          </p>
+          {filledCount ? (
+            <p className="text-sm text-muted-foreground tabular-nums" aria-live="polite">
+              {completeCount} / {filledCount} 筆完成
+            </p>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              className="-ml-3 h-10 gap-1.5 px-3"
+              onClick={pasteAddresses}
+            >
+              <ClipboardPasteIcon className="size-4" aria-hidden="true" />
+              貼上地址
+            </Button>
+          )}
           <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
-            {showGuide ? null : (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-11"
-                aria-label="使用說明"
-                onClick={() => {
-                  writeGuideDismissed(false)
-                  runViewTransition("guide", () => setShowGuide(true))
-                }}
-              >
-                <CircleHelpIcon className="size-[1.125rem]" aria-hidden="true" />
-              </Button>
-            )}
             <BatchColumnsMenu
               columns={RESULT_COLUMNS}
               order={prefs.order}

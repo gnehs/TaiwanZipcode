@@ -5,7 +5,7 @@ import { ArrowUpRightIcon } from "lucide-react"
 import { PageShell } from "@/components/page-shell"
 import { Card, CardContent } from "@/components/ui/card"
 import { PLACE_PHOTOS } from "@/lib/place-photos"
-import { ABOUT_META, SITE_INTRO } from "@/lib/site"
+import { ABOUT_META } from "@/lib/site"
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
@@ -53,12 +53,7 @@ function AboutPage() {
     <PageShell page="about" raised>
       <Card className="enter-rise">
         <CardContent className="flex flex-col gap-5">
-          <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-bold tracking-tight">關於閃電地址</h2>
-            <p className="text-muted-foreground">
-              {SITE_INTRO}
-            </p>
-          </div>
+          <h2 className="text-2xl font-bold tracking-tight">關於閃電地址</h2>
           <dl className="flex flex-col divide-y divide-border">
             {FACTS.map(({ label, value, href }) => (
               <div key={label} className="flex gap-4 py-3 first:pt-0 last:pb-0">
