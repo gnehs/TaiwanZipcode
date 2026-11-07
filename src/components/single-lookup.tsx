@@ -24,6 +24,7 @@ import {
 import { addressMeta } from "@/lib/page-meta"
 import { placePhoto } from "@/lib/place-photos"
 import { rememberLookup } from "@/lib/recent-lookups"
+import { getIsDark, subscribeTheme } from "@/lib/theme"
 import { cn } from "@/lib/utils"
 
 export function SingleLookup() {
@@ -99,7 +100,8 @@ export function SingleLookup() {
     })
   }, [targetQuery])
 
-  const photo = placePhoto(road)
+  const isDark = useSyncExternalStore(subscribeTheme, getIsDark)
+  const photo = placePhoto(road, isDark)
   // Only the words, so the band spells names rather than numbers and commas.
   const englishAddress = road
     ? `${formatAddress(road, addressSuffix, "")

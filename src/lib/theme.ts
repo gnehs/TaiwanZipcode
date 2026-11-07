@@ -35,6 +35,11 @@ export function getTheme(): Theme {
   return theme
 }
 
+// The theme in effect, with "system" resolved.
+export function getIsDark() {
+  return document.documentElement.classList.contains("dark")
+}
+
 export function setTheme(nextTheme: Theme) {
   try {
     window.localStorage.setItem(STORAGE_KEY, nextTheme)
@@ -55,7 +60,7 @@ export function initializeTheme() {
   updateTheme(readTheme())
   const colorScheme = window.matchMedia(COLOR_SCHEME_QUERY)
   const syncSystemTheme = () => {
-    if (theme === "system") applyTheme()
+    if (theme === "system") updateTheme(theme)
   }
   const syncStoredTheme = (event: StorageEvent) => {
     if (event.key !== STORAGE_KEY && event.key !== null) return

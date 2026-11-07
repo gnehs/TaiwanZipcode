@@ -23,6 +23,27 @@ const FACTS = [
   { label: "開發", value: "gnehs", href: "https://gnehs.net" },
 ]
 
+// Each place's day photo, then its night one where it has one.
+const PLACE_CREDITS = PLACE_PHOTOS.flatMap((place) => [
+  {
+    key: place.slug,
+    name: place.name,
+    thumb: `/places/thumbs/${place.slug}.webp`,
+    photo: place.photo,
+    author: place.author,
+  },
+  ...("night" in place
+    ? [
+        {
+          key: `${place.slug}-night`,
+          name: `${place.name}・夜`,
+          thumb: `/places/night/thumbs/${place.slug}.webp`,
+          ...place.night,
+        },
+      ]
+    : []),
+])
+
 function AboutPage() {
   useEffect(() => {
     document.title = ABOUT_META.title
@@ -86,8 +107,8 @@ function AboutPage() {
             使用
           </p>
           <ul className="-mx-3 -mb-3 grid sm:grid-cols-2">
-            {PLACE_PHOTOS.map(({ name, slug, photo, author }) => (
-              <li key={slug}>
+            {PLACE_CREDITS.map(({ key, name, thumb, photo, author }) => (
+              <li key={key}>
                 <a
                   href={`https://unsplash.com/photos/${photo}`}
                   target="_blank"
@@ -95,7 +116,7 @@ function AboutPage() {
                   className="flex items-center gap-3 rounded-2xl p-3 outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <img
-                    src={`/places/thumbs/${slug}.webp`}
+                    src={thumb}
                     alt=""
                     width={48}
                     height={32}
