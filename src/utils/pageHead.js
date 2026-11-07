@@ -43,7 +43,12 @@ export function writePageHead(html, { title, description, url, image, indexable,
   result = setContent(result, TITLE_TAGS, safeTitle);
   result = setContent(result, DESCRIPTION_TAGS, escapeHtml(description));
   result = setContent(result, URL_TAGS, safeUrl);
-  if (image) result = setContent(result, IMAGE_TAGS, escapeHtml(image));
+  // A page with its own image drops the site's looping video, which would
+  // otherwise play in its place.
+  if (image) {
+    result = setContent(result, IMAGE_TAGS, escapeHtml(image));
+    result = result.replace(/\s*<meta property="og:video[^>]*>/g, '');
+  }
   if (structuredData) {
     // "<" is escaped so no text can close the script early.
     const json = JSON.stringify(structuredData).replaceAll('<', '\\u003c');

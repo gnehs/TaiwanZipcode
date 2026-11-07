@@ -52,6 +52,12 @@ test('writePageHead points og:image at the page image and keeps the site image w
   }
 });
 
+test('writePageHead drops the site video from a page with its own image', () => {
+  const image = 'https://zipcode.gnehs.net/og/%E8%87%BA%E5%8C%97%E5%B8%82';
+  assert.doesNotMatch(writePageHead(indexHtml, { ...page, image }), /og:video/);
+  assert.equal(contentOf(writePageHead(indexHtml, page), 'property="og:video"'), 'https://zipcode.gnehs.net/og.mp4');
+});
+
 test('writePageHead replaces the structured data and keeps the site data without it', () => {
   const ldOf = (html) => html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1];
   const data = { '@context': 'https://schema.org', '@type': 'WebPage', name: '</script><b>' };
