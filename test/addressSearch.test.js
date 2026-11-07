@@ -195,3 +195,26 @@ test('getUnitCompletions stays quiet without a trailing number to complete', () 
   assert.deepEqual(getUnitCompletions('測試路25號3樓5室1'), []);
   assert.deepEqual(getUnitCompletions('測試路'), []);
 });
+
+test('skips a village and neighbourhood typed after the district', () => {
+  const hasDistrict = (name) => name === '臺北市虛構區';
+
+  for (const query of ['臺北市虛構區測驗里測試', '臺北市 虛構區 測驗里 5鄰 測試', '臺北市虛構區5鄰測試']) {
+    const result = searchAddressList(query, fictionalAddresses, 30, hasDistrict);
+    assert.deepEqual(result.matches, [
+      '臺北市虛構區測試路',
+      '臺北市虛構區測試路一段',
+      '臺北市虛構區測試路一段深巷',
+    ], query);
+    assert.equal(getAddressSelection(result.query, result.matches[0]).suffix, '');
+  }
+
+  assert.deepEqual(
+    searchAddressList('臺北市虛構區測驗里', fictionalAddresses, 30, hasDistrict).matches,
+    fictionalAddresses,
+  );
+});
+
+test('keeps no-match when the district is unknown', () => {
+  assert.deepEqual(searchAddressList('臺北市虛構區測驗里', fictionalAddresses).matches, []);
+});

@@ -1,3 +1,5 @@
+import { withoutVillage } from './addressCleanup.js';
+
 /**
  * The search index stores canonical Taiwanese address names, while users may
  * type full-width characters, 台 instead of 臺, or add spaces between levels.
@@ -229,27 +231,47 @@ export function getAddressSelection(query, selectedAddress) {
 
 /**
  * Search a supplied address list and cap the visible window. `hasMore` keeps
- * the UI honest when the list is intentionally truncated.
+ * the UI honest when the list is intentionally truncated. `query` is the text
+ * the matches were found for, which drops a village (村/里) or neighbourhood
+ * (鄰) typed after the district when the text as written finds nothing.
+ *
+ * @param {(name: string) => boolean} [hasDistrict] whether a "city + district" exists
  */
-export function searchAddressList(query, addresses, limit = 30) {
-  const normalizedQuery = normalizeSearchText(query);
+export function searchAddressList(query, addresses, limit = 30, hasDistrict = () => false) {
   const list = Array.isArray(addresses) ? addresses : [];
   const safeLimit = Math.max(1, Math.trunc(Number(limit) || 30));
+  const empty = { matches: [], hasMore: false, prefixMatch: null, query };
+  if (!normalizeSearchText(query)) return empty;
 
-  if (!normalizedQuery) {
-    return { matches: [], hasMore: false, prefixMatch: null };
+  for (const reading of [query, ...withoutVillageAfterDistrict(query, hasDistrict)]) {
+    const result = searchReading(reading, list, safeLimit);
+    if (result.matches.length) return { ...result, query: reading };
   }
+  const split = splitAtAddressSuffix(query);
+  return split
+    ? { ...searchByKeywords(normalizeSearchText(split.road), list, safeLimit), query }
+    : empty;
+}
 
+function withoutVillageAfterDistrict(query, hasDistrict) {
+  const text = normalizeSearchText(query);
+  let end = 0;
+  for (let index = 1; index <= text.length; index += 1) {
+    if (/\S/u.test(text[index - 1]) && hasDistrict(compactSearchText(text.slice(0, index)))) {
+      end = index;
+    }
+  }
+  if (!end) return [];
+  const district = text.slice(0, end);
+  return withoutVillage(text.slice(end).trimStart()).map((rest) => `${district}${rest}`);
+}
+
+function searchReading(query, list, safeLimit) {
   const prefixMatch = findLongestAddressPrefix(query, list);
   if (prefixMatch && startsWithAddressSuffix(prefixMatch.suffix)) {
     return { matches: [prefixMatch.address], hasMore: false, prefixMatch };
   }
-
-  const result = searchByKeywords(normalizedQuery, list, safeLimit);
-  const split = result.matches.length ? null : splitAtAddressSuffix(query);
-  return split
-    ? searchByKeywords(normalizeSearchText(split.road), list, safeLimit)
-    : result;
+  return searchByKeywords(normalizeSearchText(query), list, safeLimit);
 }
 
 function searchByKeywords(normalizedQuery, list, safeLimit) {

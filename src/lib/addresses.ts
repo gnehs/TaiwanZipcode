@@ -120,8 +120,14 @@ export const addressIndex = buildAddressIndex(zipcodeData)
 
 export const ADDRESS_SEARCH_LIMIT = 30
 
+const districtNames = new Set(
+  addressIndex.places.map(({ city, area }) => `${city}${area}`),
+)
+
 export function searchAddresses(query: string, limit = ADDRESS_SEARCH_LIMIT) {
-  return searchAddressList(query, addressIndex.addresses, limit)
+  return searchAddressList(query, addressIndex.addresses, limit, (name) =>
+    districtNames.has(name),
+  )
 }
 
 export function findAddressPrefix(

@@ -94,7 +94,7 @@ export function AddressSearch({
     () =>
       query.trim().length >= MIN_QUERY_LENGTH
         ? searchAddresses(query)
-        : { matches: [], hasMore: false, prefixMatch: null },
+        : { matches: [], hasMore: false, prefixMatch: null, query },
     [query],
   )
   // Once the road is recognized, only offer suggestions that would change it.
@@ -184,7 +184,7 @@ export function AddressSearch({
   // house number already typed after it.
   function filledText(address: string) {
     if (completions.includes(address)) return address
-    const selection = getAddressSelection(query, address)
+    const selection = getAddressSelection(searchResult.query, address)
     return `${address}${selection?.suffix || ""}`
   }
 
@@ -339,7 +339,7 @@ export function AddressSearch({
                               {address.slice(query.trimEnd().length)}
                             </>
                           ) : (
-                            <HighlightedAddress address={address} query={query} />
+                            <HighlightedAddress address={address} query={searchResult.query} />
                           )}
                         </span>
                       )}
