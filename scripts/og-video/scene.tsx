@@ -1,26 +1,82 @@
 // The home page's link preview as a loop: the og.jpg layout, with a flowing
 // background and the phone typing addresses the way the guide's demo does.
-// Every frame is a pure function of time, so capture.mjs can step through it.
-import { useState, type CSSProperties } from "react"
-import { flushSync } from "react-dom"
-import { createRoot } from "react-dom/client"
+// Every frame is a pure function of time, so render.mjs can step through it
+// with Takumi, which lays out flex boxes only, as the address images do.
+import type { CSSProperties, ReactNode } from "react"
 
-import "@/index.css"
 import iconSvg from "../../public/icon.svg?raw"
 import { addressIndex, formatAddress, loadCorrections, lookupCleanedAddress } from "@/lib/addresses"
 
-const EXAMPLES = ["北市中正區丹陽3", "冬山鄉九分路8號", "桃園市中歷區七和路1號"]
-const EXAMPLE_S = 4
-export const LOOP_S = EXAMPLES.length * EXAMPLE_S
-const TYPE_START_S = 0.35
-const TYPE_S = 0.11
-const CLEAR_S = 0.3
+// Each address as typed with Zhuyin: a word's keys per character ("_" is the
+// first-tone space), then Enter; digits go straight in. 中歷 is the classic
+// slip of picking the wrong ㄌㄧˋ.
+const INPUTS = [
+  "北市:ㄅㄟˇ ㄕˋ|中正區:ㄓㄨㄥ_ ㄓㄥˋ ㄑㄩ_|丹陽:ㄉㄢ_ ㄧㄤˊ|3",
+  "冬山鄉:ㄉㄨㄥ_ ㄕㄢ_ ㄒㄧㄤ_|九分路:ㄐㄧㄡˇ ㄈㄣ_ ㄌㄨˋ|8|號:ㄏㄠˋ",
+  "桃園市:ㄊㄠˊ ㄩㄢˊ ㄕˋ|中歷區:ㄓㄨㄥ_ ㄌㄧˋ ㄑㄩ_|七和路:ㄑㄧ_ ㄏㄜˊ ㄌㄨˋ|1|號:ㄏㄠˋ",
+]
+const TYPE_START_S = 0.25
+// Every address takes the same time to type, however many keys it needs.
+const TYPE_S = 1.5
+const HOLD_S = 1
+const EXIT_S = 0.35
+const TONES = new Set(["ˊ", "ˇ", "ˋ", "˙", "_"])
+
+// The search box after each key: text sent to the search, and the IME's
+// underlined composition still waiting for Enter.
+type Step = { at: number; committed: string; composing: string }
+
+function stepsFor(input: string) {
+  const steps: Step[] = [{ at: 0, committed: "", composing: "" }]
+  let at = TYPE_START_S
+  let committed = ""
+  let key = 0
+  // A hand's uneven rhythm, the same on every run.
+  const press = (composing: string, pause = 0) => {
+    at += pause
+    steps.push({ at, committed, composing })
+    key += 1
+    at += 0.06 + (Math.abs(Math.sin(key * 12.9898 + input.length) * 43758.5453) % 1) * 0.05
+  }
+  for (const token of input.split("|")) {
+    const [word, spelling] = token.split(":")
+    if (!spelling) {
+      committed += word
+      press("", 0.08)
+      continue
+    }
+    let converted = ""
+    spelling.split(" ").forEach((keys, index) => {
+      let pending = ""
+      for (const symbol of keys) {
+        if (TONES.has(symbol)) {
+          pending = ""
+          converted += word[index]
+        } else pending += symbol
+        press(converted + pending)
+      }
+    })
+    committed += converted
+    press("", 0.14)
+  }
+  const typing = steps[steps.length - 1].at - TYPE_START_S
+  return steps.map((step, index) =>
+    index ? { ...step, at: TYPE_START_S + ((step.at - TYPE_START_S) / typing) * TYPE_S } : step,
+  )
+}
+
+const STEPS = INPUTS.map(stepsFor)
+const DURATIONS = STEPS.map((steps) => steps[steps.length - 1].at + HOLD_S + EXIT_S)
+export const LOOP_S = DURATIONS.reduce((sum, duration) => sum + duration, 0)
 
 const PRIMARY = "oklch(0.66 0.19 50)"
 const GOLD = "oklch(0.82 0.17 80)"
 const INK = "oklch(0.2 0.006 60)"
 const MUTED = "oklch(0.55 0.01 60)"
 const ICON = `data:image/svg+xml,${encodeURIComponent(iconSvg)}`
+
+// The typo examples resolve only with the correction tables loaded.
+await loadCorrections()
 
 const placeByRoad = new Map(
   addressIndex.places.map((place) => [`${place.city}${place.area}${place.road}`, place]),
@@ -35,11 +91,13 @@ type Screen = {
   en: string
 }
 
+const EMPTY: Screen = { digits: "", place: "", house: "", segments: [], en: "" }
+
 // What the phone shows once `typed` is in the search box.
 function screenFor(typed: string): Screen {
   const { road, addressSuffix, displayedZipcode } = lookupCleanedAddress(typed)
   const place = placeByRoad.get(road)
-  if (!place) return { digits: "", place: "", house: "", segments: [], en: "" }
+  if (!place) return EMPTY
   const full = displayedZipcode.length === 6 ? displayedZipcode : ""
   const { zh, en } = formatAddress(road, addressSuffix, full)
   const house = zh.slice(road.length)
@@ -55,30 +113,71 @@ function screenFor(typed: string): Screen {
   }
 }
 
-const clamp = (value: number) => Math.min(1, Math.max(0, value))
-const easeOut = (value: number) => 1 - (1 - clamp(value)) ** 3
-
-// Where the loop stands at time t: the example, how much of it is typed, and
-// the screen after each keystroke so far (to time each change's animation).
-function frameAt(t: number) {
-  const time = ((t % LOOP_S) + LOOP_S) % LOOP_S
-  const index = Math.floor(time / EXAMPLE_S)
-  const local = time - index * EXAMPLE_S
-  const example = EXAMPLES[index]
-  const typed = Math.max(0, Math.min(example.length, Math.floor((local - TYPE_START_S) / TYPE_S) + 1))
-  const keystrokeAt = (count: number) => (count === 0 ? 0 : TYPE_START_S + (count - 1) * TYPE_S)
-  const screens = Array.from({ length: typed + 1 }, (_, count) => screenFor(example.slice(0, count)))
-  const fadeOut = clamp((local - (EXAMPLE_S - CLEAR_S)) / CLEAR_S)
-  return { time, local, example, typed, keystrokeAt, screens, fadeOut }
+// Half-typed text can match some other road for a moment ("冬山" is 冬山路)
+// before it narrows; at video speed that only flickers, so the phone shows a
+// step's result only once it is on the way to the final one.
+const screensCache = new Map<number, Screen[]>()
+function screensOf(index: number) {
+  let screens = screensCache.get(index)
+  if (screens) return screens
+  const steps = STEPS[index]
+  const final = screenFor(steps[steps.length - 1].committed)
+  screens = steps.map(({ committed }) => {
+    const screen = screenFor(committed)
+    return screen.place === final.place ? screen : EMPTY
+  })
+  screensCache.set(index, screens)
+  return screens
 }
 
-// Seconds since the screen last changed `pick`, so new values can ease in.
-function sinceChange(frame: ReturnType<typeof frameAt>, pick: (screen: Screen) => string) {
-  const { screens, typed, keystrokeAt, local } = frame
-  const current = pick(screens[typed])
+const clamp = (value: number) => Math.min(1, Math.max(0, value))
+// Close to the app's --ease-out.
+const easeOut = (value: number) => 1 - (1 - clamp(value)) ** 4
+
+// Where the loop stands at time t: the example, how far it is typed, and
+// every step's screen so far (to time each change's animation).
+function frameAt(t: number) {
+  const time = ((t % LOOP_S) + LOOP_S) % LOOP_S
+  let index = 0
+  let local = time
+  while (local >= DURATIONS[index]) local -= DURATIONS[index++]
+  const steps = STEPS[index]
+  const stamps = steps.map((step) => step.at)
+  let typed = 0
+  while (typed < steps.length - 1 && stamps[typed + 1] <= local) typed += 1
+  const exit = easeOut((local - (DURATIONS[index] - EXIT_S)) / EXIT_S)
+  return { time, local, steps, typed, last: steps.length - 1, stamps, screens: screensOf(index), exit }
+}
+type Frame = ReturnType<typeof frameAt>
+
+type Change = { value: string; previous: string; progress: number }
+
+// A value on screen, the one it replaced, and how far the swap has eased.
+function changeOf(frame: Frame, pick: (screen: Screen) => string, duration: number): Change {
+  const { screens, typed, stamps, local } = frame
+  const value = pick(screens[typed])
   let count = typed
-  while (count > 0 && pick(screens[count - 1]) === current) count -= 1
-  return local - keystrokeAt(count)
+  while (count > 0 && pick(screens[count - 1]) === value) count -= 1
+  if (count === 0) return { value, previous: "", progress: 1 }
+  return { value, previous: pick(screens[count - 1]), progress: easeOut((local - stamps[count]) / duration) }
+}
+
+// The new value rises in as the old one rises out, both softly blurred.
+function Swap({ change, distance = 6, render = (value) => value }: { change: Change; distance?: number; render?: (value: string) => ReactNode }) {
+  const { value, previous, progress } = change
+  const layer = (shown: number, offset: number): CSSProperties => ({
+    opacity: shown,
+    transform: `translateY(${offset}px)`,
+    filter: shown < 1 ? `blur(${(1 - shown) * 4}px)` : undefined,
+  })
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={layer(value ? progress : 0, (1 - progress) * distance)}>{render(value) || " "}</div>
+      {previous && progress < 1 ? (
+        <div style={{ position: "absolute", inset: 0, ...layer(1 - progress, -progress * distance) }}>{render(previous)}</div>
+      ) : null}
+    </div>
+  )
 }
 
 // Blobs of the band's colours drifting on closed paths, each a whole number
@@ -132,16 +231,13 @@ function Background({ time }: { time: number }) {
   )
 }
 
-function ZipcodeCells({ frame }: { frame: ReturnType<typeof frameAt> }) {
-  const digits = frame.screens[frame.typed].digits
+function ZipcodeCells({ frame, exit }: { frame: Frame; exit: CSSProperties }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 16 }}>
+    <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 16 }}>
       {[0, 3].map((start) => (
         <div key={start} style={{ display: "flex", gap: 5 }}>
           {[0, 1, 2].map((offset) => {
             const position = start + offset
-            const digit = digits[position] ?? ""
-            const enter = easeOut(sinceChange(frame, (screen) => screen.digits[position] ?? "") / 0.28)
             return (
               <div
                 key={offset}
@@ -162,9 +258,13 @@ function ZipcodeCells({ frame }: { frame: ReturnType<typeof frameAt> }) {
                   textShadow: "0 1px 2px oklch(0.4 0.13 48 / 0.35)",
                 }}
               >
-                <span style={{ opacity: digit ? enter : 0, transform: `translateY(${(1 - enter) * 14}px)`, filter: `blur(${(1 - enter) * 3}px)` }}>
-                  {digit}
-                </span>
+                <div style={exit}>
+                  <Swap
+                    distance={18}
+                    // Each cell starts a beat after the one before, so a new code reads left to right.
+                    change={changeOf(frame, (screen) => screen.digits[position] ?? "", 0.45 + position * 0.06)}
+                  />
+                </div>
               </div>
             )
           })}
@@ -174,14 +274,54 @@ function ZipcodeCells({ frame }: { frame: ReturnType<typeof frameAt> }) {
   )
 }
 
-function Phone({ frame }: { frame: ReturnType<typeof frameAt> }) {
+function SearchText({ frame }: { frame: Frame }) {
+  const { steps, typed, last, stamps, local } = frame
+  const { committed, composing } = steps[typed]
+  const text = committed + composing
+  // Solid while typing, then a soft blink.
+  const idle = typed < last ? 0 : local - stamps[typed]
+  const caret = idle < 0.3 ? 1 : 0.5 + 0.5 * Math.cos(((idle - 0.3) / 1.05) * Math.PI * 2)
+  // A character eases in from the step it took its place, so a tone key
+  // turning ㄅㄟ into 北 fades the character in where the symbols were.
+  const since = (position: number) => {
+    let step = typed
+    const prefix = text.slice(0, position + 1)
+    while (step > 0) {
+      const before = steps[step - 1]
+      if ((before.committed + before.composing).slice(0, position + 1) !== prefix) break
+      step -= 1
+    }
+    return local - stamps[step]
+  }
+  // The IME underlines its composition until Enter, as macOS does.
+  const underline = (position: number): CSSProperties =>
+    position >= committed.length
+      ? { boxShadow: `inset 0 -1.5px 0 ${PRIMARY}` }
+      : {}
+  return (
+    <div style={{ display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>
+      {[...text].map((char, position) => {
+        const shown = easeOut(since(position) / 0.14)
+        return (
+          <span key={position} style={{ paddingBottom: 1, ...underline(position) }}>
+            <span style={{ display: "inline-block", opacity: shown, transform: `translateY(${(1 - shown) * 3}px)` }}>{char}</span>
+          </span>
+        )
+      })}
+      <span style={{ width: 1.5, height: 16, marginLeft: 1, borderRadius: 1, backgroundColor: PRIMARY, opacity: caret }} />
+    </div>
+  )
+}
+
+function Phone({ frame }: { frame: Frame }) {
   const screen = frame.screens[frame.typed]
-  const typing = frame.typed < frame.example.length
-  const caretOn = typing || Math.floor(frame.time / 0.5) % 2 === 0
-  const shown = 1 - frame.fadeOut
-  const cardIn = easeOut(sinceChange(frame, (s) => s.place) / 0.3)
-  const rowsIn = easeOut(sinceChange(frame, (s) => (s.en ? "en" : "")) / 0.35)
   const label: CSSProperties = { fontSize: 11, color: MUTED }
+  // The whole answer lifts away before the next address is typed.
+  const exit: CSSProperties = {
+    opacity: 1 - frame.exit,
+    transform: `translateY(${-frame.exit * 6}px)`,
+    filter: frame.exit ? `blur(${frame.exit * 4}px)` : undefined,
+  }
 
   return (
     <div
@@ -226,9 +366,8 @@ function Phone({ frame }: { frame: ReturnType<typeof frameAt> }) {
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
         </svg>
-        <div style={{ display: "flex", alignItems: "center", whiteSpace: "nowrap", opacity: shown }}>
-          {frame.example.slice(0, frame.typed)}
-          <span style={{ width: 1.5, height: 16, marginLeft: 1, backgroundColor: PRIMARY, opacity: caretOn ? 1 : 0 }} />
+        <div style={exit}>
+          <SearchText frame={frame} />
         </div>
       </div>
 
@@ -247,51 +386,62 @@ function Phone({ frame }: { frame: ReturnType<typeof frameAt> }) {
         }}
       >
         <img src={PLUS_GRID} width={308} height={220} style={{ position: "absolute", left: 0, top: 0 }} />
-        <div style={{ position: "relative", height: 44, opacity: (screen.place ? cardIn : 0) * shown }}>
-          <div style={{ fontSize: 17, fontWeight: 600, whiteSpace: "nowrap" }}>{screen.place}</div>
-          <div style={{ marginTop: 2, fontSize: 13, color: "rgba(255, 255, 255, 0.78)" }}>{screen.house}</div>
-        </div>
-        <div style={{ position: "relative", opacity: shown }}>
-          <ZipcodeCells frame={frame} />
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16, padding: "0 4px", opacity: shown }}>
-        <div style={{ opacity: screen.segments.length ? 1 : 0 }}>
-          <div style={label}>中文地址</div>
-          <div style={{ marginTop: 3, fontSize: 13.5, lineHeight: 1.5 }}>
-            {screen.segments.map(({ text, filled }) => (
-              <span
-                key={text}
-                style={
-                  filled
-                    ? {
-                        borderRadius: 4,
-                        backgroundColor: `color-mix(in oklab, ${PRIMARY} 16%, white)`,
-                        color: PRIMARY,
-                        fontWeight: 500,
-                      }
-                    : undefined
-                }
-              >
-                {text}
-              </span>
-            ))}
+        <div style={{ position: "relative", ...exit }}>
+          <div style={{ fontSize: 17, fontWeight: 600, whiteSpace: "nowrap" }}>
+            <Swap change={changeOf(frame, (s) => s.place, 0.5)} />
+          </div>
+          <div style={{ marginTop: 2, fontSize: 13, color: "rgba(255, 255, 255, 0.78)" }}>
+            <Swap change={changeOf(frame, (s) => s.house, 0.45)} />
           </div>
         </div>
-        <div style={{ opacity: screen.en ? rowsIn : 0, transform: `translateY(${(1 - rowsIn) * 6}px)` }}>
-          <div style={label}>英文地址</div>
-          <div style={{ marginTop: 3, fontSize: 13.5, lineHeight: 1.35 }}>{screen.en}</div>
+        {/* The cells stay put; only their digits leave with the answer. */}
+        <ZipcodeCells frame={frame} exit={exit} />
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16, padding: "0 4px", ...exit }}>
+        <div style={{ opacity: easeOut(changeOf(frame, (s) => (s.place ? "on" : ""), 0.4).progress) * (screen.place ? 1 : 0) }}>
+          <div style={label}>中文地址</div>
+          <div style={{ marginTop: 3, fontSize: 13.5, lineHeight: 1.5 }}>
+            {[0, 1, 2, 3].map((index) => {
+              const segment = screen.segments[index]
+              if (!segment) return null
+              const shown = changeOf(frame, (s) => s.segments[index]?.text ?? "", 0.4).progress
+              return (
+                <span
+                  key={index}
+                  style={{
+                    display: "inline-block",
+                    opacity: shown,
+                    filter: shown < 1 ? `blur(${(1 - shown) * 3}px)` : undefined,
+                    ...(segment.filled && {
+                      borderRadius: 4,
+                      backgroundColor: `color-mix(in oklab, ${PRIMARY} 16%, white)`,
+                      color: PRIMARY,
+                      fontWeight: 500,
+                    }),
+                  }}
+                >
+                  {segment.text}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+        <div>
+          <div style={{ ...label, opacity: changeOf(frame, (s) => (s.en ? "on" : ""), 0.4).progress * (screen.en ? 1 : 0) }}>英文地址</div>
+          <div style={{ marginTop: 3, fontSize: 13.5, lineHeight: 1.35 }}>
+            <Swap change={changeOf(frame, (s) => s.en, 0.5)} distance={4} />
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function Scene({ time }: { time: number }) {
+export function Scene({ time }: { time: number }) {
   const frame = frameAt(time)
   return (
-    <div style={{ position: "relative", width: 1200, height: 630, overflow: "hidden", fontFamily: "var(--font-sans)", color: "white" }}>
+    <div style={{ position: "relative", width: 1200, height: 630, overflow: "hidden", fontFamily: "Geist, Noto Sans TC", color: "white" }}>
       <Background time={frame.time} />
       <div style={{ position: "absolute", left: 88, top: 160, display: "flex", alignItems: "center", gap: 14, fontSize: 30, fontWeight: 700 }}>
         <img src={ICON} width={60} height={60} />
@@ -306,39 +456,3 @@ function Scene({ time }: { time: number }) {
   )
 }
 
-let setTime: (time: number) => void = () => {}
-function App() {
-  const [time, update] = useState(0)
-  setTime = update
-  return <Scene time={time} />
-}
-
-declare global {
-  interface Window {
-    ogReady: Promise<number>
-    ogRender: (time: number) => void
-  }
-}
-
-createRoot(document.getElementById("root")!).render(<App />)
-window.ogRender = (time) => flushSync(() => setTime(time))
-
-// Ready once the corrections load and every glyph the loop shows has a font.
-window.ogReady = loadCorrections().then(async () => {
-  for (let time = 0; time < LOOP_S; time += 0.1) window.ogRender(time)
-  await document.fonts.ready
-  window.ogRender(0)
-  return LOOP_S
-})
-
-// Opened by hand (no ?capture), it simply plays.
-if (!location.search.includes("capture")) {
-  void window.ogReady.then(() => {
-    const start = performance.now()
-    const tick = () => {
-      window.ogRender((performance.now() - start) / 1000)
-      requestAnimationFrame(tick)
-    }
-    tick()
-  })
-}
