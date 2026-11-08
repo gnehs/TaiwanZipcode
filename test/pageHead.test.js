@@ -7,7 +7,7 @@ import { writePageHead } from '../src/utils/pageHead.js';
 const indexHtml = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
 const page = {
-  title: '臺北市信義區信義路五段7號 郵遞區號 110615',
+  title: '110615 臺北市信義區信義路五段7號',
   description: '臺北市信義區信義路五段7號的 3+3 郵遞區號是 110615。',
   url: 'https://zipcode.gnehs.net/%E8%87%BA%E5%8C%97%E5%B8%82',
   indexable: true,
@@ -17,7 +17,7 @@ const contentOf = (html, tag) => html.match(new RegExp(`<meta ${tag} content="([
 
 test('writePageHead replaces every title, description and url in index.html', () => {
   const html = writePageHead(indexHtml, page);
-  assert.match(html, /<title>臺北市信義區信義路五段7號 郵遞區號 110615<\/title>/u);
+  assert.match(html, /<title>110615 臺北市信義區信義路五段7號<\/title>/u);
   for (const tag of ['name="title"', 'property="og:title"', 'property="twitter:title"']) {
     assert.equal(contentOf(html, tag), page.title);
   }

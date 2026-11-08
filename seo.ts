@@ -10,6 +10,7 @@ import {
   FAQ_META,
   GUIDE_META,
   HOME_META,
+  pageName,
   SITE_INTRO,
   SITE_ORIGIN,
   SITE_TITLE,
@@ -191,7 +192,7 @@ function llmsText(urls: ReturnType<typeof createAddressUrls>) {
     "## 頁面",
     "",
     ...[GUIDE_META, FAQ_META, BATCH_META, ABOUT_META].map(
-      (meta) => `- [${meta.title.split("｜")[0]}](${SITE_ORIGIN}${meta.path}): ${meta.description}`,
+      (meta) => `- [${pageName(meta.title)}](${SITE_ORIGIN}${meta.path}): ${meta.description}`,
     ),
     "",
     "## 地址頁範例",
