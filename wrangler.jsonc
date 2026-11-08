@@ -11,6 +11,5 @@
     "run_worker_first": ["/a/*", "/og/*"]
   },
   "routes": [{ "pattern": "zipcode.gnehs.net", "custom_domain": true }],
-  // Shared links carry the address in their path, so request URLs are not logged.
-  "observability": { "enabled": true, "logs": { "invocation_logs": false } }
+  "observability": { "enabled": true }
 }
