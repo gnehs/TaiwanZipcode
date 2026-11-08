@@ -19,7 +19,7 @@ export function addressMeta(lookup: AddressLookup): PageMeta {
 
   if (displayedZipcode.length === 6) {
     return {
-      title: pageTitle(`${displayedZipcode} ${address}`),
+      title: pageTitle(`${address} - 郵遞區號 ${displayedZipcode}`),
       description: `${address}的 3+3 郵遞區號是 ${displayedZipcode}。${english}`,
       path,
     }
@@ -27,7 +27,7 @@ export function addressMeta(lookup: AddressLookup): PageMeta {
   const zipcodeCount = new Set(scopes.map((scope) => scope.zipcode)).size
   const prefix = displayedZipcode ? `，前三碼為 ${displayedZipcode}` : ""
   return {
-    title: pageTitle(`${address} 郵遞區號`),
+    title: pageTitle(`${address} - 郵遞區號`),
     description: `${address}依門牌共有 ${zipcodeCount} 個 3+3 郵遞區號${prefix}，輸入門牌即可查出完整郵遞區號。${english}`,
     path,
   }
