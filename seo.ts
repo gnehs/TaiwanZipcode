@@ -25,7 +25,7 @@ const SITEMAP_SIZE = 50_000
 // Pages that do not depend on the address are files, so only address pages
 // run the Worker: the batch, guide, FAQ and about pages, robots.txt, and a
 // sitemap of every road plus every lane and house on the doorplate lists.
-// Each district gets its own gzipped file under one index.
+// The URLs fill gzipped files of up to 50,000 each under one index.
 export function seoFiles(): Plugin {
   return {
     name: "seo-files",
@@ -122,29 +122,27 @@ export function seoFiles(): Plugin {
           }
         }
 
-        // A district past the limit is split into numbered parts.
+        // Every path in order, split into numbered files at the limit.
+        const paths = [...groups.values()].flat()
         const sitemaps: string[] = []
-        for (const [group, paths] of groups) {
-          const parts = Math.ceil(paths.length / SITEMAP_SIZE)
-          for (let part = 1; part <= parts; part++) {
-            const name = parts > 1 ? `${group}-${part}` : group
-            sitemaps.push(`/sitemaps/${encodeURIComponent(name)}.xml.gz`)
-            this.emitFile({
-              type: "asset",
-              fileName: `sitemaps/${name}.xml.gz`,
-              source: gzipSync(
-                [
-                  '<?xml version="1.0" encoding="UTF-8"?>',
-                  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-                  ...paths
-                    .slice((part - 1) * SITEMAP_SIZE, part * SITEMAP_SIZE)
-                    .map((path) => `<url><loc>${SITE_ORIGIN}${path}</loc></url>`),
-                  "</urlset>",
-                  "",
-                ].join("\n"),
-              ),
-            })
-          }
+        for (let start = 0; start < paths.length; start += SITEMAP_SIZE) {
+          const name = `${sitemaps.length + 1}.xml.gz`
+          sitemaps.push(`/sitemaps/${name}`)
+          this.emitFile({
+            type: "asset",
+            fileName: `sitemaps/${name}`,
+            source: gzipSync(
+              [
+                '<?xml version="1.0" encoding="UTF-8"?>',
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+                ...paths
+                  .slice(start, start + SITEMAP_SIZE)
+                  .map((path) => `<url><loc>${SITE_ORIGIN}${path}</loc></url>`),
+                "</urlset>",
+                "",
+              ].join("\n"),
+            ),
+          })
         }
         this.emitFile({
           type: "asset",
