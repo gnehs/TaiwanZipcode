@@ -2,7 +2,13 @@ import { useEffect, useId, useState, useSyncExternalStore } from "react"
 import { CheckIcon, CopyIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useText } from "@/lib/locale"
 import { cn } from "@/lib/utils"
+
+const TEXT = {
+  zh: { failed: "無法自動複製，請選取文字後手動複製。", copied: (label: string) => `${label}：已複製` },
+  en: { failed: "Could not copy automatically. Select the text and copy it manually.", copied: (label: string) => `${label}: copied` },
+}
 
 // The async Clipboard API can be refused (insecure context, permissions), so
 // fall back to the legacy textarea + execCommand path before giving up.
@@ -90,6 +96,7 @@ export function CopyButton({
   icon?: React.ReactNode
   className?: string
 }) {
+  const message = useText(TEXT)
   const [feedback, setFeedback] = useState<{
     text: string
     status: "pending" | "copied" | "failed"
@@ -146,9 +153,9 @@ export function CopyButton({
         className={status === "failed" ? "text-xs text-destructive" : "sr-only"}
       >
         {status === "failed"
-          ? "無法自動複製，請選取文字後手動複製。"
+          ? message.failed
           : status === "copied"
-            ? `${label}：已複製`
+            ? message.copied(label)
             : ""}
       </span>
     </div>

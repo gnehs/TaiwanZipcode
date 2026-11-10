@@ -10,24 +10,30 @@ import {
   subscribeTheme,
   type Theme,
 } from "@/lib/theme"
+import { useText } from "@/lib/locale"
+
+const TEXT = {
+  zh: { group: "主題", light: "亮色", dark: "暗色", system: "跟隨系統" },
+  en: { group: "Theme", light: "Light", dark: "Dark", system: "System" },
+} as const
 
 const THEME_OPTIONS = [
-  { value: "light", label: "亮色", icon: SunIcon },
-  { value: "dark", label: "暗色", icon: MoonIcon },
-  { value: "system", label: "跟隨系統", icon: MonitorIcon },
+  { value: "light", icon: SunIcon },
+  { value: "dark", icon: MoonIcon },
+  { value: "system", icon: MonitorIcon },
 ] as const satisfies ReadonlyArray<{
   value: Theme
-  label: string
   icon: typeof SunIcon
 }>
 
 // All three choices sit in view, so the current one needs no menu to find.
 export function ThemeToggle() {
+  const text = useText(TEXT)
   const theme = useSyncExternalStore(subscribeTheme, getTheme, getTheme)
 
   return (
     <ToggleGroup
-      aria-label="主題"
+      aria-label={text.group}
       value={[theme]}
       onValueChange={([value]) => {
         // Pressing the current choice again would empty the group; keep it.
@@ -35,11 +41,11 @@ export function ThemeToggle() {
       }}
       className="flex rounded-full bg-muted p-1 shadow-well"
     >
-      {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+      {THEME_OPTIONS.map(({ value, icon: Icon }) => (
         <Toggle
           key={value}
           value={value}
-          aria-label={label}
+          aria-label={text[value]}
           className="flex size-7 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors duration-150 ease-out hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 data-pressed:control-surface data-pressed:text-foreground data-pressed:shadow-control [&_svg]:size-3.5"
         >
           <Icon aria-hidden="true" />

@@ -21,6 +21,7 @@ import {
   slugOfHash,
   slugOfShareParts,
 } from "@/lib/address-path"
+import { useLocale } from "@/lib/locale"
 import { addressMeta } from "@/lib/page-meta"
 import { placePhoto } from "@/lib/place-photos"
 import { rememberLookup } from "@/lib/recent-lookups"
@@ -38,6 +39,7 @@ function pageTop(element: HTMLElement) {
 }
 
 export function SingleLookup() {
+  const locale = useLocale()
   const router = useRouter()
   const navigate = useNavigate()
   const { district, address: rest } = useParams({ strict: false })
@@ -124,7 +126,7 @@ export function SingleLookup() {
         .filter((word) => /^[A-Z]{2,}$/.test(word))
         .join(" ")} `
     : undefined
-  const title = addressMeta(lookup).title
+  const title = addressMeta(lookup, locale).title
   useEffect(() => {
     document.title = title
   }, [title])
@@ -226,11 +228,15 @@ export function SingleLookup() {
               className={cn(
                 "enter-rise pb-8 text-center text-[2.75rem] leading-[1.1] font-extrabold tracking-tight text-white [text-shadow:0_2px_20px_oklch(0.45_0.15_45/0.3)] transition-[opacity,scale] ease-out motion-reduce:transition-none sm:pb-10 sm:text-7xl",
                 road ? "scale-95 opacity-0 duration-200" : "duration-500",
+                // English runs about three times as wide as the five-character lines.
+                locale === "en" && "text-[2rem]",
               )}
             >
-              填表不卡關
+              {locale === "en" ? "Taiwan zip codes," : "填表不卡關"}
               <br />
-              <span className="text-[oklch(0.99_0.04_90)]">地址閃電查</span>
+              <span className="text-[oklch(0.99_0.04_90)]">
+                {locale === "en" ? "in a flash." : "地址閃電查"}
+              </span>
             </h2>
           </div>
         </div>

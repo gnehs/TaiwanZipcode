@@ -4,6 +4,7 @@ import { ArrowRightIcon, Trash2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { formatAddress } from "@/lib/addresses"
 import { addressSlug, hashOfSlug } from "@/lib/address-path"
 import {
   clearRecentLookups,
@@ -11,16 +12,34 @@ import {
   getRecentLookups,
   subscribeRecentLookups,
 } from "@/lib/recent-lookups"
+import { useLocale, useText, type Locale } from "@/lib/locale"
 import { cn } from "@/lib/utils"
+
+const TEXT = {
+  zh: { title: "最近查詢", clear: "全部清除", remove: (address: string) => `從最近查詢移除 ${address}` },
+  en: { title: "Recent lookups", clear: "Clear all", remove: (address: string) => `Remove ${address} from recent lookups` },
+}
 
 // Things appearing on hover sharpen in through a blur, like the copy
 // buttons' icons.
 const REVEAL =
   "transition-[opacity,filter,scale,color,background-color] duration-200 ease-out motion-reduce:scale-100 motion-reduce:blur-none"
 
+// The address as the page's language writes it, without the country.
+function displayName(locale: Locale, road: string, suffix: string) {
+  if (locale === "zh") return `${road}${suffix}`
+  return formatAddress(road, suffix).en.replace(/, Taiwan \(R\.O\.C\.\)$/, "") || `${road}${suffix}`
+}
+
 export function RecentLookups() {
+  const locale = useLocale()
+  const text = useText(TEXT)
   const lookups = useSyncExternalStore(subscribeRecentLookups, getRecentLookups, getRecentLookups)
-    .map((lookup) => ({ ...lookup, address: addressSlug(lookup.road, lookup.suffix) }))
+    .map((lookup) => ({
+      ...lookup,
+      address: addressSlug(lookup.road, lookup.suffix),
+      name: displayName(locale, lookup.road, lookup.suffix),
+    }))
     // A road the database has since dropped has no page to link to.
     .filter((lookup) => lookup.address)
   if (!lookups.length) return null
@@ -36,7 +55,7 @@ export function RecentLookups() {
       <CardContent className="flex flex-col">
         <div className="flex items-center justify-between -mt-0.5 gap-3 pb-2">
           <h2 id="recent-title" className="text-base font-semibold">
-            最近查詢
+            {text.title}
           </h2>
           <Button
             variant="ghost"
@@ -44,7 +63,7 @@ export function RecentLookups() {
             onClick={clearRecentLookups}
           >
             <Trash2Icon data-icon="inline-start" aria-hidden="true" />
-            全部清除
+            {text.clear}
           </Button>
         </div>
         <ul className="-mx-3 -mb-3 flex flex-col">
@@ -66,10 +85,7 @@ export function RecentLookups() {
                 <span className="shrink-0 text-[0.8125rem] text-muted-foreground tabular-nums">
                   {lookup.zipcode}
                 </span>
-                <span className="min-w-0 flex-1 truncate">
-                  {lookup.road}
-                  {lookup.suffix}
-                </span>
+                <span className="min-w-0 flex-1 truncate">{lookup.name}</span>
                 <ArrowRightIcon
                   aria-hidden="true"
                   className={cn(
@@ -81,7 +97,7 @@ export function RecentLookups() {
               </Link>
               <Button
                 variant="ghost"
-                aria-label={`從最近查詢移除 ${lookup.road}${lookup.suffix}`}
+                aria-label={text.remove(lookup.name)}
                 className={cn(
                   "size-10 p-0 text-muted-foreground hover:text-destructive",
                   REVEAL,

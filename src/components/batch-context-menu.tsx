@@ -13,6 +13,7 @@ import type {
   ContextMenuItem,
 } from "react-datasheet-grid"
 
+import { useText } from "@/lib/locale"
 import { cn } from "@/lib/utils"
 
 const MOD_KEY =
@@ -23,29 +24,54 @@ const MOD_KEY =
 // The grid lists copy before cut; menus elsewhere read cut, copy, paste.
 const CLIPBOARD_ORDER = ["CUT", "COPY", "PASTE"]
 
-function describe(item: ContextMenuItem) {
+const TEXT = {
+  zh: {
+    menu: "表格操作",
+    cut: "剪下",
+    copy: "複製",
+    paste: "貼上",
+    insertBelow: "在下方插入一列",
+    duplicateRow: "重複這一列",
+    duplicateRows: (from: number, to: number) => `重複第 ${from}–${to} 列`,
+    deleteRow: "刪除這一列",
+    deleteRows: (from: number, to: number) => `刪除第 ${from}–${to} 列`,
+  },
+  en: {
+    menu: "Table actions",
+    cut: "Cut",
+    copy: "Copy",
+    paste: "Paste",
+    insertBelow: "Insert row below",
+    duplicateRow: "Duplicate row",
+    duplicateRows: (from: number, to: number) => `Duplicate rows ${from}–${to}`,
+    deleteRow: "Delete row",
+    deleteRows: (from: number, to: number) => `Delete rows ${from}–${to}`,
+  },
+}
+
+function describe(item: ContextMenuItem, text: (typeof TEXT)[keyof typeof TEXT]) {
   switch (item.type) {
     case "CUT":
-      return { icon: ScissorsIcon, label: "剪下", shortcut: `${MOD_KEY}X` }
+      return { icon: ScissorsIcon, label: text.cut, shortcut: `${MOD_KEY}X` }
     case "COPY":
-      return { icon: CopyIcon, label: "複製", shortcut: `${MOD_KEY}C` }
+      return { icon: CopyIcon, label: text.copy, shortcut: `${MOD_KEY}C` }
     case "PASTE":
-      return { icon: ClipboardPasteIcon, label: "貼上", shortcut: `${MOD_KEY}V` }
+      return { icon: ClipboardPasteIcon, label: text.paste, shortcut: `${MOD_KEY}V` }
     case "INSERT_ROW_BELLOW":
-      return { icon: ListPlusIcon, label: "在下方插入一列" }
+      return { icon: ListPlusIcon, label: text.insertBelow }
     case "DUPLICATE_ROW":
-      return { icon: CopyPlusIcon, label: "重複這一列" }
+      return { icon: CopyPlusIcon, label: text.duplicateRow }
     case "DUPLICATE_ROWS":
       return {
         icon: CopyPlusIcon,
-        label: `重複第 ${item.fromRow}–${item.toRow} 列`,
+        label: text.duplicateRows(item.fromRow, item.toRow),
       }
     case "DELETE_ROW":
-      return { icon: Trash2Icon, label: "刪除這一列", destructive: true }
+      return { icon: Trash2Icon, label: text.deleteRow, destructive: true }
     case "DELETE_ROWS":
       return {
         icon: Trash2Icon,
-        label: `刪除第 ${item.fromRow}–${item.toRow} 列`,
+        label: text.deleteRows(item.fromRow, item.toRow),
         destructive: true,
       }
   }
@@ -62,6 +88,7 @@ export function BatchContextMenu({
 }: ContextMenuComponentProps) {
   // Only the address column (0) and the row numbers (-1) edit anything; the
   // result columns are read-only, so they offer copy alone.
+  const text = useText(TEXT)
   const items =
     cursorIndex.col <= 0
       ? gridItems
@@ -104,7 +131,7 @@ export function BatchContextMenu({
     <div
       ref={menuRef}
       role="menu"
-      aria-label="表格操作"
+      aria-label={text.menu}
       className="fixed z-50 min-w-48 rounded-2xl bg-popover p-1 text-popover-foreground shadow-popover animate-in duration-150 ease-out fade-in-0 zoom-in-95"
       style={position}
       onContextMenu={(event) => event.preventDefault()}
@@ -116,7 +143,7 @@ export function BatchContextMenu({
           className={cn(groupIndex > 0 && "mt-1 border-t pt-1")}
         >
           {group.map((item) => {
-            const { icon: Icon, label, shortcut, destructive } = describe(item)
+            const { icon: Icon, label, shortcut, destructive } = describe(item, text)
             return (
               <button
                 key={item.type}

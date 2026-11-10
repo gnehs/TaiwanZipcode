@@ -1,8 +1,10 @@
 import type { ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
 
+import { LanguageLink } from "@/components/language-link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { buttonVariants } from "@/components/ui/button"
+import { useLocale, useText } from "@/lib/locale"
 import { SITE_INTRO, SITE_TITLE } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
@@ -29,25 +31,52 @@ function CreditLink({ href, children }: { href: string; children: ReactNode }) {
   )
 }
 
-const LINK_GROUPS = [
-  {
-    label: "查詢",
-    links: [
-      { to: "/", label: "單筆查詢" },
-      { to: "/batch", label: "批次查詢" },
+const TEXT = {
+  zh: {
+    groups: [
+      {
+        label: "查詢",
+        links: [
+          { to: "/", label: "單筆查詢" },
+          { to: "/batch", label: "批次查詢" },
+        ],
+      },
+      {
+        label: "說明",
+        links: [
+          { to: "/guide", label: "使用說明" },
+          { to: "/faq", label: "常見問題" },
+          { to: "/about", label: "關於" },
+        ],
+      },
     ],
+    disclaimer: "資料擷取自郵局資料庫，僅供參考；正確資料請以中華郵政公告為準。",
   },
-  {
-    label: "說明",
-    links: [
-      { to: "/guide", label: "使用說明" },
-      { to: "/faq", label: "常見問題" },
-      { to: "/about", label: "關於" },
+  en: {
+    groups: [
+      {
+        label: "Lookup",
+        links: [
+          { to: "/", label: "Single lookup" },
+          { to: "/batch", label: "Batch lookup" },
+        ],
+      },
+      {
+        label: "Help",
+        links: [
+          { to: "/guide", label: "Guide" },
+          { to: "/faq", label: "FAQ" },
+          { to: "/about", label: "About" },
+        ],
+      },
     ],
+    disclaimer: "From Chunghwa Post's database, for reference only; Chunghwa Post's own records are authoritative.",
   },
-] as const
+} as const
 
 export function SiteFooter() {
+  const locale = useLocale()
+  const text = useText(TEXT)
   return (
     // The band spans the page edge to edge; its content keeps to the header's width.
     <footer className="mt-20 w-full border-t bg-muted/50 pt-10 pb-8">
@@ -59,11 +88,11 @@ export function SiteFooter() {
               className="flex w-fit items-center gap-2 rounded-md text-sm font-semibold tracking-tight outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <img src="/icon-flat.svg" alt="" className="size-6 shrink-0 rounded-[5.5px] ring-1 ring-foreground/10" />
-              {SITE_TITLE}
+              {SITE_TITLE[locale]}
             </Link>
-            <p className="text-sm/relaxed text-muted-foreground">{SITE_INTRO}</p>
+            <p className="text-sm/relaxed text-muted-foreground">{SITE_INTRO[locale]}</p>
           </div>
-          {LINK_GROUPS.map(({ label, links }) => (
+          {text.groups.map(({ label, links }) => (
             <nav key={label} aria-label={label} className="flex flex-col gap-2.5">
               <h2 className="text-xs text-muted-foreground">{label}</h2>
               {links.map(({ to, label }) => (
@@ -82,7 +111,7 @@ export function SiteFooter() {
             wider screens stack both notes beside the controls. */}
         <div className="mt-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 border-t pt-6 text-xs/relaxed text-muted-foreground sm:gap-y-1">
           <p className="col-span-2 sm:col-span-1">
-            資料擷取自郵局資料庫，僅供參考；正確資料請以中華郵政公告為準。
+            {text.disclaimer}
           </p>
           <p>
             Developed by <CreditLink href="https://gnehs.net">gnehs</CreditLink>
@@ -91,6 +120,12 @@ export function SiteFooter() {
             Made with <CreditLink href="https://pancake.gnehs.net">🥞</CreditLink> in Taiwan
           </p>
           <div className="flex shrink-0 items-center gap-2 sm:col-start-2 sm:row-span-2 sm:row-start-1">
+            <LanguageLink
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "lg" }),
+                "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control",
+              )}
+            />
             <a
               className={cn(
                 buttonVariants({ variant: "ghost", size: "icon-lg" }),

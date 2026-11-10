@@ -14,8 +14,11 @@ export const {
   hashOfSlug,
   slugOfHash,
   slugOfLegacyHash,
+  placeOfPath,
 } = urls
 
 export const sharePath = (slug: string): string => urls.sharePath(slug) ?? "/"
 export const shareUrl = (origin: string, slug: string): string =>
   urls.shareUrl(origin, slug) ?? origin
+export const placePath = (city: string, area: string | null = null): string =>
+  urls.placePath(city, area) ?? "/"

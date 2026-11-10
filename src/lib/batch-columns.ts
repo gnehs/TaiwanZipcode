@@ -1,3 +1,4 @@
+import type { Locale } from "@/lib/locale"
 import { parseColumnPrefs } from "@/utils/batchColumns.js"
 
 export type ColumnPrefs<K extends string> = {
@@ -6,12 +7,13 @@ export type ColumnPrefs<K extends string> = {
   widths: Partial<Record<K | "input", number>>
 }
 
-const STORAGE_KEY = "batch-columns"
+// Each language keeps its own layout, since each leads with its own address.
+const storageKey = (locale: Locale) => (locale === "zh" ? "batch-columns" : `batch-columns-${locale}`)
 
-export function readColumnPrefs<K extends string>(columns: readonly K[]) {
+export function readColumnPrefs<K extends string>(locale: Locale, columns: readonly K[]) {
   let raw: string | null = null
   try {
-    raw = window.localStorage.getItem(STORAGE_KEY)
+    raw = window.localStorage.getItem(storageKey(locale))
   } catch {
     // Unreadable storage leaves the default columns.
   }
@@ -21,9 +23,9 @@ export function readColumnPrefs<K extends string>(columns: readonly K[]) {
   }) as ColumnPrefs<K>
 }
 
-export function writeColumnPrefs<K extends string>(prefs: ColumnPrefs<K>) {
+export function writeColumnPrefs<K extends string>(locale: Locale, prefs: ColumnPrefs<K>) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs))
+    window.localStorage.setItem(storageKey(locale), JSON.stringify(prefs))
   } catch {
     // The layout still applies for this visit.
   }

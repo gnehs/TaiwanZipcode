@@ -3,10 +3,24 @@ import { GripVerticalIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useText } from "@/lib/locale"
 import { cn } from "@/lib/utils"
 import { moveItem } from "@/utils/batchColumns.js"
 
 type MenuColumn<K> = { key: K; title: string }
+
+const TEXT = {
+  zh: {
+    columns: "欄位",
+    reset: "重置",
+    move: (title: string) => `移動「${title}」，用上下鍵調整順序`,
+  },
+  en: {
+    columns: "Columns",
+    reset: "Reset",
+    move: (title: string) => `Move ${title}, use the up and down arrow keys to reorder`,
+  },
+}
 
 export function BatchColumnsMenu<K extends string>({
   columns,
@@ -25,6 +39,7 @@ export function BatchColumnsMenu<K extends string>({
   onHiddenChange: (hidden: K[]) => void
   onReset: () => void
 }) {
+  const text = useText(TEXT)
   const listRef = useRef<HTMLUListElement>(null)
   const [dragging, setDragging] = useState<K | null>(null)
   const titles = new Map(columns.map((column) => [column.key, column.title]))
@@ -64,10 +79,10 @@ export function BatchColumnsMenu<K extends string>({
           <Button type="button" variant="ghost" className="min-h-11 px-4" />
         }
       >
-        欄位
+        {text.columns}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-60 gap-1 rounded-2xl p-1">
-        <ul ref={listRef} className="flex flex-col" aria-label="欄位">
+        <ul ref={listRef} className="flex flex-col" aria-label={text.columns}>
           {order.map((key, index) => {
             const title = titles.get(key) ?? key
             const visible = !hidden.includes(key)
@@ -82,7 +97,7 @@ export function BatchColumnsMenu<K extends string>({
                 <button
                   type="button"
                   className="flex size-10 shrink-0 cursor-grab touch-none items-center justify-center rounded-xl text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
-                  aria-label={`移動「${title}」，用上下鍵調整順序`}
+                  aria-label={text.move(title)}
                   onPointerDown={(event) => startDrag(event, key)}
                   onKeyDown={(event) => {
                     const to = event.key === "ArrowUp" ? index - 1 : event.key === "ArrowDown" ? index + 1 : -1
@@ -118,7 +133,7 @@ export function BatchColumnsMenu<K extends string>({
             disabled={isDefault}
             onClick={onReset}
           >
-            重置
+            {text.reset}
           </Button>
         </div>
       </PopoverContent>

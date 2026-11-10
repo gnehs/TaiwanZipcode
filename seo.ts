@@ -4,17 +4,17 @@ import { gzipSync } from "node:zlib"
 
 import { createServer, type Plugin } from "vite"
 
+import { HTML_LANG, LOCALES, localePath, type Locale } from "./src/lib/locale.ts"
 import {
-  ABOUT_META,
-  BATCH_META,
-  FAQ_META,
-  GUIDE_META,
-  HOME_META,
+  alternates,
+  FIXED_PAGE_KEYS,
+  fixedPageMeta,
+  fixedPagePath,
   pageName,
   SITE_INTRO,
   SITE_ORIGIN,
   SITE_TITLE,
-  WEBSITE_DATA,
+  websiteData,
 } from "./src/lib/site.ts"
 import { createAddressUrls } from "./src/utils/addressUrls.js"
 import { writePageHead } from "./src/utils/pageHead.js"
@@ -39,45 +39,28 @@ export function seoFiles(): Plugin {
         if (index?.type !== "asset") throw new Error("index.html was not built")
         const template = String(index.source)
         const pages = await renderPages()
-        const faqUrl = `${SITE_ORIGIN}${FAQ_META.path}`
-        const faqData = {
-          "@context": "https://schema.org",
-          "@graph": [
-            WEBSITE_DATA,
-            {
-              "@type": "FAQPage",
-              "@id": faqUrl,
-              url: faqUrl,
-              name: FAQ_META.title,
-              inLanguage: "zh-TW",
-              isPartOf: { "@id": WEBSITE_DATA["@id"] },
-              mainEntity: pages.faq.map(({ id, question, answer }) => ({
-                "@type": "Question",
-                "@id": `${faqUrl}#${id}`,
-                name: question,
-                acceptedAnswer: { "@type": "Answer", text: answer },
-              })),
-            },
-          ],
-        }
-        index.source = writePageHead(template, {
-          ...HOME_META,
-          url: `${SITE_ORIGIN}/`,
-          indexable: true,
-          content: pages.html.get("/"),
-        })
-        for (const meta of [BATCH_META, GUIDE_META, FAQ_META, ABOUT_META]) {
-          this.emitFile({
-            type: "asset",
-            fileName: `${meta.path.slice(1)}.html`,
-            source: writePageHead(template, {
+        for (const locale of LOCALES) {
+          for (const page of FIXED_PAGE_KEYS) {
+            const meta = fixedPageMeta(page, locale)
+            const path = fixedPagePath(page)
+            const source = writePageHead(template, {
               ...meta,
               url: `${SITE_ORIGIN}${meta.path}`,
+              lang: HTML_LANG[locale],
+              siteName: SITE_TITLE[locale],
+              alternates: alternates(path),
               indexable: true,
-              content: pages.html.get(meta.path),
-              structuredData: meta === FAQ_META ? faqData : undefined,
-            }),
-          })
+              content: pages.html.get(`${locale}${path}`),
+              structuredData:
+                page === "faq"
+                  ? faqData(locale, meta.title, pages.faq[locale])
+                  : { "@context": "https://schema.org", ...websiteData(locale) },
+            })
+            // /en is served from en.html, and the Chinese home is index.html.
+            const fileName = meta.path === "/" ? "index.html" : `${meta.path.slice(1)}.html`
+            if (fileName === "index.html") index.source = source
+            else this.emitFile({ type: "asset", fileName, source })
+          }
         }
 
         const database = decodeZipcodeData(
@@ -91,15 +74,30 @@ export function seoFiles(): Plugin {
           if (!path) throw new Error(`${slug} is not an address in the database`)
           return path
         }
+        const placePath = (city: string, area: string | null = null) => {
+          const path = urls.placePath(city, area)
+          if (!path) throw new Error(`${city}${area ?? ""} is not a place in the database`)
+          return path
+        }
+        // Each language's fixed pages and every city, district and road; the
+        // lanes and houses below are listed in Chinese only, since English
+        // searches stop at the road.
+        const english = (paths: string[]) => paths.map((path) => localePath("en", path))
+        const fixedPaths = FIXED_PAGE_KEYS.map(fixedPagePath)
         const groups = new Map<string, string[]>([
-          ["pages", ["/", BATCH_META.path, GUIDE_META.path, FAQ_META.path, ABOUT_META.path]],
+          ["pages", fixedPaths],
+          ["en", english(fixedPaths)],
         ])
         for (const [city, { areas }] of Object.entries(database)) {
+          const places = [placePath(city), ...Object.keys(areas).map((area) => placePath(city, area))]
+          groups.set(city, places)
+          groups.get("en")!.push(...english(places))
+        }
+        for (const [city, { areas }] of Object.entries(database)) {
           for (const [area, { roads }] of Object.entries(areas)) {
-            groups.set(
-              `${city}${area}`,
-              Object.keys(roads).map((road) => sharePath(`${city}${area}${road}`)),
-            )
+            const roadPaths = Object.keys(roads).map((road) => sharePath(`${city}${area}${road}`))
+            groups.set(`${city}${area}`, roadPaths)
+            groups.get("en")!.push(...english(roadPaths))
           }
         }
         for (const district of readDoorplates<string[]>("index.json")) {
@@ -123,8 +121,10 @@ export function seoFiles(): Plugin {
           }
         }
 
-        // Every path in order, split into numbered files at the limit.
-        const paths = [...groups.values()].flat()
+        // Every path in order, split into numbered files at the limit; the
+        // English pages go last so the Chinese files keep their contents.
+        const { en: englishPaths, ...chinese } = Object.fromEntries(groups)
+        const paths = [...Object.values(chinese).flat(), ...englishPaths]
         const sitemaps: string[] = []
         for (let start = 0; start < paths.length; start += SITEMAP_SIZE) {
           const name = `${sitemaps.length + 1}.xml.gz`
@@ -181,9 +181,9 @@ function llmsText(urls: ReturnType<typeof createAddressUrls>) {
     ["臺北市信義區信義路五段", "道路，列出整條路的郵遞區號範圍"],
   ]
   return [
-    `# ${SITE_TITLE}`,
+    `# ${SITE_TITLE.zh}`,
     "",
-    `> ${SITE_INTRO}`,
+    `> ${SITE_INTRO.zh}`,
     "",
     "郵遞區號來自中華郵政 3+3 郵遞區號資料，門牌來自各縣市公開的門牌資料，皆每月同步。查詢結果僅供參考，正確資料以中華郵政公告為準。",
     "",
@@ -191,9 +191,10 @@ function llmsText(urls: ReturnType<typeof createAddressUrls>) {
     "",
     "## 頁面",
     "",
-    ...[GUIDE_META, FAQ_META, BATCH_META, ABOUT_META].map(
-      (meta) => `- [${pageName(meta.title)}](${SITE_ORIGIN}${meta.path}): ${meta.description}`,
-    ),
+    ...(["guide", "faq", "batch", "about"] as const).map((page) => {
+      const meta = fixedPageMeta(page, "zh")
+      return `- [${pageName(meta.title)}](${SITE_ORIGIN}${meta.path}): ${meta.description}`
+    }),
     "",
     "## 地址頁範例",
     "",
@@ -201,16 +202,44 @@ function llmsText(urls: ReturnType<typeof createAddressUrls>) {
     "",
     "## Optional",
     "",
-    `- [Sitemap](${SITE_ORIGIN}/sitemap.xml): 所有道路、巷弄與門牌頁面`,
+    `- [Sitemap](${SITE_ORIGIN}/sitemap.xml): 所有縣市、行政區、道路、巷弄與門牌頁面`,
+    `- [English](${SITE_ORIGIN}/en): 英文版；每個頁面在路徑前加上 \`/en\` 即為英文頁面`,
     "",
   ].join("\n")
+}
+
+type FaqEntry = { id: string; question: string; answer: string }
+
+function faqData(locale: Locale, title: string, entries: FaqEntry[]) {
+  const website = websiteData(locale)
+  const faqUrl = `${SITE_ORIGIN}${localePath(locale, fixedPagePath("faq"))}`
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      website,
+      {
+        "@type": "FAQPage",
+        "@id": faqUrl,
+        url: faqUrl,
+        name: title,
+        inLanguage: HTML_LANG[locale],
+        isPartOf: { "@id": website["@id"] },
+        mainEntity: entries.map(({ id, question, answer }) => ({
+          "@type": "Question",
+          "@id": `${faqUrl}#${id}`,
+          name: question,
+          acceptedAnswer: { "@type": "Answer", text: answer },
+        })),
+      },
+    ],
+  }
 }
 
 // What src/prerender.tsx exports, which this config's TypeScript cannot read.
 type Prerender = {
   setPageData(data: { doorplateDates: unknown }): void
-  renderPage(path: string): Promise<string>
-  faqEntries(): { id: string; question: string; answer: string }[]
+  renderPage(path: string, locale: Locale): Promise<string>
+  faqEntries(locale: Locale): FaqEntry[]
 }
 
 // Renders the fixed pages with the app's own components, loaded through a
@@ -229,11 +258,20 @@ async function renderPages() {
       "/src/prerender.tsx",
     )) as Prerender
     setPageData({ doorplateDates: readDoorplates("dates.json") })
+    // Keyed by language then path, as in "en/faq".
     const html = new Map<string, string>()
-    for (const path of ["/", BATCH_META.path, GUIDE_META.path, FAQ_META.path, ABOUT_META.path]) {
-      html.set(path, await renderPage(path))
+    for (const locale of LOCALES) {
+      for (const page of FIXED_PAGE_KEYS) {
+        html.set(`${locale}${fixedPagePath(page)}`, await renderPage(fixedPagePath(page), locale))
+      }
     }
-    return { html, faq: faqEntries() }
+    return {
+      html,
+      faq: Object.fromEntries(LOCALES.map((locale) => [locale, faqEntries(locale)])) as Record<
+        Locale,
+        FaqEntry[]
+      >,
+    }
   } finally {
     await server.close()
   }

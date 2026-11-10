@@ -1,10 +1,24 @@
 import { addressIndex, type AddressLookup } from "@/lib/addresses"
 import { currentSharePath } from "@/lib/address-path"
-import { addressMeta, addressStructuredData, lookupForPath } from "@/lib/page-meta"
-import { HOME_META, SITE_ORIGIN } from "@/lib/site"
+import { HTML_LANG, localeOfPath, localePath, pathInApp, type Locale } from "@/lib/locale"
+import {
+  addressMeta,
+  addressStructuredData,
+  lookupForPath,
+  placeForPath,
+  placePage,
+  placeStructuredData,
+} from "@/lib/page-meta"
+import { SITE_ORIGIN, SITE_TITLE, alternates, fixedPageMeta } from "@/lib/site"
 import { writePageHead } from "@/utils/pageHead.js"
 
-import { addressPageHtml, addressPageMarkdown, type RoadDoorplates } from "./address-page"
+import {
+  addressPageHtml,
+  addressPageMarkdown,
+  placePageHtml,
+  placePageMarkdown,
+  type RoadDoorplates,
+} from "./address-page"
 import { ogImageResponse } from "./og-image"
 
 const OG_PREFIX = "/og"
@@ -24,18 +38,17 @@ export default {
     const url = new URL(request.url)
     if (url.pathname.startsWith(`${OG_PREFIX}/`)) return withPrivacy(await ogImage(request, ctx))
 
-    const moved = currentSharePath(url.pathname)
-    if (moved) return withPrivacy(Response.redirect(new URL(moved, url).href, 301))
+    const locale = localeOfPath(url.pathname)
+    const appPath = pathInApp(url.pathname)
+    const moved = currentSharePath(appPath)
+    if (moved) return withPrivacy(Response.redirect(new URL(localePath(locale, moved), url).href, 301))
 
-    const lookup = lookupForPath(url.pathname)
-    const meta = lookup ? addressMeta(lookup) : HOME_META
-    const doorplates = lookup && (await roadDoorplates(env, url, lookup))
+    const page = await addressOrPlacePage(env, url, appPath, locale)
+    const meta = page?.meta ?? fixedPageMeta("home", locale)
 
     // Agents that ask for Markdown get the page's text without the app.
-    const markdown =
-      lookup && wantsMarkdown(request) ? addressPageMarkdown(lookup, doorplates) : null
-    if (markdown) {
-      return new Response(markdown, {
+    if (page && wantsMarkdown(request)) {
+      return new Response(page.markdown(), {
         headers: {
           "Content-Type": "text/markdown; charset=utf-8",
           Link: `<${SITE_ORIGIN}${meta.path}>; rel="canonical"`,
@@ -45,23 +58,25 @@ export default {
       })
     }
 
-    const page = await env.ASSETS.fetch(new URL("/", url))
-    const headers = new Headers(page.headers)
+    const app = await env.ASSETS.fetch(new URL(localePath(locale, "/"), url))
+    const headers = new Headers(app.headers)
     headers.set("Referrer-Policy", REFERRER_POLICY)
     headers.set("Vary", "Accept")
     // The body differs per path, so the index file's validator does not apply.
     headers.delete("ETag")
     // Unknown paths still get the app, which sends visitors home.
-    const image = lookup ? `${SITE_ORIGIN}${OG_PREFIX}${meta.path}` : undefined
-    const html = writePageHead(await page.text(), {
+    const html = writePageHead(await app.text(), {
       ...meta,
       url: `${SITE_ORIGIN}${meta.path}`,
-      image,
-      indexable: Boolean(lookup),
-      structuredData: lookup ? addressStructuredData(lookup, image) : undefined,
-      content: lookup ? addressPageHtml(lookup, doorplates) : undefined,
+      lang: HTML_LANG[locale],
+      siteName: SITE_TITLE[locale],
+      alternates: page ? alternates(appPath) : undefined,
+      image: page?.image,
+      indexable: Boolean(page),
+      structuredData: page?.structuredData,
+      content: page?.html,
     })
-    return new Response(html, { status: lookup ? 200 : 404, headers })
+    return new Response(html, { status: page ? 200 : 404, headers })
   },
 } satisfies ExportedHandler<Env>
 
@@ -70,12 +85,41 @@ export default {
 async function ogImage(request: Request, ctx: ExecutionContext) {
   const cached = await caches.default.match(request)
   if (cached) return cached
-  const lookup = lookupForPath(new URL(request.url).pathname.slice(OG_PREFIX.length))
+  const path = new URL(request.url).pathname.slice(OG_PREFIX.length)
+  const lookup = lookupForPath(pathInApp(path))
   if (!lookup) return new Response("Not found", { status: 404 })
-  const response = await ogImageResponse(lookup)
+  const response = await ogImageResponse(lookup, localeOfPath(path))
   await response.ready
   ctx.waitUntil(caches.default.put(request, response.clone()))
   return response
+}
+
+// An address, or a city or district, at this path inside the app, as what
+// the page needs: its head, its HTML and its Markdown.
+async function addressOrPlacePage(env: Env, url: URL, appPath: string, locale: Locale) {
+  const place = placeForPath(appPath)
+  if (place) {
+    const page = placePage(locale, place.city, place.area)
+    return {
+      meta: page.meta,
+      image: undefined,
+      structuredData: placeStructuredData(page, locale),
+      html: placePageHtml(page, locale),
+      markdown: () => placePageMarkdown(page, locale),
+    }
+  }
+  const lookup = lookupForPath(appPath)
+  if (!lookup) return null
+  const meta = addressMeta(lookup, locale)
+  const doorplates = await roadDoorplates(env, url, lookup)
+  const image = `${SITE_ORIGIN}${OG_PREFIX}${meta.path}`
+  return {
+    meta,
+    image,
+    structuredData: addressStructuredData(lookup, locale, image),
+    html: addressPageHtml(lookup, doorplates, locale),
+    markdown: () => addressPageMarkdown(lookup, doorplates, locale) ?? "",
+  }
 }
 
 // Browsers never list text/markdown, so naming it at all is asking for it.

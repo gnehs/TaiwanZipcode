@@ -6,6 +6,8 @@ import { buildDistrictCodes } from './districtCodes.js';
 //   in the app   /#<district>/<rest>  the hash never reaches a server
 //   shared       /a/<district>/<rest>  <rest> is the slug after the district
 //   shared once  /a/<slug>             redirected to the form above
+// A city or district has a page of its own one level up: /a/<city> lists
+// its districts and /a/<district> its roads.
 
 // Chinese stays readable, and only characters that would end or break a link
 // (spaces, #, ?, %) are escaped.
@@ -14,8 +16,10 @@ export const readable = (text) => text.replace(/[^\p{L}\p{N}\-._~]/gu, encodeURI
 export function createAddressUrls(database) {
   const codes = buildDistrictCodes(database);
   const districtOfRoad = new Map();
+  const placeOfDistrict = new Map();
   for (const [city, { areas }] of Object.entries(database)) {
     for (const [area, { roads }] of Object.entries(areas)) {
+      placeOfDistrict.set(`${city}${area}`, { city, area });
       for (const road of Object.keys(roads)) districtOfRoad.set(`${city}${area}${road}`, `${city}${area}`);
     }
   }
@@ -84,6 +88,36 @@ export function createAddressUrls(database) {
     return slug === null ? null : sharePath(slug);
   }
 
+  // The segment that names a city or district (no area for a city).
+  /** @param {string} city @param {string | null} area */
+  function placeSegment(city, area) {
+    return area ? codes.segmentOf(`${city}${area}`) : city in database ? city : null;
+  }
+
+  /** @param {string} city @param {string | null} [area] */
+  function placePath(city, area = null) {
+    const segment = placeSegment(city, area);
+    return segment && `/a/${encodeURIComponent(segment)}`;
+  }
+
+  /** @param {string} origin @param {string} city @param {string | null} [area] */
+  function placeUrl(origin, city, area = null) {
+    const segment = placeSegment(city, area);
+    return segment && `${origin}/a/${readable(segment)}`;
+  }
+
+  // The city, and the district within it, that a path names; area is null
+  // for a city's own page.
+  function placeOfPath(pathname) {
+    const [, prefix, segment, ...extra] = pathname.split('/');
+    if (prefix !== 'a' || !segment || extra.length) return null;
+    const name = decode(segment);
+    if (name === null) return null;
+    if (Object.hasOwn(database, name)) return { city: name, area: null };
+    const district = codes.districtOf(name);
+    return district ? placeOfDistrict.get(district) : null;
+  }
+
   function hashOfSlug(slug) {
     const parts = splitSlug(slug);
     return parts ? `${readable(parts.segment)}/${readable(parts.rest)}` : readable(slug);
@@ -119,6 +153,9 @@ export function createAddressUrls(database) {
     parseAddressSlug,
     sharePath,
     shareUrl,
+    placePath,
+    placeUrl,
+    placeOfPath,
     slugOfShareParts,
     slugOfSharePath,
     currentSharePath,

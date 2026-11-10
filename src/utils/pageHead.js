@@ -35,12 +35,20 @@ function setContent(html, tags, value) {
  * content, already HTML, fills the app's root until the app replaces it, and
  * stays hidden meanwhile (see index.css).
  *
- * @param {{ title: string, description: string, url: string, image?: string, indexable: boolean, structuredData?: object, content?: string }} page
+ * A page in both languages lists each one's URL (`alternates`, keyed by
+ * the html lang), and the Chinese one stands for any other language.
+ *
+ * @param {{ title: string, description: string, url: string, lang: string, siteName: string, alternates?: Record<string, string>, image?: string, indexable: boolean, structuredData?: object, content?: string }} page
  */
-export function writePageHead(html, { title, description, url, image, indexable, structuredData, content }) {
+export function writePageHead(
+  html,
+  { title, description, url, lang, siteName, alternates, image, indexable, structuredData, content },
+) {
   const safeTitle = escapeHtml(title);
   const safeUrl = escapeHtml(url);
-  let result = html.replace(/<title>[^<]*<\/title>/, () => `<title>${safeTitle}</title>`);
+  let result = html.replace(/<html lang="[^"]*">/, () => `<html lang="${escapeHtml(lang)}">`);
+  result = result.replace(/<title>[^<]*<\/title>/, () => `<title>${safeTitle}</title>`);
+  result = setContent(result, ['property="og:site_name"'], escapeHtml(siteName));
   result = setContent(result, TITLE_TAGS, safeTitle);
   result = setContent(result, DESCRIPTION_TAGS, escapeHtml(description));
   result = setContent(result, URL_TAGS, safeUrl);
@@ -68,9 +76,18 @@ export function writePageHead(html, { title, description, url, image, indexable,
   }
   // A page that does not exist names no canonical address and stays out of
   // search results.
+  // The Worker writes over a built page, which already lists its own languages.
+  result = result.replace(/\s*<link rel="alternate" hreflang="[^"]*" href="[^"]*" \/>/g, '');
+  const links = [`<link rel="canonical" href="${safeUrl}" />`];
+  if (alternates) {
+    for (const [hreflang, href] of Object.entries(alternates)) {
+      links.push(`<link rel="alternate" hreflang="${hreflang}" href="${escapeHtml(href)}" />`);
+    }
+    if (alternates['zh-TW']) {
+      links.push(`<link rel="alternate" hreflang="x-default" href="${escapeHtml(alternates['zh-TW'])}" />`);
+    }
+  }
   return result.replace(/<link rel="canonical" href="[^"]*" \/>/, () =>
-    indexable
-      ? `<link rel="canonical" href="${safeUrl}" />`
-      : '<meta name="robots" content="noindex" />',
+    indexable ? links.join('\n  ') : '<meta name="robots" content="noindex" />',
   );
 }

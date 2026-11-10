@@ -34,6 +34,7 @@ import {
   subscribeLoadedRoads,
 } from "@/lib/doorplates"
 import { readColumnPrefs, writeColumnPrefs, type ColumnPrefs } from "@/lib/batch-columns"
+import { useLocale, useText, type Locale } from "@/lib/locale"
 import { cn } from "@/lib/utils"
 import { clampColumnWidth } from "@/utils/batchColumns.js"
 import { toCsv } from "@/utils/batchTable.js"
@@ -42,9 +43,18 @@ import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type Tone = "success" | "warning" | "destructive"
 
+type StatusCode =
+  | "unrecognizedRoad"
+  | "noRange"
+  | "needsSubNumber"
+  | "needsHouseNumber"
+  | "checkEnglish"
+  | "doorUnlisted"
+  | "done"
+
 type BatchResult = {
   tone: Tone | null
-  status: string
+  status: StatusCode | ""
   zipcode: string
   zh: string
   zhCity: string
@@ -64,7 +74,76 @@ type ResultKey = Exclude<keyof BatchResult, "tone">
 
 type ColumnKey = ResultKey | "input"
 
-const INPUT_COLUMN = { key: "input", title: "地址", basis: 300, grow: 1 } as const
+const TEXT = {
+  zh: {
+    section: "批次查詢",
+    input: "地址",
+    columns: {
+      status: "狀態",
+      zipcode: "郵遞區號",
+      zh: "中文地址",
+      zhCity: "縣市",
+      zhArea: "鄉鎮市區",
+      zhRest: "詳細地址",
+      en: "英文地址",
+      line1: "Address Line 1",
+      line2: "Address Line 2",
+      district: "District",
+      city: "City",
+    } satisfies Record<ResultKey, string>,
+    status: {
+      unrecognizedRoad: "無法辨識道路",
+      noRange: "找不到門牌範圍",
+      needsSubNumber: "需補附號或樓層",
+      needsHouseNumber: "需補門牌",
+      checkEnglish: "英文需確認",
+      doorUnlisted: "門牌待確認",
+      done: "完成",
+    } satisfies Record<StatusCode, string>,
+    progress: (done: number, total: number) => `${done} / ${total} 筆完成`,
+    paste: "貼上地址",
+    download: "下載",
+    resize: (title: string) => `調整「${title}」欄寬`,
+    fileName: "批次查詢",
+    sheetName: "地址",
+  },
+  en: {
+    section: "Batch lookup",
+    input: "Address",
+    columns: {
+      status: "Status",
+      zipcode: "Zip code",
+      zh: "Chinese address",
+      zhCity: "Chinese city",
+      zhArea: "Chinese district",
+      zhRest: "Chinese street address",
+      en: "English address",
+      line1: "Address Line 1",
+      line2: "Address Line 2",
+      district: "District",
+      city: "City",
+    } satisfies Record<ResultKey, string>,
+    status: {
+      unrecognizedRoad: "Road not found",
+      noRange: "No matching range",
+      needsSubNumber: "Add sub-number or floor",
+      needsHouseNumber: "Add house number",
+      checkEnglish: "Check English",
+      doorUnlisted: "House number unconfirmed",
+      done: "Done",
+    } satisfies Record<StatusCode, string>,
+    progress: (done: number, total: number) => `${done} of ${total} done`,
+    paste: "Paste addresses",
+    download: "Download",
+    resize: (title: string) => `Resize ${title} column`,
+    fileName: "batch-lookup",
+    sheetName: "Addresses",
+  },
+}
+
+type Text = (typeof TEXT)[keyof typeof TEXT]
+
+const INPUT_COLUMN = { key: "input", basis: 300, grow: 1 } as const
 
 const RESULT_COLUMNS: {
   key: ResultKey
@@ -72,21 +151,31 @@ const RESULT_COLUMNS: {
   basis: number
   grow?: number
 }[] = [
-  { key: "status", title: "狀態", basis: 112 },
-  { key: "zipcode", title: "郵遞區號", basis: 96 },
-  { key: "zh", title: "中文地址", basis: 260, grow: 1 },
-  { key: "zhCity", title: "縣市", basis: 96 },
-  { key: "zhArea", title: "鄉鎮市區", basis: 104 },
-  { key: "zhRest", title: "詳細地址", basis: 200 },
-  { key: "en", title: "英文地址", basis: 380, grow: 1 },
-  { key: "line1", title: "Address Line 1", basis: 260 },
-  { key: "line2", title: "Address Line 2", basis: 140 },
-  { key: "district", title: "District", basis: 140 },
-  { key: "city", title: "City", basis: 150 },
+  { key: "status", title: "", basis: 112 },
+  { key: "zipcode", title: "", basis: 96 },
+  { key: "zh", title: "", basis: 260, grow: 1 },
+  { key: "zhCity", title: "", basis: 96 },
+  { key: "zhArea", title: "", basis: 104 },
+  { key: "zhRest", title: "", basis: 200 },
+  { key: "en", title: "", basis: 380, grow: 1 },
+  { key: "line1", title: "", basis: 260 },
+  { key: "line2", title: "", basis: 140 },
+  { key: "district", title: "", basis: 140 },
+  { key: "city", title: "", basis: 150 },
 ]
 
 const RESULT_KEYS = RESULT_COLUMNS.map((column) => column.key)
-const DEFAULT_PREFS: ColumnPrefs<ResultKey> = { order: RESULT_KEYS, hidden: [], widths: {} }
+// English readers want the English address beside the zipcode, and the
+// Chinese one after it for the forms that ask for it.
+const DEFAULT_ORDER: Record<Locale, ResultKey[]> = {
+  zh: RESULT_KEYS,
+  en: ["status", "zipcode", "en", "line1", "line2", "district", "city", "zh", "zhCity", "zhArea", "zhRest"],
+}
+const defaultPrefs = (locale: Locale): ColumnPrefs<ResultKey> => ({
+  order: DEFAULT_ORDER[locale],
+  hidden: [],
+  widths: {},
+})
 
 const TONE_CLASSES: Record<Tone, string> = {
   success: "text-success",
@@ -120,7 +209,7 @@ type ResolvedRow = {
   door: { road: string; addressSuffix: string } | null
 }
 
-const DOOR_UNLISTED = { tone: "warning", status: "門牌待確認" } as const
+const DOOR_UNLISTED = { tone: "warning", status: "doorUnlisted" } as const
 
 function resolveRow(input: string): ResolvedRow {
   const text = input.trim()
@@ -128,7 +217,7 @@ function resolveRow(input: string): ResolvedRow {
   const lookup = lookupCleanedAddress(text)
   if (!lookup.road) {
     return {
-      result: { ...EMPTY_RESULT, tone: "destructive", status: "無法辨識道路" },
+      result: { ...EMPTY_RESULT, tone: "destructive", status: "unrecognizedRoad" },
       door: null,
     }
   }
@@ -142,16 +231,16 @@ function resolveRow(input: string): ResolvedRow {
   const isStreetUncertain =
     !suffix || !parseAddressSuffix(addressSuffix).complete || parsed.warns.length > 0
 
-  const [tone, status]: [Tone, string] =
+  const [tone, status]: [Tone, StatusCode] =
     scopeResolution.status === "unmatched"
-      ? ["destructive", "找不到門牌範圍"]
+      ? ["destructive", "noRange"]
       : !isComplete
-        ? ["warning", scopeResolution.status === "ambiguous" ? "需補附號或樓層" : "需補門牌"]
+        ? ["warning", scopeResolution.status === "ambiguous" ? "needsSubNumber" : "needsHouseNumber"]
         : isStreetUncertain
-          ? ["warning", "英文需確認"]
-          : ["success", "完成"]
+          ? ["warning", "checkEnglish"]
+          : ["success", "done"]
 
-  const result = {
+  const result: BatchResult = {
     tone,
     status,
     zipcode: displayedZipcode,
@@ -202,8 +291,14 @@ function padInputs(inputs: (string | null)[]) {
   return padded
 }
 
+function cellText(text: Text, row: GridRow, key: ColumnKey) {
+  if (key === "status") return row.status ? text.status[row.status] : ""
+  return row[key] ?? ""
+}
+
 function ResultCell({ rowData, columnData }: CellProps<GridRow, ResultKey>) {
-  const value = rowData[columnData]
+  const text = useText(TEXT)
+  const value = cellText(text, rowData, columnData)
   return (
     <span
       className={cn(
@@ -241,10 +336,12 @@ function fitColumnWidth(grid: HTMLElement, key: ColumnKey, title: string, values
 
 function ColumnTitle({
   title,
+  resizeLabel,
   onResize,
   onAutoFit,
 }: {
   title: string
+  resizeLabel: string
   onResize: (width: number) => void
   onAutoFit: () => void
 }) {
@@ -254,7 +351,7 @@ function ColumnTitle({
       <span
         role="separator"
         aria-orientation="vertical"
-        aria-label={`調整「${title}」欄寬`}
+        aria-label={resizeLabel}
         className="batch-resize-handle"
         // The grid selects the column on mousedown; resizing must not.
         onMouseDown={(event) => event.stopPropagation()}
@@ -298,13 +395,14 @@ function downloadFile(name: string, data: BlobPart, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
-function exportName(extension: string) {
+function exportName(base: string, extension: string) {
   const date = new Date()
   const pad = (value: number) => String(value).padStart(2, "0")
-  return `批次查詢-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}.${extension}`
+  return `${base}-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}.${extension}`
 }
 
 export function BatchLookup() {
+  const text = useText(TEXT)
   // Always ends with one empty row; the grid is padded to MIN_ROWS for display.
   const correctionsVersion = useSyncExternalStore(
     subscribeCorrections,
@@ -318,9 +416,10 @@ export function BatchLookup() {
   )
   const [inputs, setInputs] = useState(() => padInputs([]))
   const gridRef = useRef<DataSheetGridRef>(null)
-  const [prefs, setPrefs] = useState(() => readColumnPrefs(RESULT_KEYS))
+  const locale = useLocale()
+  const [prefs, setPrefs] = useState(() => readColumnPrefs(locale, DEFAULT_ORDER[locale]))
   const gridBoxRef = useRef<HTMLDivElement>(null)
-  useEffect(() => writeColumnPrefs(prefs), [prefs])
+  useEffect(() => writeColumnPrefs(locale, prefs), [locale, prefs])
   // The first address cell starts selected, so a paste lands in it.
   useEffect(() => {
     if (window.matchMedia("(hover: hover) and (pointer: fine)").matches)
@@ -353,8 +452,12 @@ export function BatchLookup() {
       .filter((key) => !prefs.hidden.includes(key))
       .flatMap((key) => byKey.get(key) ?? [])
   }, [prefs.order, prefs.hidden])
-  const tableColumns = [INPUT_COLUMN, ...visibleColumns]
-  const cellText = (row: GridRow, key: ColumnKey) => row[key] ?? ""
+  const inputColumn = { ...INPUT_COLUMN, title: text.input }
+  const resultColumns = useMemo(
+    () => visibleColumns.map((column) => ({ ...column, title: text.columns[column.key] })),
+    [visibleColumns, text],
+  )
+  const tableColumns = [inputColumn, ...resultColumns]
 
   const columns = useMemo<Column<GridRow>[]>(() => {
     const sizing = ({ key, basis, grow = 0 }: (typeof tableColumns)[number]) => {
@@ -366,6 +469,7 @@ export function BatchLookup() {
     const title = ({ key, title }: (typeof tableColumns)[number]) => (
       <ColumnTitle
         title={title}
+        resizeLabel={text.resize(title)}
         onResize={(width) =>
           setPrefs((current) => ({ ...current, widths: { ...current.widths, [key]: width } }))
         }
@@ -375,7 +479,7 @@ export function BatchLookup() {
             gridBoxRef.current,
             key,
             title,
-            filledRows.map((row) => cellText(row, key)),
+            filledRows.map((row) => cellText(text, row, key)),
           )
           setPrefs((current) => ({ ...current, widths: { ...current.widths, [key]: width } }))
         }}
@@ -384,10 +488,10 @@ export function BatchLookup() {
     return [
       {
         ...keyColumn<GridRow, "input">("input", textColumn),
-        title: title(INPUT_COLUMN),
-        ...sizing(INPUT_COLUMN),
+        title: title(inputColumn),
+        ...sizing(inputColumn),
       },
-      ...visibleColumns.map(
+      ...resultColumns.map(
         (column): Column<GridRow> => ({
           id: column.key,
           title: title(column),
@@ -395,17 +499,17 @@ export function BatchLookup() {
           component: ResultCell as Column<GridRow>["component"],
           columnData: column.key,
           disabled: true,
-          copyValue: ({ rowData }) => rowData[column.key],
+          copyValue: ({ rowData }) => cellText(text, rowData, column.key),
         }),
       ),
     ]
-  }, [filledRows, visibleColumns, prefs.widths])
+  }, [filledRows, resultColumns, prefs.widths, text])
 
   const tableRows = [
     tableColumns.map((column) => column.title),
-    ...filledRows.map((row) => tableColumns.map((column) => cellText(row, column.key))),
+    ...filledRows.map((row) => tableColumns.map((column) => cellText(text, row, column.key))),
   ]
-  const isDefaultPrefs = JSON.stringify(prefs) === JSON.stringify(DEFAULT_PREFS)
+  const isDefaultPrefs = JSON.stringify(prefs) === JSON.stringify(defaultPrefs(locale))
 
   async function pasteAddresses() {
     try {
@@ -422,19 +526,19 @@ export function BatchLookup() {
     const { toXlsx } = await import("@/utils/xlsx.js")
     const widths = tableColumns.map((column) => prefs.widths[column.key] ?? column.basis)
     downloadFile(
-      exportName("xlsx"),
-      toXlsx(tableRows, widths) as Uint8Array<ArrayBuffer>,
+      exportName(text.fileName, "xlsx"),
+      toXlsx(tableRows, widths, text.sheetName) as Uint8Array<ArrayBuffer>,
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
   }
 
   return (
-    <section className="flex flex-col gap-3" aria-label="批次查詢">
+    <section className="flex flex-col gap-3" aria-label={text.section}>
       <Card className="batch-sheet enter-rise gap-0 py-0">
         <div className="flex flex-wrap items-center justify-between gap-3 py-2 pr-2 pl-(--card-spacing)">
           {filledCount ? (
             <p className="text-sm text-muted-foreground tabular-nums" aria-live="polite">
-              {completeCount} / {filledCount} 筆完成
+              {text.progress(completeCount, filledCount)}
             </p>
           ) : (
             <Button
@@ -444,18 +548,18 @@ export function BatchLookup() {
               onClick={pasteAddresses}
             >
               <ClipboardPasteIcon className="size-4" aria-hidden="true" />
-              貼上地址
+              {text.paste}
             </Button>
           )}
           <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
             <BatchColumnsMenu
-              columns={RESULT_COLUMNS}
+              columns={RESULT_COLUMNS.map((column) => ({ ...column, title: text.columns[column.key] }))}
               order={prefs.order}
               hidden={prefs.hidden}
               isDefault={isDefaultPrefs}
               onOrderChange={(order) => setPrefs((current) => ({ ...current, order }))}
               onHiddenChange={(hidden) => setPrefs((current) => ({ ...current, hidden }))}
-              onReset={() => setPrefs(DEFAULT_PREFS)}
+              onReset={() => setPrefs(defaultPrefs(locale))}
             />
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -468,14 +572,14 @@ export function BatchLookup() {
                 }
               >
                 <DownloadIcon className="size-4 max-sm:hidden" aria-hidden="true" />
-                下載
+                {text.download}
                 <ChevronDownIcon className="size-4" aria-hidden="true" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-auto">
                 <DropdownMenuItem
                   className="min-h-10 px-3"
                   onClick={() =>
-                    downloadFile(exportName("csv"), `\ufeff${toCsv(tableRows)}`, "text/csv;charset=utf-8")
+                    downloadFile(exportName(text.fileName, "csv"), `\ufeff${toCsv(tableRows)}`, "text/csv;charset=utf-8")
                   }
                 >
                   CSV

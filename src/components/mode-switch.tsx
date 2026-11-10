@@ -1,11 +1,17 @@
 import { Link } from "@tanstack/react-router"
 
 import type { Page } from "@/components/page-shell"
+import { useText } from "@/lib/locale"
 import { cn } from "@/lib/utils"
 
+const TEXT = {
+  zh: { nav: "查詢模式", single: "單筆", batch: "批次" },
+  en: { nav: "Lookup mode", single: "Single", batch: "Batch" },
+} as const
+
 const MODES = [
-  { to: "/", label: "單筆", page: "single" },
-  { to: "/batch", label: "批次", page: "batch" },
+  { to: "/", page: "single" },
+  { to: "/batch", page: "batch" },
 ] as const
 
 // Each mode has its own path, so each link is a real, shareable destination.
@@ -15,9 +21,10 @@ const MODES = [
 // the pill slides across under the labels.
 // Pages outside the two modes, like about and the guide, leave both unselected.
 export function ModeSwitch({ page, onBand }: { page: Page; onBand: boolean }) {
+  const text = useText(TEXT)
   const isBatch = page === "batch"
   return (
-    <nav aria-label="查詢模式">
+    <nav aria-label={text.nav}>
       <div
         className={cn(
           "relative grid grid-cols-2 rounded-full p-1 transition-[background-color,box-shadow] duration-500 ease-out [view-transition-name:mode-switch]",
@@ -55,7 +62,7 @@ export function ModeSwitch({ page, onBand }: { page: Page; onBand: boolean }) {
                     : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {mode.label}
+              {text[mode.page]}
             </Link>
           )
         })}

@@ -3,9 +3,10 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { PageShell } from "@/components/page-shell"
 import { Card, CardContent } from "@/components/ui/card"
-import { addressIndex } from "@/lib/addresses"
+import { addressIndex, zipcodeData } from "@/lib/addresses"
 import { knownDoorplateDates, loadDoorplateDates, type DoorplateDate } from "@/lib/doorplates"
-import { FAQ_META } from "@/lib/site"
+import { useLocale, type Locale } from "@/lib/locale"
+import { usePageTitle } from "@/lib/page-title"
 
 export const Route = createFileRoute("/faq")({
   component: FaqPage,
@@ -40,17 +41,28 @@ function useDoorplateDates() {
   return dates
 }
 
-function formatDoorplateDate({ date, kind }: DoorplateDate) {
+function formatDoorplateDate({ date, kind }: DoorplateDate, locale: Locale) {
   const [year, month, day] = date.split("-")
+  if (locale === "en") {
+    const monthName = month ? MONTHS[Number(month) - 1] : ""
+    const text = [day ? Number(day) : "", monthName, Number(year) + 1911].filter(Boolean).join(" ")
+    return kind === "updated" ? `updated ${text}` : text
+  }
   const text = `${Number(year) + 1911} 年${month ? ` ${month} 月` : ""}${day ? ` ${day} 日` : ""}`
   return kind === "updated" ? `${text}更新` : text
 }
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+]
+
 type Question = { id: string; question: string; answer: ReactNode }
 
-export function questions(dates: Record<string, DoorplateDate> | null): Question[] {
+export function questions(dates: Record<string, DoorplateDate> | null, locale: Locale): Question[] {
   const uncovered = dates ? CITIES.filter((city) => !dates[city]) : null
   const covered = dates ? CITIES.filter((city) => dates[city]) : []
+  if (locale === "en") return englishQuestions(dates, uncovered, covered)
   return [
     {
       id: "road",
@@ -131,7 +143,7 @@ export function questions(dates: Record<string, DoorplateDate> | null): Question
                 <div key={city} className="contents">
                   <dt>{city}</dt>
                   <dd className="text-foreground tabular-nums">
-                    {formatDoorplateDate(dates[city])}
+                    {formatDoorplateDate(dates[city], locale)}
                   </dd>
                 </div>
               ))}
@@ -161,19 +173,137 @@ export function questions(dates: Record<string, DoorplateDate> | null): Question
   ]
 }
 
+const cityName = (city: string) => zipcodeData[city].en
+
+function englishQuestions(
+  dates: Record<string, DoorplateDate> | null,
+  uncovered: string[] | null,
+  covered: string[],
+): Question[] {
+  return [
+    {
+      id: "road",
+      question: "Why does it say \u201cNo matching road\u201d?",
+      answer: (
+        <>
+          <p>
+            The road name has to match how it is written in Chunghwa Post&rsquo;s data. Common causes are a typo, a missing &ldquo;Rd.&rdquo;, &ldquo;St.&rdquo; or &ldquo;Sec.&rdquo;, or a city and district that do not belong together.
+          </p>
+          <p>
+            Try a shorter keyword, such as just &ldquo;Zhongxiao E.&rdquo;, then pick from the suggestions. A newly built road can only be found once Chunghwa Post adds it to its data.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "scope",
+      question: "Why does it say \u201cNo matching range\u201d?",
+      answer: (
+        <>
+          <p>
+            3+3 zip codes are assigned by ranges of lanes, alleys and house numbers along a road. When the lane, alley or house number you typed falls outside every range on that road, the last three digits cannot be decided.
+          </p>
+          <p>
+            Usually the lane or alley number is mistyped, or it belongs to a different road. Select &ldquo;Rule&rdquo; on the result card to see every range on the road.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "more",
+      question: "Why does it ask for a sub-number or floor?",
+      answer: (
+        <p>
+          In some buildings and offices, different floors or sub-numbers (such as &ldquo;-1&rdquo;) have their own zip codes. When one house number maps to several zip codes, a sub-number or floor is needed to pick one.
+        </p>
+      ),
+    },
+    {
+      id: "doorplates",
+      question: "Why does it say \u201cHouse number unconfirmed\u201d?",
+      answer: (
+        <>
+          <p>
+            Besides the zip code ranges, we also check each county&rsquo;s published house number data. When the number is within a range but cannot be found in that data, this notice appears. The zip code is still the one found from the range.
+          </p>
+          <p>
+            It does not mean the house number does not exist. Common causes are a mistyped number or sub-number, a newly assigned number that is not yet included (each county updates at its own pace), and temporary or special house numbers (such as &ldquo;Temp. No. 23&rdquo;), which are not checked.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "coverage",
+      question: "Why are some house numbers not checked?",
+      answer: (
+        <>
+          <p>
+            Checking house numbers and suggesting lane and alley numbers needs the data that county governments publish. The following counties have not released it or it is currently unavailable, so they only get a 3+3 zip code lookup and no house number check:
+          </p>
+          {uncovered ? (
+            <p className="font-medium text-foreground">{uncovered.map(cityName).join(", ")}</p>
+          ) : null}
+        </>
+      ),
+    },
+    {
+      id: "dates",
+      question: "How recent is each county\u2019s house number data?",
+      answer: (
+        <>
+          <p>
+            Counties release data at different intervals, and older data may not include newly assigned house numbers. Counties marked &ldquo;updated&rdquo; do not state when their data was taken, so the date shown is when the file was last updated.
+          </p>
+          {dates ? (
+            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 sm:grid-cols-[auto_1fr_auto_1fr]">
+              {covered.map((city) => (
+                <div key={city} className="contents">
+                  <dt>{cityName(city)}</dt>
+                  <dd className="text-foreground tabular-nums">
+                    {formatDoorplateDate(dates[city], "en")}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+        </>
+      ),
+    },
+    {
+      id: "english",
+      question: "Why does the English address say it needs checking?",
+      answer: (
+        <p>
+          English addresses are generated with Chunghwa Post&rsquo;s romanization rules. Chinese numerals, lanes named rather than numbered, and rarer forms such as &ldquo;衖&rdquo; may not convert completely. Use Arabic numerals and check it once more.
+        </p>
+      ),
+    },
+    {
+      id: "source",
+      question: "Where does the data come from, and how often is it updated?",
+      answer: (
+        <p>
+          Zip codes come from Chunghwa Post&rsquo;s 3+3 zip code data, and house numbers from the house number location data that each county publishes. Both are checked for updates every month. Results are for reference only; Chunghwa Post&rsquo;s own records are authoritative.
+        </p>
+      ),
+    },
+  ]
+}
+
 function FaqPage() {
+  const locale = useLocale()
   const dates = useDoorplateDates()
-  useEffect(() => {
-    document.title = FAQ_META.title
-  }, [])
+  usePageTitle("faq")
 
   return (
     <PageShell page="faq" raised>
       <Card className="enter-rise">
         <CardContent className="flex flex-col gap-5">
-          <h2 className="text-2xl font-bold tracking-tight">常見問題</h2>
+          <h2 className="text-2xl font-bold tracking-tight">
+            {locale === "en" ? "FAQ" : "常見問題"}
+          </h2>
           <div className="flex flex-col divide-y divide-border">
-            {questions(dates).map(({ id, question, answer }) => (
+            {questions(dates, locale).map(({ id, question, answer }) => (
               <section
                 key={id}
                 id={id}

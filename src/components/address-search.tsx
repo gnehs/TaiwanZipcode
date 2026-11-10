@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import { LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react"
 
+import { useText } from "@/lib/locale"
 import { cn } from "@/lib/utils"
 import {
   Combobox,
@@ -17,7 +19,14 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { InputGroupAddon, InputGroupButton } from "@/components/ui/input-group"
-import { addressIndex, searchAddresses } from "@/lib/addresses"
+import {
+  addressIndex,
+  formatAddress,
+  isEnglishAddress,
+  searchAddresses,
+  searchEnglishAddresses,
+} from "@/lib/addresses"
+import { placePath } from "@/lib/address-path"
 import { useRoadDoorplates } from "@/lib/doorplates"
 import {
   getAddressSelection,
@@ -70,6 +79,66 @@ type FloorChoice = {
 
 const MIN_QUERY_LENGTH = 2
 
+const COUNTRY = /, Taiwan \(R\.O\.C\.\)$/
+
+// A Chinese completion of the road as English: the whole address to write,
+// and the part before the road to list ("No. 12", "45 Ln", "3F, No. 7").
+function englishCompletion(road: string, completion: string) {
+  const { en, enFields } = formatAddress(road, completion.slice(road.length))
+  const roadEn = addressIndex.englishByAddress[road]?.road ?? ""
+  const house = enFields?.line1.endsWith(roadEn)
+    ? enFields.line1.slice(0, -roadEn.length).replace(/,\s*$/u, "")
+    : ""
+  return {
+    text: en.replace(COUNTRY, ""),
+    label: [enFields?.line2, house].filter(Boolean).join(", ") || en.replace(COUNTRY, ""),
+  }
+}
+
+// "2樓以上" → "2F and above", "地下1樓" → "B1F".
+function englishFloorLabel(label: string) {
+  if (label === "其他樓層") return "Other floors"
+  return label
+    .replace(/地下(\d+)樓/gu, "B$1F")
+    .replace(/(\d+)樓/gu, "$1F")
+    .replace("以上", " and above")
+    .replace("以下", " and below")
+    .replace("至", "–")
+}
+
+const TEXT = {
+  zh: {
+    search: "地址查詢",
+    label: "輸入地址",
+    placeholder: "搜尋地址",
+    clear: "清除搜尋內容",
+    loadingDoors: "正在載入門牌",
+    digits: "請使用阿拉伯數字；附號可用「之」或「-」。",
+    recognized: "已辨識道路，請在同一欄接著輸入巷、弄、號與樓層。",
+    empty: "輸入道路後接著輸入門牌，也可以直接貼上完整地址。",
+    oneMore: "再輸入 1 個字元開始搜尋。",
+    noMatch: "找不到相符道路",
+    showingFirst: (count: number) =>
+      `顯示前 ${count} 條相符道路，請加入縣市或行政區縮小範圍。`,
+    found: (count: number) => `找到 ${count} 條相符道路，選擇後即可接著輸入門牌。`,
+  },
+  en: {
+    search: "Address lookup",
+    label: "Enter an address",
+    placeholder: "Search an address, e.g. Songren Road, Taipei",
+    clear: "Clear search",
+    loadingDoors: "Loading house numbers",
+    digits: "Use Arabic numerals. Write a sub-number with 之 or a hyphen.",
+    recognized: "Road found. Keep typing the lane, alley, number and floor in the same field.",
+    empty: "Type a road, then the house number. You can also paste a full address.",
+    oneMore: "Type 1 more character to search.",
+    noMatch: "No matching road",
+    showingFirst: (count: number) =>
+      `Showing the first ${count} matching roads. Add a city or district to narrow them down.`,
+    found: (count: number) => `${count} matching roads. Pick one, then type the house number.`,
+  },
+}
+
 export function AddressSearch({
   onBand,
   query,
@@ -80,6 +149,7 @@ export function AddressSearch({
   onQueryChange,
   onPopupOpenChange,
 }: AddressSearchProps) {
+  const text = useText(TEXT)
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
   // A picked lane or alley keeps the list open for its house numbers.
   const keepOpenAfterPick = useRef(false)
@@ -90,12 +160,26 @@ export function AddressSearch({
   // suggestion so typing carries on after it; the list still follows `query`.
   const [inlineValue, setInlineValue] = useState<string | null>(null)
   const comboboxAnchor = useComboboxAnchor()
+  const navigate = useNavigate()
+  const isLongEnough = query.trim().length >= MIN_QUERY_LENGTH
+  // English is matched by its own index, and what a pick writes stays in
+  // English, read back through the same index.
+  const isEnglish = useMemo(() => isEnglishAddress(query), [query])
+  const englishByAddress = useMemo(
+    () =>
+      new Map(
+        isEnglish && isLongEnough
+          ? searchEnglishAddresses(query).map((item) => [item.address, item])
+          : [],
+      ),
+    [isEnglish, isLongEnough, query],
+  )
   const searchResult = useMemo(
     () =>
-      query.trim().length >= MIN_QUERY_LENGTH
+      isLongEnough && !isEnglish
         ? searchAddresses(query)
-        : { matches: [], hasMore: false, prefixMatch: null, query },
-    [query],
+        : { matches: [...englishByAddress.keys()], hasMore: false, prefixMatch: null, query },
+    [query, isLongEnough, isEnglish, englishByAddress],
   )
   // Once the road is recognized, only offer suggestions that would change it.
   // The road may come from the cleaned text ("1段" → 一段), which the raw
@@ -111,34 +195,66 @@ export function AddressSearch({
   // list away.
   const { doorplates, isLoading: areDoorplatesLoading } = useRoadDoorplates(road)
   const hasRoadSuggestions = roadSuggestions.length > 0
-  const { completions, areDoors, floorByCompletion } = useMemo(() => {
+  // Completions are worked out on Chinese text. English is read as the
+  // Chinese it stands for, ending in the number still being typed, so
+  // "…, No. 1" completes like "…仁愛路四段1".
+  const typedChinese = useMemo(() => {
+    if (!isEnglish) return query.trimEnd()
+    const chinese = `${road}${addressSuffix.trim()}`
+    // A number after a unit word ("Sec. 4", "Ln 45", "3F") is that unit, not
+    // a house number being typed.
+    const typing = query.trimEnd().match(/\d+$/u)?.[0]
+    const afterUnit = /\b(?:sec|section|ln|lane|aly|alley|fl|floor|rm|room|unit)\.?\s*\d+$/iu.test(query.trimEnd())
+    if (!road || !typing || afterUnit) return chinese
+    if (chinese.endsWith(`${typing}號`)) return chinese.slice(0, -1)
+    return chinese.endsWith(typing) ? chinese : `${chinese}${typing}`
+  }, [isEnglish, query, road, addressSuffix])
+  const { chineseCompletions, areDoors, floorByCompletion } = useMemo<{
+    chineseCompletions: string[]
+    areDoors: boolean
+    floorByCompletion: Map<string, FloorChoice>
+  }>(() => {
     const floorByCompletion = new Map<string, FloorChoice>()
-    if (!road) return { completions: [], areDoors: false, floorByCompletion }
+    if (!road) return { chineseCompletions: [], areDoors: false, floorByCompletion }
     // A house whose zipcode turns on the floor offers its floors.
     const floors: FloorChoice[] = getFloorChoices(
       addressIndex.scopesByAddress[road] ?? [],
       addressSuffix,
     )
     if (floors.length) {
-      for (const choice of floors)
-        floorByCompletion.set(`${query.trimEnd()}${choice.floor}`, choice)
-      return { completions: [...floorByCompletion.keys()], areDoors: false, floorByCompletion }
+      const house = isEnglish ? `${road}${addressSuffix.trim()}` : typedChinese
+      for (const choice of floors) floorByCompletion.set(`${house}${choice.floor}`, choice)
+      return { chineseCompletions: [...floorByCompletion.keys()], areDoors: false, floorByCompletion }
     }
-    const doors = suggestDoors(doorplates, query, addressSuffix)
+    const doors = suggestDoors(doorplates, typedChinese, addressSuffix)
     // A bare road still lists the longer roads it is the start of.
     if (doors.length && (addressSuffix.trim() || !hasRoadSuggestions))
-      return { completions: doors, areDoors: true, floorByCompletion }
-    const units = getUnitCompletions(query)
-    if (units.length) return { completions: units, areDoors: false, floorByCompletion }
+      return { chineseCompletions: doors, areDoors: true, floorByCompletion }
+    const units = getUnitCompletions(typedChinese)
+    if (units.length) return { chineseCompletions: units, areDoors: false, floorByCompletion }
     return {
-      completions:
-        hasHouseNumber && parseAddressSuffix(addressSuffix).complete
-          ? [query.trimEnd()]
-          : [],
+      chineseCompletions:
+        hasHouseNumber && parseAddressSuffix(addressSuffix).complete ? [typedChinese] : [],
       areDoors: false,
       floorByCompletion,
     }
-  }, [road, query, hasHouseNumber, addressSuffix, doorplates, hasRoadSuggestions])
+  }, [road, typedChinese, hasHouseNumber, addressSuffix, doorplates, hasRoadSuggestions, isEnglish])
+  // In English each completion is listed and written as English, keyed back
+  // to the Chinese it stands for.
+  const englishCompletions = useMemo(
+    () =>
+      isEnglish
+        ? new Map(
+            chineseCompletions.map((chinese): [string, { chinese: string; label: string }] => {
+              const { text, label } = englishCompletion(road, chinese)
+              return [text, { chinese, label }]
+            }),
+          )
+        : null,
+    [isEnglish, chineseCompletions, road],
+  )
+  const completions = englishCompletions ? [...englishCompletions.keys()] : chineseCompletions
+  const chineseOf = (completion: string) => englishCompletions?.get(completion)?.chinese ?? completion
   const suggestions = completions.length ? completions : roadSuggestions
   const isPopupOpen = isSuggestionsOpen && suggestions.length > 0
   useEffect(() => onPopupOpenChange(isPopupOpen), [isPopupOpen, onPopupOpenChange])
@@ -149,22 +265,22 @@ export function AddressSearch({
     const trimmedQuery = query.trim()
     if (road) {
       return addressSuffix.trim()
-        ? "請使用阿拉伯數字；附號可用「之」或「-」。"
-        : "已辨識道路，請在同一欄接著輸入巷、弄、號與樓層。"
+        ? text.digits
+        : text.recognized
     }
     if (!trimmedQuery) {
-      return "輸入道路後接著輸入門牌，也可以直接貼上完整地址。"
+      return text.empty
     }
     if (trimmedQuery.length < MIN_QUERY_LENGTH) {
-      return "再輸入 1 個字元開始搜尋。"
+      return text.oneMore
     }
     if (!suggestions.length) {
-      return "找不到相符道路"
+      return text.noMatch
     }
     if (searchResult.hasMore) {
-      return `顯示前 ${suggestions.length} 條相符道路，請加入縣市或行政區縮小範圍。`
+      return text.showingFirst(suggestions.length)
     }
-    return `找到 ${suggestions.length} 條相符道路，選擇後即可接著輸入門牌。`
+    return text.found(suggestions.length)
   })()
 
   function updateQuery(value: string, openSuggestions: boolean) {
@@ -184,27 +300,40 @@ export function AddressSearch({
   // house number already typed after it.
   function filledText(address: string) {
     if (completions.includes(address)) return address
+    const english = englishByAddress.get(address)
+    if (english) return english.en
     const selection = getAddressSelection(searchResult.query, address)
     return `${address}${selection?.suffix || ""}`
   }
 
   function selectAddress(address: string) {
+    const english = englishByAddress.get(address)
+    // A city or district has its own page, listing its districts or roads.
+    if (english && english.kind !== "road") {
+      const place = addressIndex.places.find(({ city, area }) =>
+        english.kind === "city" ? city === address : `${city}${area}` === address,
+      )
+      if (place) {
+        void navigate({ to: placePath(place.city, english.kind === "city" ? null : place.area) })
+        return
+      }
+    }
     const text = filledText(address)
     // A listed lane or alley has listed houses, so the list stays open for them.
-    const needsHouse = areDoors && /[巷弄]$/u.test(text)
+    const needsHouse = areDoors && /[巷弄]$/u.test(chineseOf(text))
     keepOpenAfterPick.current = needsHouse
     updateQuery(text, needsHouse)
   }
 
   return (
-    <section role="search" aria-label="地址查詢">
+    <section role="search" aria-label={text.search}>
       <FieldGroup>
         <Field data-invalid={isUnmatched || undefined}>
           <FieldLabel htmlFor="address-search" className="sr-only">
-            輸入地址
+            {text.label}
           </FieldLabel>
           <Combobox
-            items={completions.length ? completions : addressIndex.addresses}
+            items={completions.length ? completions : isEnglish ? suggestions : addressIndex.addresses}
             filteredItems={suggestions}
             filter={null}
             value={null}
@@ -260,7 +389,7 @@ export function AddressSearch({
                       "shadow-[0_20px_40px_-12px_oklch(0.4_0.15_45/0.45)] sm:h-16 dark:bg-[oklch(0.2_0.01_55/0.55)] dark:shadow-[inset_0_0_0_1px_oklch(1_0_0/0.14),0_20px_40px_-12px_oklch(0_0_0/0.5)] dark:backdrop-blur-xl dark:backdrop-saturate-150"
                     : "shadow-surface",
                 )}
-                placeholder="搜尋地址"
+                placeholder={text.placeholder}
                 aria-describedby="address-search-help"
                 aria-invalid={isUnmatched || undefined}
                 autoComplete="off"
@@ -292,7 +421,7 @@ export function AddressSearch({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      aria-label="清除搜尋內容"
+                      aria-label={text.clear}
                       onClick={() => updateQuery("", false)}
                     >
                       <XIcon aria-hidden="true" />
@@ -308,7 +437,8 @@ export function AddressSearch({
             >
               <ComboboxList>
                 {(address: string) => {
-                  const floor = floorByCompletion.get(address)
+                  const floor = floorByCompletion.get(chineseOf(address))
+                  const english = englishCompletions?.get(address)
                   return (
                     <ComboboxItem
                       key={address}
@@ -318,7 +448,7 @@ export function AddressSearch({
                       {floor ? (
                         <>
                           <span className="flex min-w-0 flex-1 flex-col py-0.5">
-                            <span>{floor.label}</span>
+                            <span>{english ? englishFloorLabel(floor.label) : floor.label}</span>
                             {floor.department ? (
                               <span className="text-xs text-muted-foreground">
                                 {floor.department}
@@ -331,13 +461,22 @@ export function AddressSearch({
                         </>
                       ) : (
                         <span className="min-w-0 whitespace-normal break-words">
-                          {completions.includes(address) ? (
+                          {english ? (
+                            english.label
+                          ) : completions.includes(address) ? (
                             <>
                               <mark className="bg-transparent font-semibold text-primary">
                                 {query.trimEnd()}
                               </mark>
                               {address.slice(query.trimEnd().length)}
                             </>
+                          ) : englishByAddress.has(address) ? (
+                            <span className="flex flex-col py-0.5">
+                              <span>{englishByAddress.get(address)!.en}</span>
+                              <span lang="zh-TW" className="text-xs text-muted-foreground">
+                                {address}
+                              </span>
+                            </span>
                           ) : (
                             <HighlightedAddress address={address} query={searchResult.query} />
                           )}
@@ -351,7 +490,7 @@ export function AddressSearch({
                 // Delayed so a cached or quick load never flashes it.
                 <span
                   role="status"
-                  aria-label="正在載入門牌"
+                  aria-label={text.loadingDoors}
                   className="pointer-events-none absolute right-2 bottom-2 flex size-9 animate-in items-center justify-center rounded-full bg-popover text-muted-foreground shadow-popover delay-200 duration-200 fill-mode-both fade-in-0 zoom-in-90"
                 >
                   <LoaderCircleIcon className="size-4 animate-spin" aria-hidden="true" />

@@ -6,9 +6,10 @@
   "assets": {
     "not_found_handling": "single-page-application",
     "binding": "ASSETS",
-    // Only address pages and their images run the Worker. Everything else is
-    // a static file, and unknown paths get the app, which sends visitors home.
-    "run_worker_first": ["/a/*", "/og/*"]
+    // Only address, city and district pages (in either language) and their
+    // images run the Worker. Everything else is a static file, and unknown
+    // paths get the app, which sends visitors home.
+    "run_worker_first": ["/a/*", "/en/a/*", "/og/*"]
   },
   "routes": [{ "pattern": "zipcode.gnehs.net", "custom_domain": true }],
   "observability": { "enabled": true }

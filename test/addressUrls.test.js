@@ -72,3 +72,18 @@ test('both older hash forms read as the slug', () => {
   assert.equal(urls.slugOfLegacyHash(`#${slug}`), null);
   assert.equal(urls.slugOfLegacyHash('#%E0%A4%A'), null);
 });
+
+test('a city and a district each have a page one level above their roads', () => {
+  assert.equal(urls.placePath('臺北市', '大安區'), '/a/106');
+  assert.equal(urls.placePath('新竹市', '東區'), `/a/${encodeURIComponent('新竹市東區')}`);
+  assert.equal(urls.placePath('新竹市'), `/a/${encodeURIComponent('新竹市')}`);
+  assert.equal(urls.placeUrl('https://example.test', '新竹市', '東區'), 'https://example.test/a/新竹市東區');
+  assert.equal(urls.placePath('火星市'), null);
+  for (const [city, area] of [['臺北市', '大安區'], ['新竹市', '東區'], ['新竹市', null]]) {
+    assert.deepEqual(urls.placeOfPath(urls.placePath(city, area)), { city, area });
+  }
+  assert.deepEqual(urls.placeOfPath(`/a/${encodeURIComponent('臺北市大安區')}`), { city: '臺北市', area: '大安區' });
+  for (const path of ['/a/999', '/a/106/x', `/a/${encodeURIComponent(slug)}`, '/b/106', '/a/%E0%A4%A']) {
+    assert.equal(urls.placeOfPath(path), null, path);
+  }
+});

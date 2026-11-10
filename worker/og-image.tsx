@@ -2,7 +2,9 @@ import { googleFonts } from "takumi-js/helpers"
 import { ImageResponse } from "takumi-js/response"
 
 import iconSvg from "../public/icon.svg?raw"
-import { formatAddress, type AddressLookup } from "@/lib/addresses"
+import { addressIndex, formatAddress, type AddressLookup } from "@/lib/addresses"
+import type { Locale } from "@/lib/locale"
+import { SITE_TITLE } from "@/lib/site"
 
 // What the phone in the image shows: the app's result card for one address.
 type PhoneScreen = {
@@ -13,21 +15,35 @@ type PhoneScreen = {
   rows: { label: string; value: string }[]
 }
 
-function phoneScreen(lookup: AddressLookup): PhoneScreen {
+function phoneScreen(lookup: AddressLookup, locale: Locale): PhoneScreen {
   const { road, addressSuffix, displayedZipcode } = lookup
   const house = addressSuffix.trim()
   const fullZipcode = displayedZipcode.length === 6 ? displayedZipcode : ""
-  const { en } = formatAddress(road, house, fullZipcode)
+  const { en, enFields } = formatAddress(road, house, fullZipcode)
+  const chinese = { label: locale === "en" ? "In Chinese" : "中文地址", value: `${fullZipcode} ${road}${house}`.trim() }
+  const english = en ? [{ label: locale === "en" ? "In English" : "英文地址", value: en }] : []
+  if (locale === "en" && enFields) {
+    const place = addressIndex.englishByAddress[road]
+    return {
+      query: en,
+      place: `${place.road}, ${place.district}`,
+      house: enFields.line1.slice(0, -place.road.length).replace(/,\s*$/, ""),
+      digits: displayedZipcode,
+      rows: [...english, chinese],
+    }
+  }
   return {
     query: `${road}${house}`,
     place: road,
     house,
     digits: displayedZipcode,
-    rows: [
-      { label: "中文地址", value: `${fullZipcode} ${road}${house}`.trim() },
-      ...(en ? [{ label: "英文地址", value: en }] : []),
-    ],
+    rows: [chinese, ...english],
   }
+}
+
+const HEADLINE: Record<Locale, { lines: [string, string]; size: number }> = {
+  zh: { lines: ["填表不卡關，", "地址閃電查。"], size: 80 },
+  en: { lines: ["Taiwan zip codes,", "in a flash."], size: 64 },
 }
 
 const PRIMARY = "oklch(0.66 0.19 50)"
@@ -155,7 +171,8 @@ const BAND = [
   "linear-gradient(to bottom, oklch(0.7 0.18 54) 0%, oklch(0.8 0.14 68) 58%, oklch(0.97 0.02 75) 100%)",
 ].join(", ")
 
-function OgImage({ screen }: { screen: PhoneScreen }) {
+function OgImage({ screen, locale }: { screen: PhoneScreen; locale: Locale }) {
+  const headline = HEADLINE[locale]
   return (
     <div
       style={{
@@ -176,14 +193,14 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
           top: 252,
           display: "flex",
           flexDirection: "column",
-          fontSize: 80,
+          fontSize: headline.size,
           fontWeight: 700,
           lineHeight: 1.22,
           letterSpacing: "-0.01em",
         }}
       >
-        <div style={{ color: "white" }}>填表不卡關，</div>
-        <div style={{ color: "rgba(255, 255, 255, 0.62)" }}>地址閃電查。</div>
+        <div style={{ color: "white" }}>{headline.lines[0]}</div>
+        <div style={{ color: "rgba(255, 255, 255, 0.62)" }}>{headline.lines[1]}</div>
       </div>
 
       <div
@@ -200,7 +217,7 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
         }}
       >
         <img src={ICON} width={60} height={60} />
-        閃電地址
+        {SITE_TITLE[locale]}
       </div>
 
       <div
@@ -279,8 +296,8 @@ function OgImage({ screen }: { screen: PhoneScreen }) {
   )
 }
 
-export async function ogImageResponse(lookup: AddressLookup) {
-  return new ImageResponse(<OgImage screen={phoneScreen(lookup)} />, {
+export async function ogImageResponse(lookup: AddressLookup, locale: Locale) {
+  return new ImageResponse(<OgImage screen={phoneScreen(lookup, locale)} locale={locale} />, {
     // The 1200×630 card at 1.5×, sharp on high-density screens without
     // the weight of 2×.
     width: 1800,

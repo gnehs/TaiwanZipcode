@@ -1,6 +1,7 @@
 import zipcodeText from "@/assets/zipcode.txt?raw"
 import { createAddressResolver } from "@/utils/addressResolver.js"
 import { hasUnconvertedAddressParts } from "@/utils/addressConversion.js"
+import { createEnglishAddressReader } from "@/utils/englishAddress.js"
 import {
   findLongestAddressPrefix,
   searchAddressList,
@@ -65,6 +66,12 @@ export type EnglishAddressFields = {
   country: string
 }
 
+export type AddressWarning =
+  | "chineseNumerals"
+  | "subAlleyDropped"
+  | "laneName"
+  | "unconverted"
+
 export type ParsedAddress = {
   zh: string
   en: string
@@ -79,7 +86,7 @@ export type ParsedAddress = {
     basement: boolean
     room: string | null
   }
-  warns: string[]
+  warns: AddressWarning[]
 }
 
 function buildAddressIndex(database: ZipcodeDatabase): AddressIndex {
@@ -268,10 +275,31 @@ export function getCorrectionsVersion() {
   return correctionsVersion
 }
 
+// Built on the first address typed in English (about 0.1s), so a visitor who
+// only types Chinese never pays for it.
+let englishReader: ReturnType<typeof createEnglishAddressReader> | null = null
+const readEnglish = () => (englishReader ??= createEnglishAddressReader(zipcodeData))
+
+export function isEnglishAddress(text: string) {
+  return /[A-Za-z]/u.test(text) && readEnglish().hasLatin(text)
+}
+
+export type EnglishSuggestion = {
+  address: string
+  kind: "city" | "district" | "road"
+  en: string
+}
+
+export function searchEnglishAddresses(text: string, limit = ADDRESS_SEARCH_LIMIT): EnglishSuggestion[] {
+  return readEnglish().search(text, limit)
+}
+
 // Typed or pasted text often uses spellings, places or extra words the
-// database does not; resolve those before reading the zipcode.
+// database does not; resolve those before reading the zipcode. An address in
+// English, whole or in part, is read as its most likely Chinese first.
 export function lookupCleanedAddress(text: string): AddressLookup {
-  return resolveAddressText(text) as AddressLookup
+  const chinese = isEnglishAddress(text) ? readEnglish().toChinese(text)[0] : null
+  return resolveAddressText(chinese ?? text) as AddressLookup
 }
 
 export function formatScopeRule(scope: string) {
@@ -302,17 +330,17 @@ export function formatAddress(
     return { en: "", zh: "", enFields: null, form: emptyForm, warns: [] }
   }
 
-  const warns: string[] = []
+  const warns: AddressWarning[] = []
   if (/[一二三四五六七八九十]/u.test(addressSuffix)) {
-    warns.push("請不要輸入中文數字")
+    warns.push("chineseNumerals")
   }
   // 衖 only narrows below 弄; it is kept in Chinese but has no English unit.
   const subAlley = addressSuffix.normalize("NFKC").match(/(\d+)\s*衖/u)?.[1]
   if (subAlley) {
-    warns.push("英文地址未包含「衖」")
+    warns.push("subAlleyDropped")
   }
   if (/(.+?)巷/u.test(addressSuffix) && !/(\d+)巷/u.test(addressSuffix)) {
-    warns.push("不支援在此介面輸入中文巷弄名稱")
+    warns.push("laneName")
   }
 
   const parsed = parseAddressSuffix(addressSuffix)
@@ -372,7 +400,7 @@ export function formatAddress(
   }
 
   if (hasUnconvertedAddressParts(addressSuffix, zh.slice(baseAddress.length))) {
-    warns.push("部分門牌內容未能轉換成英文")
+    warns.push("unconverted")
   }
 
   const enFields: EnglishAddressFields = {

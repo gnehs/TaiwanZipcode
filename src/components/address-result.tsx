@@ -23,13 +23,16 @@ import {
   addressIndex,
   formatAddress,
   formatScopeRule,
+  type AddressWarning,
   type ScopeResolution,
   type ZipcodeScope,
 } from "@/lib/addresses"
 import { addressSlug, shareUrl } from "@/lib/address-path"
 import { useRoadDoorplates } from "@/lib/doorplates"
+import { useLocale, useText, type Locale } from "@/lib/locale"
 import { cn } from "@/lib/utils"
 import { findDoor } from "@/utils/doorplates.js"
+import { scopeRuleToEnglish } from "@/utils/scopeRuleEnglish.js"
 import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type AddressResultProps = {
@@ -41,6 +44,91 @@ type AddressResultProps = {
   scopes: ZipcodeScope[]
   // Picks a bulk recipient's own code, or null for the general range.
   onRecipientChange: (scope: ZipcodeScope | null) => void
+}
+
+const TEXT = {
+  zh: {
+    general: "一般地址",
+    recipient: (label: string) => `收件對象：${label}`,
+    rule: "規則",
+    ruleCount: (count: number) => `${count} 條`,
+    rulesTitle: "郵遞區號規則",
+    result: "查詢結果",
+    heading: (road: string) => `${road}的 3+3 郵遞區號`,
+    noRange: "找不到符合的門牌範圍",
+    addSubNumber: "請補上附號或樓層",
+    addHouseNumber: "請補上完整門牌",
+    doorUnlisted: "門牌資料查無此號",
+    why: "了解原因",
+    zipcode: (code: string) => `郵遞區號 ${code}`,
+    zipcodePrefix: (code: string) => `前三碼 ${code}，後三碼待確認`,
+    zipcodePending: "郵遞區號待確認",
+    bulk: "大宗戶",
+    chineseAddress: "中文地址",
+    englishAddress: "英文地址",
+    copyChinese: "複製中文地址",
+    copyEnglish: "複製英文地址",
+    copy: "複製",
+    copyField: (label: string) => `複製 ${label}`,
+    copyShare: "複製分享連結",
+    share: "分享",
+    copyZipcode: "複製郵遞區號",
+    city: "縣市",
+    district: "鄉鎮市區",
+    street: "詳細地址",
+    warnJoin: "；",
+    warnings: {
+      chineseNumerals: "請不要輸入中文數字",
+      subAlleyDropped: "英文地址未包含「衖」",
+      laneName: "不支援在此介面輸入中文巷弄名稱",
+      unconverted: "部分門牌內容未能轉換成英文",
+    } satisfies Record<AddressWarning, string>,
+  },
+  en: {
+    general: "General address",
+    recipient: (label: string) => `Recipient: ${label}`,
+    rule: "Rule",
+    ruleCount: (count: number) => (count === 1 ? "1 rule" : `${count} rules`),
+    rulesTitle: "Zip code rules",
+    result: "Lookup result",
+    heading: (road: string) => `3+3 zip code for ${road}`,
+    noRange: "No matching range",
+    addSubNumber: "Add a sub-number or floor",
+    addHouseNumber: "Add the full house number",
+    doorUnlisted: "House number unconfirmed",
+    why: "Why",
+    zipcode: (code: string) => `Zip code ${code}`,
+    zipcodePrefix: (code: string) => `First 3 digits ${code}, last 3 to confirm`,
+    zipcodePending: "Zip code to confirm",
+    bulk: "Bulk recipient",
+    chineseAddress: "In Chinese",
+    englishAddress: "English address",
+    copyChinese: "Copy Chinese address",
+    copyEnglish: "Copy English address",
+    copy: "Copy",
+    copyField: (label: string) => `Copy ${label}`,
+    copyShare: "Copy share link",
+    share: "Share",
+    copyZipcode: "Copy zip code",
+    city: "City",
+    district: "District",
+    street: "Street address",
+    warnJoin: "; ",
+    warnings: {
+      chineseNumerals: "Don't use Chinese numerals",
+      subAlleyDropped: "The English address leaves out 衖",
+      laneName: "Chinese lane and alley names aren't supported here",
+      unconverted: "Part of the house number couldn't be converted to English",
+    } satisfies Record<AddressWarning, string>,
+  },
+}
+
+// The share link points at the page in the visitor's language.
+function localizedShareUrl(locale: Locale, slug: string) {
+  const url = shareUrl(window.location.origin, slug)
+  if (locale === "zh") return url
+  const { origin } = window.location
+  return `${origin}/en${url.slice(origin.length)}`
 }
 
 const DESTRUCTIVE_TONE =
@@ -59,8 +147,9 @@ function RecipientPicker({
   selected: ZipcodeScope | null
   onChange: (scope: ZipcodeScope | null) => void
 }) {
+  const text = useText(TEXT)
   const options = [
-    { label: "一般地址", scope: general },
+    { label: text.general, scope: general },
     ...recipients.map((scope) => ({
       label: scope.department ?? String(scope.zipcode),
       scope,
@@ -74,7 +163,7 @@ function RecipientPicker({
     <div className="-mb-2 flex justify-center">
       <DropdownMenu>
         <DropdownMenuTrigger
-          aria-label={`收件對象：${options[index].label}`}
+          aria-label={text.recipient(options[index].label)}
           className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-full bg-paper pr-2 pl-3 text-xs font-medium text-paper-ink shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] outline-none transition-colors duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--paper),var(--paper-ink)_8%)] focus-visible:ring-3 focus-visible:ring-white/50"
         >
           <span className="truncate">{options[index].label}</span>
@@ -151,6 +240,8 @@ function ScopeRules({
   scopes,
   summary,
 }: ScopeRulesProps) {
+  const text = useText(TEXT)
+  const locale = useLocale()
   if (!scopes.length) return <span className={META_VALUE}>{summary}</span>
   return (
     <Popover>
@@ -170,7 +261,7 @@ function ScopeRules({
         className="max-h-96 w-80 max-w-[calc(100vw-2rem)] gap-1 rounded-2xl p-0 sm:w-[26rem]"
       >
         <PopoverHeader className="px-4 pt-4">
-          <PopoverTitle>郵遞區號規則</PopoverTitle>
+          <PopoverTitle>{text.rulesTitle}</PopoverTitle>
         </PopoverHeader>
         <ul
           ref={scrollToCurrentRule}
@@ -196,7 +287,11 @@ function ScopeRules({
                   {rule.department ? (
                     <span className="font-medium">{rule.department}</span>
                   ) : null}
-                  <span>{formatScopeRule(rule.scope)}</span>
+                  <span>
+                    {locale === "en"
+                      ? scopeRuleToEnglish(rule.scope)
+                      : formatScopeRule(rule.scope)}
+                  </span>
                 </div>
               </li>
             )
@@ -254,6 +349,9 @@ export function AddressResult({
   scopes,
   onRecipientChange,
 }: AddressResultProps) {
+  const text = useText(TEXT)
+  const locale = useLocale()
+  const isEnglish = locale === "en"
   const hasSuffix = Boolean(addressSuffix.trim())
   const isSuffixIncomplete =
     hasSuffix && !parseAddressSuffix(addressSuffix).complete
@@ -269,22 +367,22 @@ export function AddressResult({
   const message = !hasSuffix
     ? ""
     : isUnmatched
-      ? "找不到符合的門牌範圍"
+      ? text.noRange
       : !resolvedScope && scopeResolution.status === "ambiguous"
-        ? "請補上附號或樓層"
+        ? text.addSubNumber
         : !resolvedScope && scopeResolution.status === "incomplete"
-          ? "請補上完整門牌"
+          ? text.addHouseNumber
           : isDoorUnlisted
-            ? "門牌資料查無此號"
+            ? text.doorUnlisted
             : ""
   const isStreetUnusable =
     isSuffixIncomplete || parsedAddress.warns.length > 0
   const place = addressIndex.placeByAddress[address]
   const chineseFields = place
     ? [
-        { label: "縣市", value: place.city, disabled: false },
-        { label: "鄉鎮市區", value: place.area, disabled: false },
-        { label: "詳細地址", value: `${place.road}${addressSuffix.trim()}`, disabled: false },
+        { label: text.city, value: place.city, disabled: false },
+        { label: text.district, value: place.area, disabled: false },
+        { label: text.street, value: `${place.road}${addressSuffix.trim()}`, disabled: false },
       ]
     : []
   const fields = parsedAddress.enFields
@@ -301,17 +399,19 @@ export function AddressResult({
       ]
     : []
   const zipcodeLabel = isComplete
-    ? `郵遞區號 ${displayedZipcode}`
+    ? text.zipcode(displayedZipcode)
     : displayedZipcode
-      ? `前三碼 ${displayedZipcode}，後三碼待確認`
-      : "郵遞區號待確認"
+      ? text.zipcodePrefix(displayedZipcode)
+      : text.zipcodePending
   const ruleSummary =
     isComplete && resolvedScope
-      ? formatScopeRule(resolvedScope.scope)
-      : `${scopes.length} 條`
+      ? isEnglish
+        ? scopeRuleToEnglish(resolvedScope.scope)
+        : formatScopeRule(resolvedScope.scope)
+      : text.ruleCount(scopes.length)
   const metaItems = (align: ScopeRulesProps["align"]) => (
     <MetaItem
-      label="規則"
+      label={text.rule}
       value={
         <ScopeRules
           align={align}
@@ -324,9 +424,63 @@ export function AddressResult({
     />
   )
 
+  const chineseItem = (
+    <li key="zh" className="flex flex-col gap-3 py-4 last:pb-0">
+      <div className="flex items-center gap-3.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h3 className={isEnglish ? "text-xs font-normal text-muted-foreground" : "sr-only"}>
+            {text.chineseAddress}
+          </h3>
+          <p lang={isEnglish ? "zh-TW" : undefined} className="text-base font-medium break-words sm:text-lg">
+            {chineseAddress}
+          </p>
+        </div>
+        <CopyButton
+          text={chineseAddress}
+          label={text.copyChinese}
+          visibleLabel={text.copy}
+        />
+      </div>
+      {chineseFields.length ? <AddressFields fields={chineseFields} lang={isEnglish ? "zh-TW" : undefined} /> : null}
+    </li>
+  )
+  const englishItem = (
+    <li key="en" className="flex flex-col gap-3 py-4 last:pb-0">
+      <div className="flex items-center gap-3.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h3 className="sr-only">{text.englishAddress}</h3>
+          <p lang="en" className="text-base font-medium break-words sm:text-lg">
+            {parsedAddress.en}
+          </p>
+        </div>
+        <CopyButton
+          text={parsedAddress.en}
+          label={text.copyEnglish}
+          visibleLabel={text.copy}
+          disabled={isStreetUnusable}
+        />
+      </div>
+      {englishFields.length ? <AddressFields fields={englishFields} lang="en" /> : null}
+      {parsedAddress.warns.length ? (
+        <p
+          className={cn(
+            "flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm",
+            DESTRUCTIVE_TONE,
+          )}
+        >
+          <CircleAlertIcon
+            className="mt-0.5 size-4 shrink-0"
+            aria-hidden="true"
+          />
+          {parsedAddress.warns.map((code) => text.warnings[code]).join(text.warnJoin)}
+        </p>
+      ) : null}
+    </li>
+  )
+
   return (
     // Pulled up to overlap the photo band, like the recent lookups card.
-    <section className="relative -mt-12 flex flex-col sm:-mt-14" aria-label="查詢結果">
+    <section className="relative -mt-12 flex flex-col sm:-mt-14" aria-label={text.result}>
       <Card className="enter-rise relative z-10 bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary),var(--primary-gold)_35%),color-mix(in_oklab,var(--primary),black_4%))] text-primary-foreground shadow-primary">
         <div
           className="plus-grid pointer-events-none absolute inset-0 text-white/15"
@@ -346,7 +500,7 @@ export function AddressResult({
         />
         <CardContent className="relative flex flex-col gap-6">
           {/* The road already leads the search input, so it is only spoken here. */}
-          <h2 className="sr-only">{address}的 3+3 郵遞區號</h2>
+          <h2 className="sr-only">{text.heading(isEnglish ? (addressIndex.englishByAddress[address]?.road ?? address) : address)}</h2>
           {scopeResolution.recipients?.length ? (
             <RecipientPicker
               general={scopeResolution.matches[0]}
@@ -403,7 +557,7 @@ export function AddressResult({
                     hash="doorplates"
                     className="shrink-0 font-medium underline underline-offset-4"
                   >
-                    了解原因
+                    {text.why}
                   </Link>
                 ) : null}
               </p>
@@ -420,9 +574,9 @@ export function AddressResult({
             <div className="flex">
               {slug ? (
                 <CopyButton
-                  text={shareUrl(window.location.origin, slug)}
-                  label="複製分享連結"
-                  visibleLabel="分享"
+                  text={localizedShareUrl(locale, slug)}
+                  label={text.copyShare}
+                  visibleLabel={text.share}
                   variant="ghost"
                   icon={<LinkIcon />}
                   className={FOOTER_BUTTON}
@@ -432,8 +586,8 @@ export function AddressResult({
             {/* Sits in the card's corner: 18px pill radius + 8px inset = 26px card radius. */}
             <CopyButton
               text={isComplete ? displayedZipcode : ""}
-              label="複製郵遞區號"
-              visibleLabel="複製"
+              label={text.copyZipcode}
+              visibleLabel={text.copy}
               disabled={!isComplete}
               variant="outline"
               className="my-1.5 mr-1.5 font-semibold text-paper-ink [--control-bottom:oklch(0.9_0.012_50)] [--control-top:var(--paper)] hover:text-paper-ink"
@@ -458,56 +612,12 @@ export function AddressResult({
             {resolvedScope?.department && isComplete ? (
               <li className="flex items-center gap-3.5 py-4">
                 <div className="flex min-w-0 flex-col gap-0.5">
-                  <span className="text-xs text-muted-foreground">大宗戶</span>
+                  <span className="text-xs text-muted-foreground">{text.bulk}</span>
                   <span className="break-words">{resolvedScope.department}</span>
                 </div>
               </li>
             ) : null}
-            <li className="flex flex-col gap-3 py-4">
-              <div className="flex items-center gap-3.5">
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <h3 className="sr-only">中文地址</h3>
-                  <p className="text-base font-medium break-words sm:text-lg">{chineseAddress}</p>
-                </div>
-                <CopyButton
-                  text={chineseAddress}
-                  label="複製中文地址"
-                  visibleLabel="複製"
-                />
-              </div>
-              {chineseFields.length ? <AddressFields fields={chineseFields} /> : null}
-            </li>
-            <li className="flex flex-col gap-3 py-4 last:pb-0">
-              <div className="flex items-center gap-3.5">
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <h3 className="sr-only">英文地址</h3>
-                  <p lang="en" className="text-base font-medium break-words sm:text-lg">
-                    {parsedAddress.en}
-                  </p>
-                </div>
-                <CopyButton
-                  text={parsedAddress.en}
-                  label="複製英文地址"
-                  visibleLabel="複製"
-                  disabled={isStreetUnusable}
-                />
-              </div>
-              {englishFields.length ? <AddressFields fields={englishFields} lang="en" /> : null}
-              {parsedAddress.warns.length ? (
-                <p
-                  className={cn(
-                    "flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm",
-                    DESTRUCTIVE_TONE,
-                  )}
-                >
-                  <CircleAlertIcon
-                    className="mt-0.5 size-4 shrink-0"
-                    aria-hidden="true"
-                  />
-                  {parsedAddress.warns.join("；")}
-                </p>
-              ) : null}
-            </li>
+            {isEnglish ? [englishItem, chineseItem] : [chineseItem, englishItem]}
           </ul>
         </CardContent>
       </Card>
@@ -529,6 +639,7 @@ function copyRow(event: React.MouseEvent<HTMLLIElement>) {
 
 // The parts most address forms ask for, each copied on its own.
 function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string }) {
+  const text = useText(TEXT)
   return (
     <ul className="flex flex-col rounded-2xl bg-muted shadow-well">
       {fields.map((field) => (
@@ -559,7 +670,7 @@ function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string
           </div>
           <CopyButton
             text={field.value}
-            label={`複製 ${field.label}`}
+            label={text.copyField(field.label)}
             visibleLabel=""
             variant="ghost"
             disabled={field.disabled}

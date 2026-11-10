@@ -11,7 +11,21 @@ import {
   subscribeCorrections,
 } from "@/lib/addresses"
 import { addressSlug, hashOfSlug } from "@/lib/address-path"
+import { useLocale, useText } from "@/lib/locale"
 import { cn } from "@/lib/utils"
+
+const TEXT = {
+  zh: {
+    open: "開啟這筆查詢",
+    columns: { address: "地址", zipcode: "郵遞區號", zh: "中文地址", status: "狀態" },
+    done: "完成",
+  },
+  en: {
+    open: "Open this lookup",
+    columns: { address: "Address", zipcode: "Zip code", zh: "Chinese address", status: "Status" },
+    done: "Done",
+  },
+} as const
 
 const placeByRoad = new Map(
   addressIndex.places.map((place) => [`${place.city}${place.area}${place.road}`, place]),
@@ -93,16 +107,21 @@ function addressSegments(typed: string, road: string, suffix: string): Segment[]
   if (!place) return []
   const input = normalize(typed)
   const fullSuffix = formatAddress(road, suffix).zh.slice(road.length)
+  // Typed in English, nothing was typed in Chinese to compare with.
+  const hasChinese = /\p{Script=Han}/u.test(input)
   return [place.city, place.area, place.road, fullSuffix]
     .filter(Boolean)
-    .map((text) => ({ text, filled: !input.includes(text) }))
+    .map((text) => ({ text, filled: hasChinese && !input.includes(text) }))
 }
 
 export function TypingDemo({ examples }: { examples: string[] }) {
+  const labels = useText(TEXT)
+  const locale = useLocale()
   const [ref, inView] = useInView<HTMLDivElement>()
   const { text, done } = useTypewriter(examples, inView)
   const { road, addressSuffix, displayedZipcode } = useCleanedLookup(text)
   const segments = addressSegments(text, road, addressSuffix)
+  const english = locale === "en" && segments.length ? formatAddress(road, addressSuffix).en : ""
   const slug = done ? addressSlug(road, addressSuffix) : null
 
   return (
@@ -120,18 +139,21 @@ export function TypingDemo({ examples }: { examples: string[] }) {
             <span className="w-[6ch] shrink-0 text-2xl font-bold tracking-tight tabular-nums">
               {displayedZipcode}
             </span>
-            <span className="min-w-0 flex-1 text-sm/relaxed">
-              {segments.map(({ text, filled }) => (
-                <span
-                  key={text}
-                  className={cn(
-                    "transition-colors duration-200",
-                    filled && "rounded-sm bg-[color-mix(in_oklab,var(--primary)_16%,var(--card))] font-medium text-primary",
-                  )}
-                >
-                  {text}
-                </span>
-              ))}
+            <span className="flex min-w-0 flex-1 flex-col text-sm/relaxed">
+              <span>
+                {segments.map(({ text, filled }) => (
+                  <span
+                    key={text}
+                    className={cn(
+                      "transition-colors duration-200",
+                      filled && "rounded-sm bg-[color-mix(in_oklab,var(--primary)_16%,var(--card))] font-medium text-primary",
+                    )}
+                  >
+                    {text}
+                  </span>
+                ))}
+              </span>
+              {english ? <span className="text-muted-foreground">{english}</span> : null}
             </span>
           </>
         ) : (
@@ -149,7 +171,7 @@ export function TypingDemo({ examples }: { examples: string[] }) {
           !slug && "pointer-events-none opacity-0",
         )}
       >
-        開啟這筆查詢
+        {labels.open}
         <ArrowRightIcon className="size-3.5" aria-hidden="true" />
       </Link>
     </div>
@@ -162,6 +184,7 @@ const BATCH_HOLD_MS = 3600
 
 // Pastes a column of messy addresses, then fills in each row's result.
 export function BatchDemo({ addresses }: { addresses: string[] }) {
+  const text = useText(TEXT)
   const [ref, inView] = useInView<HTMLDivElement>()
   const reduceMotion = usePrefersReducedMotion()
   // 0 is empty, 1 pasted, then one step per filled row.
@@ -186,10 +209,10 @@ export function BatchDemo({ addresses }: { addresses: string[] }) {
     <div ref={ref} className="rounded-3xl bg-muted p-2" aria-hidden="true">
       <div className="overflow-hidden rounded-xl bg-card text-xs">
         <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_3.5rem] border-b font-medium text-muted-foreground sm:grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1fr)_3.5rem]">
-          <span className="px-3 py-2">地址</span>
-          <span className="px-3 py-2">郵遞區號</span>
-          <span className="px-3 py-2 max-sm:hidden">中文地址</span>
-          <span className="px-3 py-2">狀態</span>
+          <span className="px-3 py-2">{text.columns.address}</span>
+          <span className="px-3 py-2">{text.columns.zipcode}</span>
+          <span className="px-3 py-2 max-sm:hidden">{text.columns.zh}</span>
+          <span className="px-3 py-2">{text.columns.status}</span>
         </div>
         {rows.map(({ address, zipcode, zh }, index) => {
           const pasted = shown >= 1
@@ -225,7 +248,7 @@ export function BatchDemo({ addresses }: { addresses: string[] }) {
                   !filled && "opacity-0",
                 )}
               >
-                完成
+                {text.done}
               </span>
             </div>
           )

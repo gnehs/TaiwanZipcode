@@ -25,9 +25,10 @@ function columnName(index) {
  *
  * @param {string[][]} rows
  * @param {number[]} widths column widths in CSS pixels
+ * @param {string} sheetName
  * @returns {Uint8Array}
  */
-export function toXlsx(rows, widths = []) {
+export function toXlsx(rows, widths = [], sheetName = '地址') {
   const cols = widths.length
     ? `<cols>${widths
         .map((px, i) => `<col min="${i + 1}" max="${i + 1}" width="${Math.max(1, Math.round((px / 7) * 100) / 100)}" customWidth="1"/>`)
@@ -71,7 +72,7 @@ export function toXlsx(rows, widths = []) {
     'xl/workbook.xml': strToU8(
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
         '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-        '<sheets><sheet name="地址" sheetId="1" r:id="rId1"/></sheets></workbook>',
+        `<sheets><sheet name="${escapeXml(sheetName)}" sheetId="1" r:id="rId1"/></sheets></workbook>`,
     ),
     'xl/_rels/workbook.xml.rels': strToU8(
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +

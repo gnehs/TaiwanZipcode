@@ -10,6 +10,8 @@ const page = {
   title: '臺北市信義區信義路五段7號 - 郵遞區號 110615',
   description: '臺北市信義區信義路五段7號的 3+3 郵遞區號是 110615。',
   url: 'https://zipcode.gnehs.net/%E8%87%BA%E5%8C%97%E5%B8%82',
+  lang: 'zh-TW',
+  siteName: '閃電地址',
   indexable: true,
 };
 
@@ -28,7 +30,26 @@ test('writePageHead replaces every title, description and url in index.html', ()
     assert.equal(contentOf(html, tag), page.url);
   }
   assert.match(html, /<link rel="canonical" href="https:\/\/zipcode\.gnehs\.net\/%E8%87%BA%E5%8C%97%E5%B8%82" \/>/);
-  assert.equal(contentOf(html, 'property="og:site_name"'), contentOf(indexHtml, 'property="og:site_name"'));
+  assert.equal(contentOf(html, 'property="og:site_name"'), '閃電地址');
+});
+
+test('writePageHead sets the language and links each language of the page', () => {
+  const html = writePageHead(indexHtml, {
+    ...page,
+    url: 'https://zipcode.gnehs.net/en/faq',
+    lang: 'en',
+    siteName: 'ZipBolt',
+    alternates: { 'zh-TW': 'https://zipcode.gnehs.net/faq', en: 'https://zipcode.gnehs.net/en/faq' },
+  });
+  assert.match(html, /<html lang="en">/);
+  assert.equal(contentOf(html, 'property="og:site_name"'), 'ZipBolt');
+  assert.match(html, /<link rel="alternate" hreflang="zh-TW" href="https:\/\/zipcode\.gnehs\.net\/faq" \/>/);
+  assert.match(html, /<link rel="alternate" hreflang="en" href="https:\/\/zipcode\.gnehs\.net\/en\/faq" \/>/);
+  assert.match(html, /<link rel="alternate" hreflang="x-default" href="https:\/\/zipcode\.gnehs\.net\/faq" \/>/);
+  const rewritten = writePageHead(html, { ...page, alternates: { 'zh-TW': 'https://a.test/', en: 'https://a.test/en' } });
+  assert.equal(rewritten.match(/hreflang="en"/g).length, 1);
+  const noindex = writePageHead(html, { ...page, indexable: false, alternates: { en: 'x' } });
+  assert.doesNotMatch(noindex, /hreflang/);
 });
 
 test('writePageHead marks a missing page noindex without a canonical', () => {

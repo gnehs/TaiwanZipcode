@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import { BookOpenIcon, CircleHelpIcon, InfoIcon, MenuIcon } from "lucide-react"
 
+import { useOtherLanguage } from "@/components/language-link"
 import { ModeSwitch } from "@/components/mode-switch"
 import type { Page } from "@/components/page-shell"
 import {
@@ -9,13 +10,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useLocale, useText } from "@/lib/locale"
+import { SITE_TITLE } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
+const TEXT = {
+  zh: { menu: "選單", guide: "使用說明", faq: "常見問題", about: "關於" },
+  en: { menu: "Menu", guide: "Guide", faq: "FAQ", about: "About" },
+} as const
+
 const MENU_LINKS = [
-  { to: "/guide", label: "使用說明", icon: BookOpenIcon },
-  { to: "/faq", label: "常見問題", icon: CircleHelpIcon },
-  { to: "/about", label: "關於", icon: InfoIcon },
+  { to: "/guide", key: "guide", icon: BookOpenIcon },
+  { to: "/faq", key: "faq", icon: CircleHelpIcon },
+  { to: "/about", key: "about", icon: InfoIcon },
 ] as const
+
+const HEADER_BUTTON =
+  "flex h-11 min-w-11 items-center justify-center rounded-full outline-none transition-[color,background-color,box-shadow] duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50"
+const ON_BAND = "text-white hover:bg-white/20 aria-expanded:bg-white/20"
+const OFF_BAND =
+  "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control aria-expanded:bg-card aria-expanded:text-foreground aria-expanded:shadow-control"
 
 // The outer columns share the leftover width, so the mode switch stays
 // centred however wide the logo is.
@@ -28,6 +42,9 @@ export function SiteHeader({
   onBand: boolean
   onHome?: () => void
 }) {
+  const locale = useLocale()
+  const text = useText(TEXT)
+  const other = useOtherLanguage()
   return (
     <>
       {/* Darkens the photo band under the white header text. */}
@@ -60,36 +77,44 @@ export function SiteHeader({
           />
           {/* Phones keep only the icon; the name still labels the link. */}
           <h1 className="text-base font-semibold tracking-tight max-sm:sr-only">
-            閃電地址
+            {SITE_TITLE[locale]}
           </h1>
         </Link>
         <ModeSwitch page={page} onBand={onBand} />
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-label="選單"
-            className={cn(
-              "flex size-11 items-center justify-center justify-self-end rounded-full outline-none transition-[color,background-color,box-shadow] duration-150 ease-out focus-visible:ring-3 focus-visible:ring-ring/50",
-              onBand
-                ? "text-white hover:bg-white/20 aria-expanded:bg-white/20"
-                : "text-muted-foreground hover:bg-card hover:text-foreground hover:shadow-control aria-expanded:bg-card aria-expanded:text-foreground aria-expanded:shadow-control",
-            )}
+        {/* The other language stays in view, for visitors who cannot read
+            this one to find their way out. */}
+        <div className="flex items-center justify-self-end">
+          <a
+            href={other.href}
+            hrefLang={other.lang}
+            lang={other.lang}
+            aria-label={other.label}
+            className={cn(HEADER_BUTTON, "px-3 text-sm font-medium", onBand ? ON_BAND : OFF_BAND)}
           >
-            <MenuIcon className="size-[1.125rem]" aria-hidden="true" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-auto min-w-40">
-            {MENU_LINKS.map(({ to, label, icon: Icon }) => (
-              <DropdownMenuItem
-                key={to}
-                render={<Link to={to} />}
-                aria-current={page === to.slice(1) ? "page" : undefined}
-                className="min-h-10 gap-3 rounded-xl px-3 aria-[current=page]:font-medium"
-              >
-                <Icon className="text-muted-foreground" aria-hidden="true" />
-                {label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            {locale === "zh" ? "EN" : "中文"}
+          </a>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label={text.menu}
+              className={cn(HEADER_BUTTON, "size-11", onBand ? ON_BAND : OFF_BAND)}
+            >
+              <MenuIcon className="size-[1.125rem]" aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-auto min-w-40">
+              {MENU_LINKS.map(({ to, key, icon: Icon }) => (
+                <DropdownMenuItem
+                  key={to}
+                  render={<Link to={to} />}
+                  aria-current={page === to.slice(1) ? "page" : undefined}
+                  className="min-h-10 gap-3 rounded-xl px-3 aria-[current=page]:font-medium"
+                >
+                  <Icon className="text-muted-foreground" aria-hidden="true" />
+                  {text[key]}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
     </>
   )

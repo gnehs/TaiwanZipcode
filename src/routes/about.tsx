@@ -1,33 +1,59 @@
-import { useEffect } from "react"
+import type { ReactNode } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { ArrowUpRightIcon } from "lucide-react"
 
 import { PageShell } from "@/components/page-shell"
 import { Card, CardContent } from "@/components/ui/card"
+import { useLocale, useText } from "@/lib/locale"
 import { PLACE_PHOTOS } from "@/lib/place-photos"
-import { ABOUT_META } from "@/lib/site"
+import { SITE_TITLE } from "@/lib/site"
+import { usePageTitle } from "@/lib/page-title"
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
 })
 
-const FACTS = [
-  { label: "資料", value: "中華郵政 3+3 區號與各縣市門牌，每月自動同步" },
-  { label: "隱私", value: "查詢在瀏覽器內完成，地址不上傳伺服器" },
-  { label: "費用", value: "無訂閱費、無查詢費，免註冊、免驗證碼" },
-  {
-    label: "原始碼",
-    value: "GitHub",
-    href: "https://github.com/gnehs/TaiwanZipcode",
+const LINKS = {
+  source: "https://github.com/gnehs/TaiwanZipcode",
+  developer: "https://gnehs.net",
+}
+
+const TEXT = {
+  zh: {
+    title: (site: string) => `關於${site}`,
+    facts: [
+      { label: "資料", value: "中華郵政 3+3 區號與各縣市門牌，每月自動同步" },
+      { label: "隱私", value: "查詢在瀏覽器內完成，地址不上傳伺服器" },
+      { label: "費用", value: "無訂閱費、無查詢費，免註冊、免驗證碼" },
+      { label: "原始碼", value: "GitHub", href: LINKS.source },
+      { label: "開發", value: "gnehs", href: LINKS.developer },
+    ],
+    photos: "圖片來源",
+    license: (link: ReactNode) => <>照片皆依 {link} 使用</>,
+    placeName: (name: string, night: boolean) => (night ? `${name}・夜` : name),
   },
-  { label: "開發", value: "gnehs", href: "https://gnehs.net" },
-]
+  en: {
+    title: (site: string) => `About ${site}`,
+    facts: [
+      { label: "Data", value: "Chunghwa Post 3+3 zip codes and each county's house numbers, synced monthly" },
+      { label: "Privacy", value: "Lookups run in your browser. Addresses are never uploaded" },
+      { label: "Cost", value: "No subscription, no lookup fees, no sign-up, no CAPTCHA" },
+      { label: "Source", value: "GitHub", href: LINKS.source },
+      { label: "Developer", value: "gnehs", href: LINKS.developer },
+    ],
+    photos: "Photo credits",
+    license: (link: ReactNode) => <>Photos are used under the {link}</>,
+    placeName: (name: string, night: boolean) => (night ? `${name} (night)` : name),
+  },
+}
 
 // Each place's day photo, then its night one where it has one.
 const PLACE_CREDITS = PLACE_PHOTOS.flatMap((place) => [
   {
     key: place.slug,
     name: place.name,
+    nameEn: place.nameEn,
+    night: false,
     thumb: `/places/thumbs/${place.slug}.webp`,
     photo: place.photo,
     author: place.author,
@@ -36,7 +62,9 @@ const PLACE_CREDITS = PLACE_PHOTOS.flatMap((place) => [
     ? [
         {
           key: `${place.slug}-night`,
-          name: `${place.name}・夜`,
+          name: place.name,
+          nameEn: place.nameEn,
+          night: true,
           thumb: `/places/night/thumbs/${place.slug}.webp`,
           ...place.night,
         },
@@ -45,17 +73,17 @@ const PLACE_CREDITS = PLACE_PHOTOS.flatMap((place) => [
 ])
 
 function AboutPage() {
-  useEffect(() => {
-    document.title = ABOUT_META.title
-  }, [])
+  const locale = useLocale()
+  const text = useText(TEXT)
+  usePageTitle("about")
 
   return (
     <PageShell page="about" raised>
       <Card className="enter-rise">
         <CardContent className="flex flex-col gap-5">
-          <h2 className="text-2xl font-bold tracking-tight">關於閃電地址</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{text.title(SITE_TITLE[locale])}</h2>
           <dl className="flex flex-col divide-y divide-border">
-            {FACTS.map(({ label, value, href }) => (
+            {text.facts.map(({ label, value, href }) => (
               <div key={label} className="flex gap-4 py-3 first:pt-0 last:pb-0">
                 <dt className="w-14 shrink-0 text-muted-foreground">{label}</dt>
                 <dd className="min-w-0">
@@ -87,22 +115,22 @@ function AboutPage() {
       >
         <CardContent className="flex flex-col">
           <h2 id="photos-title" className="text-base font-semibold">
-            圖片來源
+            {text.photos}
           </h2>
           <p className="pb-2 text-sm text-muted-foreground">
-            照片皆依{" "}
-            <a
-              href="https://unsplash.com/license"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              Unsplash License
-            </a>{" "}
-            使用
+            {text.license(
+              <a
+                href="https://unsplash.com/license"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
+                Unsplash License
+              </a>,
+            )}
           </p>
           <ul className="-mx-3 -mb-3 grid sm:grid-cols-2">
-            {PLACE_CREDITS.map(({ key, name, thumb, photo, author }) => (
+            {PLACE_CREDITS.map(({ key, name, nameEn, night, thumb, photo, author }) => (
               <li key={key}>
                 <a
                   href={`https://unsplash.com/photos/${photo}`}
@@ -119,7 +147,9 @@ function AboutPage() {
                     className="h-8 w-12 shrink-0 rounded-md object-cover"
                   />
                   <span className="flex min-w-0 flex-col">
-                    <span className="font-medium">{name}</span>
+                    <span className="font-medium">
+                      {text.placeName(locale === "en" ? nameEn : name, night)}
+                    </span>
                     <span className="truncate text-xs text-muted-foreground">
                       {author} · Unsplash
                     </span>
