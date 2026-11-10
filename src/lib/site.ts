@@ -41,7 +41,7 @@ export type PageMeta = {
   path: string
 }
 
-export type FixedPage = "home" | "batch" | "guide" | "faq" | "about"
+export type FixedPage = "home" | "batch" | "zipcodes" | "guide" | "faq" | "about"
 
 const FIXED_PAGES: Record<FixedPage, { path: string } & Record<Locale, { name: string | null; description: string }>> = {
   home: {
@@ -61,6 +61,18 @@ const FIXED_PAGES: Record<FixedPage, { path: string } & Record<Locale, { name: s
     en: {
       name: "Batch Lookup",
       description: "Paste a list of Taiwanese addresses and get each one's 3+3 zip code and English address.",
+    },
+  },
+  zipcodes: {
+    path: "/zipcodes",
+    zh: {
+      name: "三碼郵遞區號表",
+      description: "全臺各縣市、鄉鎮市區的三碼郵遞區號一覽，點選行政區查看每條道路的 3+3 郵遞區號。",
+    },
+    en: {
+      name: "Taiwan Zip Code List",
+      description:
+        "The 3-digit zip code of every district in Taiwan, by city and county. Pick a district for each road's 3+3 zip code.",
     },
   },
   guide: {

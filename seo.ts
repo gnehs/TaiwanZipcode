@@ -191,7 +191,7 @@ function llmsText(urls: ReturnType<typeof createAddressUrls>) {
     "",
     "## 頁面",
     "",
-    ...(["guide", "faq", "batch", "about"] as const).map((page) => {
+    ...(["zipcodes", "guide", "faq", "batch", "about"] as const).map((page) => {
       const meta = fixedPageMeta(page, "zh")
       return `- [${pageName(meta.title)}](${SITE_ORIGIN}${meta.path}): ${meta.description}`
     }),

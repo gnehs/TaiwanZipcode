@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { PageShell } from "@/components/page-shell"
 import { Card, CardContent } from "@/components/ui/card"
-import { addressIndex, zipcodeData } from "@/lib/addresses"
+import { zipcodeData } from "@/lib/addresses"
+import { CITIES } from "@/lib/cities"
 import { knownDoorplateDates, loadDoorplateDates, type DoorplateDate } from "@/lib/doorplates"
 import { useLocale, type Locale } from "@/lib/locale"
 import { usePageTitle } from "@/lib/page-title"
@@ -11,23 +12,6 @@ import { usePageTitle } from "@/lib/page-title"
 export const Route = createFileRoute("/faq")({
   component: FaqPage,
 })
-
-// North to south down the west coast, then the east coast, then the islands,
-// the order people scan for their own county in.
-const CITY_ORDER = [
-  "臺北市", "新北市", "基隆市", "桃園市", "新竹市", "新竹縣", "苗栗縣",
-  "臺中市", "彰化縣", "南投縣", "雲林縣",
-  "嘉義市", "嘉義縣", "臺南市", "高雄市", "屏東縣",
-  "宜蘭縣", "花蓮縣", "臺東縣",
-  "澎湖縣", "金門縣", "連江縣",
-]
-const rank = (city: string) => {
-  const index = CITY_ORDER.indexOf(city)
-  return index === -1 ? CITY_ORDER.length : index
-}
-const CITIES = [...new Set(addressIndex.places.map(({ city }) => city))].sort(
-  (a, b) => rank(a) - rank(b),
-)
 
 // Which counties have doorplates and how old they are, read from the files
 // the site ships.

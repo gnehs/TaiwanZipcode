@@ -15,6 +15,7 @@ import { Route as SingleRouteImport } from "./routes/_single"
 import { Route as AboutRouteImport } from "./routes/about"
 import { Route as FaqRouteImport } from "./routes/faq"
 import { Route as GuideRouteImport } from "./routes/guide"
+import { Route as ZipcodesRouteImport } from "./routes/zipcodes"
 import { Route as SingleIndexRouteImport } from "./routes/_single.index"
 import { Route as ADistrictRouteImport } from "./routes/a.$district"
 import { Route as SingleADistrictAddressRouteImport } from "./routes/_single.a.$district.$address"
@@ -45,6 +46,11 @@ const GuideRoute = GuideRouteImport.update({
   path: "/guide",
   getParentRoute: () => rootRouteImport,
 } as any)
+const ZipcodesRoute = ZipcodesRouteImport.update({
+  id: "/zipcodes",
+  path: "/zipcodes",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SingleIndexRoute = SingleIndexRouteImport.update({
   id: "/",
   path: "/",
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   "/about": typeof AboutRoute
   "/faq": typeof FaqRoute
   "/guide": typeof GuideRoute
+  "/zipcodes": typeof ZipcodesRoute
   "/batch": typeof BatchLazyRoute
   "/a/$district": typeof ADistrictRoute
   "/a/$district/$address": typeof SingleADistrictAddressRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   "/about": typeof AboutRoute
   "/faq": typeof FaqRoute
   "/guide": typeof GuideRoute
+  "/zipcodes": typeof ZipcodesRoute
   "/batch": typeof BatchLazyRoute
   "/a/$district": typeof ADistrictRoute
   "/": typeof SingleIndexRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   "/about": typeof AboutRoute
   "/faq": typeof FaqRoute
   "/guide": typeof GuideRoute
+  "/zipcodes": typeof ZipcodesRoute
   "/batch": typeof BatchLazyRoute
   "/a/$district": typeof ADistrictRoute
   "/_single/": typeof SingleIndexRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | "/about"
     | "/faq"
     | "/guide"
+    | "/zipcodes"
     | "/batch"
     | "/a/$district"
     | "/a/$district/$address"
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | "/about"
     | "/faq"
     | "/guide"
+    | "/zipcodes"
     | "/batch"
     | "/a/$district"
     | "/"
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | "/about"
     | "/faq"
     | "/guide"
+    | "/zipcodes"
     | "/batch"
     | "/a/$district"
     | "/_single/"
@@ -126,6 +138,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   FaqRoute: typeof FaqRoute
   GuideRoute: typeof GuideRoute
+  ZipcodesRoute: typeof ZipcodesRoute
   BatchLazyRoute: typeof BatchLazyRoute
   ADistrictRoute: typeof ADistrictRoute
 }
@@ -165,6 +178,13 @@ declare module "@tanstack/react-router" {
       path: "/guide"
       fullPath: "/guide"
       preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/zipcodes": {
+      id: "/zipcodes"
+      path: "/zipcodes"
+      fullPath: "/zipcodes"
+      preLoaderRoute: typeof ZipcodesRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/_single/": {
@@ -209,6 +229,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   FaqRoute: FaqRoute,
   GuideRoute: GuideRoute,
+  ZipcodesRoute: ZipcodesRoute,
   BatchLazyRoute: BatchLazyRoute,
   ADistrictRoute: ADistrictRoute,
 }

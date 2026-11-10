@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { BookOpenIcon, CircleHelpIcon, InfoIcon, MenuIcon } from "lucide-react"
+import { BookOpenIcon, CircleHelpIcon, InfoIcon, MenuIcon, TableIcon } from "lucide-react"
 
 import { useOtherLanguage } from "@/components/language-link"
 import { ModeSwitch } from "@/components/mode-switch"
@@ -15,11 +15,12 @@ import { SITE_TITLE } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
 const TEXT = {
-  zh: { menu: "選單", guide: "使用說明", faq: "常見問題", about: "關於" },
-  en: { menu: "Menu", guide: "Guide", faq: "FAQ", about: "About" },
+  zh: { menu: "選單", zipcodes: "三碼郵遞區號表", guide: "使用說明", faq: "常見問題", about: "關於" },
+  en: { menu: "Menu", zipcodes: "Zip code list", guide: "Guide", faq: "FAQ", about: "About" },
 } as const
 
 const MENU_LINKS = [
+  { to: "/zipcodes", key: "zipcodes", icon: TableIcon },
   { to: "/guide", key: "guide", icon: BookOpenIcon },
   { to: "/faq", key: "faq", icon: CircleHelpIcon },
   { to: "/about", key: "about", icon: InfoIcon },

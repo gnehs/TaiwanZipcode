@@ -39,6 +39,7 @@ const TEXT = {
         links: [
           { to: "/", label: "單筆查詢" },
           { to: "/batch", label: "批次查詢" },
+          { to: "/zipcodes", label: "三碼郵遞區號表" },
         ],
       },
       {
@@ -59,6 +60,7 @@ const TEXT = {
         links: [
           { to: "/", label: "Single lookup" },
           { to: "/batch", label: "Batch lookup" },
+          { to: "/zipcodes", label: "Zip code list" },
         ],
       },
       {
