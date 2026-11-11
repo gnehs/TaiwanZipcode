@@ -674,7 +674,9 @@ function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string
             visibleLabel=""
             variant="ghost"
             disabled={field.disabled}
-            className="text-muted-foreground group-hover/field:enabled:bg-background group-hover/field:enabled:text-foreground group-hover/field:enabled:shadow-control focus-visible:bg-background"
+            // The row is the control, so its button shows only when it has
+            // something to say: under the pointer, on focus, or just copied.
+            className="text-muted-foreground opacity-0 group-hover/field:enabled:bg-background group-hover/field:enabled:text-foreground group-hover/field:enabled:opacity-100 group-hover/field:enabled:shadow-control focus-visible:bg-background focus-visible:opacity-100 data-copied:opacity-100"
           />
         </li>
       ))}

@@ -138,6 +138,7 @@ export function CopyButton({
         onClick={copy}
         disabled={disabled || !text || status === "pending"}
         aria-label={label}
+        data-copied={status === "copied" ? "" : undefined}
       >
         <IconSwap
           swapped={status === "copied"}
