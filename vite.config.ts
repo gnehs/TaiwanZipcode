@@ -24,6 +24,18 @@ export default defineConfig(({ command, isPreview }) => ({
     }),
     seoFiles(),
   ],
+  // The zipcode data is most of what the app downloads and changes once a
+  // month, so it is a file of its own: a new release of the app leaves it,
+  // and its name, as they were, and returning visitors keep their copy.
+  environments: {
+    client: {
+      build: {
+        rolldownOptions: {
+          output: { codeSplitting: { groups: [{ name: "zipcode", test: /zipcode\.txt/ }] } },
+        },
+      },
+    },
+  },
   server: {
     // The database tools' Wine prefix links z: to the filesystem root.
     watch: { ignored: ["**/.tmpwine/**"] },

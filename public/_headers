@@ -1,2 +1,7 @@
 /*
   Referrer-Policy: no-referrer
+
+# Files under /assets are named after their contents, so a name never
+# changes what it holds.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
