@@ -6,11 +6,12 @@
   "assets": {
     "not_found_handling": "404-page",
     "binding": "ASSETS",
-    // Only address, city and district pages (in either language) and their
-    // images run the Worker. Everything else is a static file, and unknown
-    // paths get 404.html: the app, which sends visitors home, marked as
-    // missing (see seo.ts).
-    "run_worker_first": ["/a/*", "/en/a/*", "/og/*"]
+    // Only address, city and district pages (in either language), their
+    // images, and the text for agents (each page's .md and llms.txt) run the
+    // Worker. Everything else is a static file, and unknown paths get
+    // 404.html: the app, which sends visitors home, marked as missing (see
+    // seo.ts).
+    "run_worker_first": ["/a/*", "/en/a/*", "/og/*", "/*.md", "/llms.txt", "/en/llms.txt"]
   },
   "routes": [{ "pattern": "zipcode.gnehs.net", "custom_domain": true }],
   "observability": { "enabled": true }

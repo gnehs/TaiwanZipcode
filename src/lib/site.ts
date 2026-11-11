@@ -1,3 +1,5 @@
+import { readable } from "../utils/addressUrls.js"
+
 import { HTML_LANG, LOCALES, localePath, type Locale } from "./locale"
 
 export const SITE_ORIGIN = "https://zipcode.gnehs.net"
@@ -6,6 +8,17 @@ export const SITE_TITLE: Record<Locale, string> = {
   en: "ZipBolt",
 }
 const TITLE_SEPARATOR = " - "
+
+/**
+ * A path on the site as a full URL with its Chinese left readable: readers of
+ * Markdown or JSON may have no page to resolve a path against, and readable
+ * Chinese takes far fewer tokens than escaped.
+ */
+export function siteUrl(path: string) {
+  const [pathname, hash] = path.split("#")
+  const parts = pathname.split("/").map((part) => readable(decodeURIComponent(part)))
+  return `${SITE_ORIGIN}${parts.join("/")}${hash ? `#${readable(decodeURIComponent(hash))}` : ""}`
+}
 
 /** A page's title: its own name, then the site's. */
 export function pageTitle(locale: Locale, name: string) {

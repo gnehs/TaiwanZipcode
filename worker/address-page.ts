@@ -2,8 +2,7 @@ import { formatScopeRule, type AddressLookup } from "@/lib/addresses"
 import { sharePath } from "@/lib/address-path"
 import { localePath, type Locale } from "@/lib/locale"
 import { addressPage, type PlacePage } from "@/lib/page-meta"
-import { SITE_ORIGIN } from "@/lib/site"
-import { readable } from "@/utils/addressUrls.js"
+import { siteUrl } from "@/lib/site"
 import { escapeHtml } from "@/utils/pageHead.js"
 import { scopeRuleToEnglish } from "@/utils/scopeRuleEnglish.js"
 
@@ -225,11 +224,7 @@ export function addressPageMarkdown(lookup: AddressLookup, doorplates: RoadDoorp
   if (!content) return null
   const text = TEXT[locale]
   const { name, trail, facts, ranges, lanes, houses } = content
-  // Readers of Markdown may have no page to resolve a path against, and
-  // Chinese left readable takes far fewer tokens than escaped.
-  const url = (path: string) =>
-    SITE_ORIGIN + path.split("/").map((part) => readable(decodeURIComponent(part))).join("/")
-  const anchor = ({ name, path }: Link) => `[${escapeMarkdown(name)}](${url(path)})`
+  const anchor = ({ name, path }: Link) => `[${escapeMarkdown(name)}](${siteUrl(path)})`
   const links = (heading: string, items: Link[]) =>
     items.length ? [`## ${heading}`, "", items.map(anchor).join(" · "), ""] : []
 
@@ -258,9 +253,7 @@ export function addressPageMarkdown(lookup: AddressLookup, doorplates: RoadDoorp
 /** A city or district page as Markdown, for agents that ask for it. */
 export function placePageMarkdown(page: PlacePage, locale: Locale) {
   const text = TEXT[locale]
-  const url = (path: string) =>
-    SITE_ORIGIN + path.split("/").map((part) => readable(decodeURIComponent(part))).join("/")
-  const anchor = ({ name, path }: { name: string; path: string }) => `[${escapeMarkdown(name)}](${url(path)})`
+  const anchor = ({ name, path }: Link) => `[${escapeMarkdown(name)}](${siteUrl(path)})`
   return [
     `# ${escapeMarkdown(page.name)}`,
     "",
@@ -275,3 +268,39 @@ export function placePageMarkdown(page: PlacePage, locale: Locale) {
     "",
   ].join("\n")
 }
+
+/** The address page as JSON, for programs and agents. */
+export function addressPageJson(lookup: AddressLookup, doorplates: RoadDoorplates | null, locale: Locale) {
+  const page = addressPage(lookup, locale)
+  const content = addressContent(lookup, doorplates, locale)
+  if (!page || !content) return null
+  const { displayedZipcode, resolvedScope } = lookup
+  const isComplete = displayedZipcode.length === 6
+  return {
+    url: siteUrl(page.meta.path),
+    address: page.name,
+    english: page.en || null,
+    city: page.place.city,
+    district: page.place.area,
+    road: page.place.road,
+    zipcode: isComplete ? displayedZipcode : null,
+    zipcodePrefix: displayedZipcode.slice(0, 3) || null,
+    rule: isComplete && resolvedScope ? ruleText(locale, resolvedScope.scope) : null,
+    ranges: content.ranges.map(([zipcode, rule]) => ({ zipcode, rule })),
+    lanes: content.lanes.map(jsonLink),
+    houses: content.houses.map(jsonLink),
+  }
+}
+
+/** A city or district page as JSON, for programs and agents. */
+export function placePageJson(page: PlacePage) {
+  const entries = page.entries.map(({ name, path, zipcode }) => ({ name, zipcode, url: siteUrl(path) }))
+  return {
+    url: siteUrl(page.meta.path),
+    name: page.name,
+    zipcodePrefixes: page.prefixes,
+    ...(page.prefixes.length ? { roads: entries } : { districts: entries }),
+  }
+}
+
+const jsonLink = ({ name, path }: Link) => ({ name, url: siteUrl(path) })

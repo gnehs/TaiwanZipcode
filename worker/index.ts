@@ -15,8 +15,10 @@ import { writePageHead } from "@/utils/pageHead.js"
 
 import {
   addressPageHtml,
+  addressPageJson,
   addressPageMarkdown,
   placePageHtml,
+  placePageJson,
   placePageMarkdown,
   type RoadDoorplates,
 } from "./address-page"
@@ -32,36 +34,55 @@ function withPrivacy(response: Response) {
 }
 
 // Address pages run here before the app loads, so crawlers and link previews
-// read each address's own title, description and image. Every other path is a
+// read each address's own title, description and image. Any page's URL plus
+// .md, and an address's or place's plus .json, is its text for agents; those
+// and llms.txt run here too, so their reads are logged. Every other path is a
 // static file (see run_worker_first in wrangler.jsonc).
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url)
     if (url.pathname.startsWith(`${OG_PREFIX}/`)) return withPrivacy(await ogImage(request, ctx))
+    if (url.pathname.endsWith("/llms.txt")) {
+      logRead(request, url.pathname, "llms")
+      return withPrivacy(await env.ASSETS.fetch(request))
+    }
 
-    const locale = localeOfPath(url.pathname)
-    const appPath = pathInApp(url.pathname)
+    const [, pathname, format] = url.pathname.match(/^(.*?)(?:\.(md|json))?$/) as [string, string, Format | undefined]
+    const extension = format ? `.${format}` : ""
+    const locale = localeOfPath(pathname)
+    const appPath = pathInApp(pathname)
     const moved = currentSharePath(appPath)
-    if (moved) return withPrivacy(Response.redirect(new URL(localePath(locale, moved), url).href, 301))
+    if (moved) {
+      return withPrivacy(Response.redirect(new URL(localePath(locale, moved) + extension, url).href, 301))
+    }
 
     const page = await addressOrPlacePage(env, url, tidyPath(appPath), locale)
     const meta = page?.meta ?? fixedPageMeta("home", locale)
     // One address has one URL: its other spellings move to it.
-    if (page && decoded(url.pathname) !== decoded(meta.path)) {
-      return withPrivacy(Response.redirect(new URL(meta.path, url).href, 301))
+    if (page && decoded(pathname) !== decoded(meta.path)) {
+      return withPrivacy(Response.redirect(new URL(meta.path + extension, url).href, 301))
+    }
+
+    if (format) {
+      logRead(request, url.pathname, format)
+      if (page) {
+        return format === "md"
+          ? textResponse(page.markdown(), "text/markdown", meta.path)
+          : textResponse(JSON.stringify(page.json()), "application/json", meta.path)
+      }
+      // A fixed page's Markdown is a file the build wrote; "/index.md" is
+      // the home's.
+      const file = format === "md" ? await env.ASSETS.fetch(new URL(url.pathname, url)) : null
+      if (file?.ok) return textResponse(await file.text(), "text/markdown", pathname === "/index" ? "/" : pathname)
+      return withPrivacy(new Response("Not found", { status: 404 }))
     }
 
     // Agents that ask for Markdown get the page's text without the app.
     if (page && wantsMarkdown(request)) {
-      return new Response(page.markdown(), {
-        headers: {
-          "Content-Type": "text/markdown; charset=utf-8",
-          Link: `<${SITE_ORIGIN}${meta.path}>; rel="canonical"`,
-          Vary: "Accept",
-          "Referrer-Policy": REFERRER_POLICY,
-        },
-      })
+      logRead(request, url.pathname, "md")
+      return textResponse(page.markdown(), "text/markdown", meta.path, { Vary: "Accept" })
     }
+    if (agentName(request)) logRead(request, url.pathname, "html")
 
     const app = await env.ASSETS.fetch(new URL(localePath(locale, "/"), url))
     const headers = new Headers(app.headers)
@@ -84,6 +105,39 @@ export default {
     return new Response(html, { status: page ? 200 : 404, headers })
   },
 } satisfies ExportedHandler<Env>
+
+type Format = "md" | "json"
+
+function textResponse(body: string, type: string, path: string, extra: Record<string, string> = {}) {
+  return new Response(body, {
+    headers: {
+      "Content-Type": `${type}; charset=utf-8`,
+      Link: `<${SITE_ORIGIN}${path}>; rel="canonical"`,
+      "Access-Control-Allow-Origin": "*",
+      "Referrer-Policy": REFERRER_POLICY,
+      ...extra,
+    },
+  })
+}
+
+// Crawlers and fetchers of AI assistants, by the name each puts in its
+// User-Agent.
+const AGENTS =
+  /GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-User|Claude-SearchBot|anthropic-ai|PerplexityBot|Perplexity-User|Google-Extended|GoogleOther|Gemini|Applebot-Extended|CCBot|Bytespider|Amazonbot|meta-external(agent|fetcher)|DuckAssistBot|MistralAI-User|cohere-ai|YouBot/i
+
+const agentName = (request: Request) => request.headers.get("User-Agent")?.match(AGENTS)?.[0] ?? null
+
+// Reads of the text meant for agents never reach page analytics, so each is
+// logged for Workers Logs: what was read, in which form, and by whom.
+function logRead(request: Request, path: string, format: Format | "llms" | "html") {
+  console.log({
+    event: "agent-read",
+    format,
+    path: decoded(path),
+    agent: agentName(request),
+    userAgent: request.headers.get("User-Agent"),
+  })
+}
 
 function decoded(path: string) {
   try {
@@ -127,6 +181,7 @@ async function addressOrPlacePage(env: Env, url: URL, appPath: string, locale: L
       structuredData: placeStructuredData(page, locale),
       html: placePageHtml(page, locale),
       markdown: () => placePageMarkdown(page, locale),
+      json: () => placePageJson(page),
     }
   }
   const lookup = lookupForPath(appPath)
@@ -141,6 +196,7 @@ async function addressOrPlacePage(env: Env, url: URL, appPath: string, locale: L
     structuredData: addressStructuredData(lookup, locale, image),
     html: addressPageHtml(lookup, doorplates, locale),
     markdown: () => addressPageMarkdown(lookup, doorplates, locale) ?? "",
+    json: () => addressPageJson(lookup, doorplates, locale),
   }
 }
 
