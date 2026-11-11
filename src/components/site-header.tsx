@@ -1,13 +1,14 @@
 import { Link } from "@tanstack/react-router"
-import { BookOpenIcon, CircleHelpIcon, InfoIcon, MenuIcon, TableIcon } from "lucide-react"
+import { BookOpenIcon, CircleHelpIcon, InfoIcon, LanguagesIcon, MenuIcon, TableIcon } from "lucide-react"
 
-import { useOtherLanguage } from "@/components/language-link"
+import { useOtherLanguage } from "@/lib/other-language"
 import { ModeSwitch } from "@/components/mode-switch"
 import type { Page } from "@/components/page-shell"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLocale, useText } from "@/lib/locale"
@@ -82,18 +83,7 @@ export function SiteHeader({
           </h1>
         </Link>
         <ModeSwitch page={page} onBand={onBand} />
-        {/* The other language stays in view, for visitors who cannot read
-            this one to find their way out. */}
         <div className="flex items-center justify-self-end">
-          <a
-            href={other.href}
-            hrefLang={other.lang}
-            lang={other.lang}
-            aria-label={other.label}
-            className={cn(HEADER_BUTTON, "px-3 text-sm font-medium", onBand ? ON_BAND : OFF_BAND)}
-          >
-            {locale === "zh" ? "EN" : "中文"}
-          </a>
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label={text.menu}
@@ -113,6 +103,15 @@ export function SiteHeader({
                   {text[key]}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuSeparator />
+              {/* Named in its own language, for visitors who cannot read this one. */}
+              <DropdownMenuItem
+                render={<a href={other.href} hrefLang={other.lang} lang={other.lang} />}
+                className="min-h-10 gap-3 rounded-xl px-3"
+              >
+                <LanguagesIcon className="text-muted-foreground" aria-hidden="true" />
+                {other.label}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
