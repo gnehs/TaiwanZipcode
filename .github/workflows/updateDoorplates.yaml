@@ -34,8 +34,10 @@ jobs:
           set -euo pipefail
           rm -rf ./public/doorplates
           cp -R ./utils/doorplate-converter/result/doorplates ./public/doorplates
+      - name: Install the site's packages
+        run: npm ci
       - name: Run tests
-        run: node --test
+        run: npm test
       - name: Commit changes
         run: |
           set -euo pipefail
