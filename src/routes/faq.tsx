@@ -49,6 +49,51 @@ export function questions(dates: Record<string, DoorplateDate> | null, locale: L
   if (locale === "en") return englishQuestions(dates, uncovered, covered)
   return [
     {
+      id: "free",
+      question: "閃電地址要付費或註冊嗎？",
+      answer: (
+        <p>
+          免費，不需註冊、登入或驗證碼。查詢在瀏覽器中完成，輸入的地址不會上傳到伺服器。
+        </p>
+      ),
+    },
+    {
+      id: "batch",
+      question: "可以一次查很多筆地址嗎？",
+      answer: (
+        <p>
+          可以。在批次查詢把整欄地址從試算表貼進表格，每一列都會查出 3+3 郵遞區號、中文與英文地址，可以複製回試算表，或下載成 Excel、CSV 檔。
+        </p>
+      ),
+    },
+    {
+      id: "english-format",
+      question: "英文地址要怎麼寫？",
+      answer: (
+        <p>
+          英文地址從小寫到大：門牌號碼、巷弄、道路與路段、行政區、縣市，再接郵遞區號與國名。例如臺北市信義區信義路五段7號寫成「No. 7, Sec. 5, Xinyi Rd., Xinyi Dist., Taipei City 110615, Taiwan (R.O.C.)」。
+        </p>
+      ),
+    },
+    {
+      id: "digits",
+      question: "3+3 和 3+2 郵遞區號有什麼不同？",
+      answer: (
+        <p>
+          中華郵政自 2020 年 3 月起改用 3+3 碼。前三碼一樣代表鄉鎮市區，後三碼依道路、巷弄與門牌範圍劃分，比 3+2 碼分得更細。
+        </p>
+      ),
+    },
+    {
+      id: "agents",
+      question: "程式或 AI 可以讀取查詢結果嗎？",
+      answer: (
+        <p>
+          可以。道路、巷弄、門牌與行政區頁面的網址後加上「.md」會回傳 Markdown，加上「.json」會回傳 JSON，其他頁面也有「.md」版本。網址規則寫在網站的 llms.txt。
+        </p>
+      ),
+    },
+    {
       id: "road",
       question: "為什麼顯示「找不到相符道路」？",
       answer: (
@@ -165,6 +210,51 @@ function englishQuestions(
   covered: string[],
 ): Question[] {
   return [
+    {
+      id: "free",
+      question: "Does ZipBolt cost anything, or need an account?",
+      answer: (
+        <p>
+          It is free, with no sign-up, login or CAPTCHA. Lookups run in your browser, and the addresses you type are never uploaded.
+        </p>
+      ),
+    },
+    {
+      id: "batch",
+      question: "Can I look up many addresses at once?",
+      answer: (
+        <p>
+          Yes. In Batch Lookup, paste a column of addresses from a spreadsheet into the table. Each row gets its 3+3 zip code and its Chinese and English address, ready to copy back or download as an Excel or CSV file.
+        </p>
+      ),
+    },
+    {
+      id: "english-format",
+      question: "How is a Taiwanese address written in English?",
+      answer: (
+        <p>
+          From the smallest part to the largest: house number, lane and alley, road and section, district, city, then the zip code and the country. For example, 臺北市信義區信義路五段7號 is &ldquo;No. 7, Sec. 5, Xinyi Rd., Xinyi Dist., Taipei City 110615, Taiwan (R.O.C.)&rdquo;.
+        </p>
+      ),
+    },
+    {
+      id: "digits",
+      question: "How do 3+3 zip codes differ from 3+2?",
+      answer: (
+        <p>
+          Chunghwa Post moved to 3+3 zip codes in March 2020. The first three digits still name the district, and the last three follow ranges of roads, lanes and house numbers, finer than the 3+2 codes.
+        </p>
+      ),
+    },
+    {
+      id: "agents",
+      question: "Can programs or AI assistants read the results?",
+      answer: (
+        <p>
+          Yes. Add &ldquo;.md&rdquo; to the URL of a road, lane, house number or district page for Markdown, or &ldquo;.json&rdquo; for JSON. Every other page has a &ldquo;.md&rdquo; version too. The site&rsquo;s llms.txt describes how the URLs are built.
+        </p>
+      ),
+    },
     {
       id: "road",
       question: "Why does it say \u201cNo matching road\u201d?",

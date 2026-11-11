@@ -104,12 +104,12 @@ const FIXED_PAGES: Record<FixedPage, { path: string } & Record<Locale, { name: s
     path: "/faq",
     zh: {
       name: "常見問題",
-      description: "查不到道路、找不到範圍、門牌待確認等提示的原因，以及資料來源與門牌資料涵蓋的縣市。",
+      description: "費用、批次查詢、英文地址寫法、3+3 與 3+2 的差別，查不到道路、門牌待確認等提示的原因，以及資料來源。",
     },
     en: {
       name: "FAQ",
       description:
-        "How Taiwan's 3+3 zip codes work, why a road may need a house number, where the data comes from, and which counties list house numbers.",
+        "Cost, batch lookups, writing an address in English, how 3+3 zip codes work, why a road may need a house number, and where the data comes from.",
     },
   },
   about: {
