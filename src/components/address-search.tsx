@@ -463,6 +463,10 @@ export function AddressSearch({
                       // rather than a white slab outshining the result.
                       "shadow-[0_20px_40px_-12px_oklch(0.4_0.15_45/0.45)] sm:h-16 dark:bg-[oklch(0.2_0.01_55/0.55)] dark:shadow-[inset_0_0_0_1px_oklch(1_0_0/0.14),0_20px_40px_-12px_oklch(0_0_0/0.5)] dark:backdrop-blur-xl dark:backdrop-saturate-150"
                     : "shadow-surface",
+                  // The half-alpha orange ring sinks into the photo; a white
+                  // line a gap away from the field stands out on any photo.
+                  onBand &&
+                    "has-[[data-slot=input-group-control]:focus-visible]:ring-0 has-[[data-slot=input-group-control]:focus-visible]:outline-2 has-[[data-slot=input-group-control]:focus-visible]:outline-solid has-[[data-slot=input-group-control]:focus-visible]:outline-offset-3 has-[[data-slot=input-group-control]:focus-visible]:outline-white",
                 )}
                 placeholder={text.placeholder}
                 aria-describedby="address-search-help"
