@@ -144,7 +144,7 @@ export function CopyButton({
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="flex flex-col items-end gap-1 print:hidden">
       <Button
         type="button"
         variant={variant}

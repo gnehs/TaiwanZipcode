@@ -15,7 +15,7 @@ function RootLayout() {
   }, [])
 
   return (
-    <div className="relative isolate flex min-h-svh flex-col overflow-x-clip bg-background">
+    <div className="relative isolate flex min-h-svh flex-col print:min-h-0 overflow-x-clip bg-background">
       <Outlet />
       <SiteFooter />
     </div>

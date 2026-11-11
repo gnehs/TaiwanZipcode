@@ -23,7 +23,7 @@ export function PageShell({
       <SiteHeader page={page} onBand={onBand} onHome={onHome} />
       <main
         className={cn(
-          "relative mx-auto flex w-full flex-1 flex-col gap-3 px-4 transition-[padding] duration-500 ease-out motion-reduce:transition-none sm:px-6",
+          "relative mx-auto flex w-full flex-1 flex-col gap-3 px-4 transition-[padding] duration-500 ease-out motion-reduce:transition-none sm:px-6 print:px-0 print:pt-8",
           page === "batch" ? "max-w-6xl" : "max-w-2xl",
           // The search rises once a result appears below it.
           raised ? "pt-6 sm:pt-8" : "pt-10 sm:pt-[9vh]",

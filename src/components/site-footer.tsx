@@ -69,7 +69,7 @@ export function SiteFooter() {
   const text = useText(TEXT)
   return (
     // The band spans the page edge to edge; its content keeps to the header's width.
-    <footer className="mt-20 w-full border-t bg-muted/50 pt-10 pb-8">
+    <footer className="mt-20 print:hidden w-full border-t bg-muted/50 pt-10 pb-8">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <div className="col-span-2 flex flex-col gap-3 sm:col-span-1 sm:max-w-md">

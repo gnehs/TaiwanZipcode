@@ -24,7 +24,7 @@ export function ModeSwitch({ page, onBand }: { page: Page; onBand: boolean }) {
   const text = useText(TEXT)
   const isBatch = page === "batch"
   return (
-    <nav aria-label={text.nav}>
+    <nav aria-label={text.nav} className="print:hidden">
       <div
         className={cn(
           "relative grid grid-cols-2 rounded-full p-1 transition-[background-color,box-shadow] duration-500 ease-out [view-transition-name:mode-switch]",

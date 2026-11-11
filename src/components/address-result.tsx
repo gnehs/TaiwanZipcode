@@ -164,10 +164,10 @@ function RecipientPicker({
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label={text.recipient(options[index].label)}
-          className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-full bg-paper pr-2 pl-3 text-xs font-medium text-paper-ink shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] outline-none transition-colors duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--paper),var(--paper-ink)_8%)] focus-visible:ring-3 focus-visible:ring-white/50"
+          className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-full bg-paper pr-2 pl-3 text-xs font-medium text-paper-ink shadow-[0_2px_6px_-2px_oklch(0.4_0.13_48/0.4)] outline-none transition-colors duration-150 ease-out hover:bg-[color-mix(in_oklab,var(--paper),var(--paper-ink)_8%)] focus-visible:ring-3 focus-visible:ring-white/50 print:border print:shadow-none"
         >
           <span className="truncate">{options[index].label}</span>
-          <ChevronDownIcon className="size-3.5 shrink-0" aria-hidden="true" />
+          <ChevronDownIcon className="size-3.5 shrink-0 print:hidden" aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="center" className="w-auto max-w-[min(22rem,calc(100vw-2rem))]">
           <DropdownMenuRadioGroup
@@ -206,7 +206,7 @@ const META_VALUE = "min-w-0 text-[0.8125rem] break-words"
 function MetaItem({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <span className="inline-flex min-w-0 items-baseline gap-2">
-      <span className="shrink-0 text-xs text-primary-foreground/70">{label}</span>
+      <span className="shrink-0 text-xs text-primary-foreground/70 print:text-muted-foreground">{label}</span>
       {typeof value === "string" ? (
         <span className={META_VALUE}>{value}</span>
       ) : (
@@ -251,7 +251,7 @@ function ScopeRules({
         delay={300}
         className={cn(
           META_VALUE,
-          "cursor-pointer rounded-sm text-left underline decoration-[color-mix(in_oklab,var(--primary-foreground)_55%,var(--primary))] decoration-dashed underline-offset-4 outline-none hover:decoration-primary-foreground focus-visible:ring-2 focus-visible:ring-white/60 aria-expanded:decoration-primary-foreground",
+          "cursor-pointer rounded-sm text-left underline decoration-[color-mix(in_oklab,var(--primary-foreground)_55%,var(--primary))] decoration-dashed underline-offset-4 outline-none hover:decoration-primary-foreground focus-visible:ring-2 focus-visible:ring-white/60 aria-expanded:decoration-primary-foreground print:no-underline",
         )}
       >
         {summary}
@@ -319,13 +319,13 @@ function ZipcodeCells({ digits }: { digits: string }) {
             {[0, 1, 2].map((index) => (
               <span
                 key={index}
-                className="flex h-12 w-9 items-center justify-center overflow-hidden rounded-lg bg-white/16 text-3xl font-semibold tabular-nums shadow-[inset_0_1px_0_oklch(1_0_0/0.35),inset_0_0_0_1px_oklch(1_0_0/0.18),0_4px_10px_-4px_oklch(0.4_0.13_48/0.35)] backdrop-blur-sm sm:h-18 sm:w-13 sm:rounded-xl sm:text-5xl"
+                className="flex h-12 w-9 items-center justify-center overflow-hidden rounded-lg bg-white/16 text-3xl font-semibold tabular-nums shadow-[inset_0_1px_0_oklch(1_0_0/0.35),inset_0_0_0_1px_oklch(1_0_0/0.18),0_4px_10px_-4px_oklch(0.4_0.13_48/0.35)] backdrop-blur-sm sm:h-18 sm:w-13 sm:rounded-xl sm:text-5xl print:border print:border-foreground/40 print:shadow-none print:backdrop-blur-none"
               >
                 {digits[group * 3 + index] ? (
                   // Re-keyed per digit so a change replays the slide-in.
                   <span
                     key={digits[group * 3 + index]}
-                    className="digit-in text-shadow-[0_1px_2px_oklch(0.4_0.13_48/0.35)]"
+                    className="digit-in text-shadow-[0_1px_2px_oklch(0.4_0.13_48/0.35)] print:text-shadow-none"
                     style={{ "--enter-delay": `${index * 30}ms` } as React.CSSProperties}
                   >
                     {digits[group * 3 + index]}
@@ -464,7 +464,7 @@ export function AddressResult({
       {parsedAddress.warns.length ? (
         <p
           className={cn(
-            "flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm",
+            "flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm print:border",
             DESTRUCTIVE_TONE,
           )}
         >
@@ -480,22 +480,22 @@ export function AddressResult({
 
   return (
     // Pulled up to overlap the photo band, like the recent lookups card.
-    <section className="relative -mt-12 flex flex-col sm:-mt-14" aria-label={text.result}>
+    <section className="relative -mt-12 flex flex-col sm:-mt-14 print:mt-0" aria-label={text.result}>
       <Card className="enter-rise relative z-10 bg-primary bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary),var(--primary-gold)_35%),color-mix(in_oklab,var(--primary),black_4%))] text-primary-foreground shadow-primary">
         <div
-          className="plus-grid pointer-events-none absolute inset-0 text-white/15"
+          className="plus-grid pointer-events-none absolute inset-0 text-white/15 print:hidden"
           aria-hidden="true"
         />
         <div
-          className="grain pointer-events-none absolute inset-0 opacity-40"
+          className="grain pointer-events-none absolute inset-0 opacity-40 print:hidden"
           aria-hidden="true"
         />
         <div
-          className="rim pointer-events-none absolute inset-0"
+          className="rim pointer-events-none absolute inset-0 print:hidden"
           aria-hidden="true"
         />
         <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_0%,rgb(255_255_255/0.22),transparent_60%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_0%,rgb(255_255_255/0.22),transparent_60%)] print:hidden"
           aria-hidden="true"
         />
         <CardContent className="relative flex flex-col gap-6">
@@ -535,7 +535,7 @@ export function AddressResult({
                   "flex items-start gap-2.5 rounded-2xl px-4 py-3 text-sm",
                   isUnmatched
                     ? DESTRUCTIVE_TONE
-                    : "bg-white/15 text-primary-foreground",
+                    : "bg-white/15 text-primary-foreground print:border print:text-foreground",
                 )}
               >
                 {isUnmatched ? (
@@ -566,11 +566,11 @@ export function AddressResult({
 
         </CardContent>
         {/* Footer: the rule summary on the left (wider screens), actions on the right. */}
-        <div data-zipcode-divider className="relative -mb-(--card-spacing) flex border-t border-white/25">
+        <div data-zipcode-divider className="relative -mb-(--card-spacing) flex border-t border-white/25 print:mt-6 print:border-border">
           <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1 py-3 pl-(--card-spacing) sm:flex">
             {metaItems("start")}
           </div>
-          <div className="flex flex-1 items-center justify-between gap-2 sm:flex-none">
+          <div className="flex flex-1 items-center justify-between gap-2 sm:flex-none print:hidden">
             <div className="flex">
               {slug ? (
                 <CopyButton
@@ -606,7 +606,7 @@ export function AddressResult({
         {/* The orange card's glow spilling onto this one. It starts at the very top,
             under the orange card, so its rounded corners show the glow too. */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-28 max-sm:hidden bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary)_14%,transparent)_2rem,transparent)]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-28 max-sm:hidden print:hidden bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary)_14%,transparent)_2rem,transparent)]"
           aria-hidden="true"
         />
         <CardContent className="relative flex flex-col">
@@ -643,7 +643,7 @@ function copyRow(event: React.MouseEvent<HTMLLIElement>) {
 function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string }) {
   const text = useText(TEXT)
   return (
-    <ul className="flex flex-col rounded-2xl bg-muted shadow-well">
+    <ul className="flex flex-col rounded-2xl bg-muted shadow-well print:border print:shadow-none">
       {fields.map((field) => (
         <li
           key={field.label}

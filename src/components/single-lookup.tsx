@@ -193,7 +193,7 @@ export function SingleLookup() {
           (the header's height plus the page's top padding), and ends with
           this block, or on the zipcode card's footer line once there is a
           result. It stays mounted so the search never loses focus. */}
-      <div ref={bandBlockRef} className="relative pb-16 sm:pb-18">
+      <div ref={bandBlockRef} className="relative pb-16 sm:pb-18 print:hidden">
         <div
           aria-hidden="true"
           className={cn(

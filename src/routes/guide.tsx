@@ -216,7 +216,7 @@ function GuidePage() {
           <BatchDemo addresses={BATCH_EXAMPLES} />
           <Link
             to="/batch"
-            className={cn(buttonVariants(), "min-h-11 self-start px-5")}
+            className={cn(buttonVariants(), "min-h-11 self-start px-5 print:hidden")}
           >
             {text.batchAction}
             <ArrowRightIcon aria-hidden="true" />

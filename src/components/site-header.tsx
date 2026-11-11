@@ -53,16 +53,16 @@ export function SiteHeader({
       <div
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute inset-x-0 top-0 z-10 h-[calc(3.5rem+--spacing(4))] bg-linear-to-b from-black/25 to-transparent transition-opacity duration-500 ease-out motion-reduce:transition-none sm:h-[calc(4rem+--spacing(4))]",
+          "pointer-events-none absolute inset-x-0 top-0 z-10 h-[calc(3.5rem+--spacing(4))] bg-linear-to-b from-black/25 to-transparent transition-opacity print:hidden duration-500 ease-out motion-reduce:transition-none sm:h-[calc(4rem+--spacing(4))]",
           !onBand && "opacity-0",
         )}
       />
-      <header className="relative z-10 mx-auto grid w-full max-w-6xl [view-transition-name:site-bar] grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 pt-3 sm:px-5 sm:pt-5">
+      <header className="relative z-10 mx-auto grid w-full max-w-6xl [view-transition-name:site-bar] print:max-w-2xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 pt-3 sm:px-5 sm:pt-5 print:p-0">
         <Link
           to="/"
           className={cn(
-            "flex items-center gap-2.5 justify-self-start rounded-xl p-1 pr-2 outline-none transition-colors duration-500 ease-out [view-transition-name:site-header] focus-visible:ring-3 focus-visible:ring-ring/50",
-            onBand && "text-white",
+            "flex items-center gap-2.5 justify-self-start rounded-xl p-1 pr-2 outline-none print:p-0 transition-colors duration-500 ease-out [view-transition-name:site-header] focus-visible:ring-3 focus-visible:ring-ring/50",
+            onBand && "text-white print:text-foreground",
           )}
           onClick={(event) => {
             // Let modified clicks open a new tab; a plain click resets in place.
@@ -83,7 +83,7 @@ export function SiteHeader({
           </h1>
         </Link>
         <ModeSwitch page={page} onBand={onBand} />
-        <div className="flex items-center justify-self-end">
+        <div className="flex items-center justify-self-end print:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label={text.menu}

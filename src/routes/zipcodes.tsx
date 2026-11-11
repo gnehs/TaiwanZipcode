@@ -36,7 +36,7 @@ function ZipcodesPage() {
         <Card flatOnPhone className="enter-rise">
           <CardContent className="flex flex-col gap-6">
             <h2 className="text-2xl font-bold tracking-tight">{text.title}</h2>
-            <nav aria-label={text.cities}>
+            <nav aria-label={text.cities} className="print:hidden">
               <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-sm">
                 {CITY_REGIONS.map((region) => (
                   <div key={region.name.zh} className="contents">
@@ -79,7 +79,7 @@ function ZipcodesPage() {
                     data-current={current === city || undefined}
                     // The county a link points at stands out. Inset 12px into the
                     // card's 20px (28px) padding, so 26 − 8 = 18 (26 − 16 = 10).
-                    className="-mx-3 -my-3 flex scroll-mt-21 flex-col gap-1 rounded-2xl px-3 py-3 transition-colors duration-300 ease-out data-current:bg-muted sm:rounded-lg"
+                    className="-mx-3 -my-3 flex scroll-mt-21 flex-col gap-1 rounded-2xl px-3 py-3 transition-colors duration-300 ease-out data-current:bg-muted break-inside-avoid sm:rounded-lg"
                   >
                     <h4 id={`${city}-title`} className="font-semibold">
                       <Link to={pathInApp(page.meta.path)} className={LINK}>
