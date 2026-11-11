@@ -19,7 +19,11 @@ export async function renderPage(path: string, locale: Locale) {
   const router = createRouter({
     routeTree,
     basepath: routerBase(locale),
-    history: createMemoryHistory({ initialEntries: [localePath(locale, path)] }),
+    // The English home is "/en/" here: the router does not match "/en" alone
+    // against its own base.
+    history: createMemoryHistory({
+      initialEntries: [path === "/" ? `${localePath(locale, "")}/` : localePath(locale, path)],
+    }),
   })
   await router.load()
   const html = renderToString(
@@ -27,6 +31,7 @@ export async function renderPage(path: string, locale: Locale) {
       <RouterProvider router={router} />
     </LocaleProvider>,
   )
+  if (!html) throw new Error(`${localePath(locale, path)} rendered nothing`)
   // React leaves this mark where a part failed and would be left to the app.
   if (html.includes("<!--$!-->")) throw new Error(`${path} did not render in full`)
   return html

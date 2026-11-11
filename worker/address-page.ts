@@ -189,7 +189,7 @@ function pageHtml(
 
   return [
     '<div class="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-10 sm:px-6">',
-    '<nav aria-label="${text.trail}"><ol class="flex flex-wrap gap-x-2 text-sm text-muted-foreground">',
+    `<nav aria-label="${text.trail}"><ol class="flex flex-wrap gap-x-2 text-sm text-muted-foreground">`,
     ...trail.map((step, index) => `<li>${index ? "› " : ""}${anchor(step)}</li>`),
     "</ol></nav>",
     `<h1 class="text-2xl font-semibold">${escapeHtml(name)}</h1>`,
@@ -201,7 +201,7 @@ function pageHtml(
     "</dl>",
     ranges.length
       ? [
-          '<section class="flex flex-col gap-2"><h2 class="font-medium">${text.ranges}</h2>',
+          `<section class="flex flex-col gap-2"><h2 class="font-medium">${text.ranges}</h2>`,
           '<ul class="flex flex-col divide-y text-sm">',
           ...ranges.map(
             ([zipcode, rule]) =>
