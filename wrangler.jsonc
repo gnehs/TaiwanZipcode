@@ -4,11 +4,12 @@
   "main": "./worker/index.ts",
   "compatibility_date": "2026-11-04",
   "assets": {
-    "not_found_handling": "single-page-application",
+    "not_found_handling": "404-page",
     "binding": "ASSETS",
     // Only address, city and district pages (in either language) and their
     // images run the Worker. Everything else is a static file, and unknown
-    // paths get the app, which sends visitors home.
+    // paths get 404.html: the app, which sends visitors home, marked as
+    // missing (see seo.ts).
     "run_worker_first": ["/a/*", "/en/a/*", "/og/*"]
   },
   "routes": [{ "pattern": "zipcode.gnehs.net", "custom_domain": true }],

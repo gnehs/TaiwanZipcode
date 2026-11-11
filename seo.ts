@@ -61,6 +61,20 @@ export function seoFiles(): Plugin {
             if (fileName === "index.html") index.source = source
             else this.emitFile({ type: "asset", fileName, source })
           }
+          // What an unknown path gets, with a 404: the app without a page of
+          // its own, kept out of search results.
+          const home = fixedPageMeta("home", locale)
+          this.emitFile({
+            type: "asset",
+            fileName: `${localePath(locale, "/404.html").slice(1)}`,
+            source: writePageHead(template, {
+              ...home,
+              url: `${SITE_ORIGIN}${home.path}`,
+              lang: HTML_LANG[locale],
+              siteName: SITE_TITLE[locale],
+              indexable: false,
+            }),
+          })
         }
 
         const database = decodeZipcodeData(

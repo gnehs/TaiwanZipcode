@@ -171,6 +171,14 @@ export function addressMeta(lookup: AddressLookup, locale: Locale): PageMeta {
   }
 }
 
+/**
+ * Whether search engines should keep an address's page: not when part of
+ * what follows the road is not an address at all.
+ */
+export function isIndexableAddress({ road, addressSuffix }: AddressLookup) {
+  return !formatAddress(road, addressSuffix).warns.includes("unconverted")
+}
+
 // What an address page names: the address in full, its place, and the trail
 // from the city and district down through the road, each lane and alley,
 // every step a page of its own.

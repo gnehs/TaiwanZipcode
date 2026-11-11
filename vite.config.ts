@@ -8,12 +8,20 @@ import { defineConfig } from "vite"
 
 import { seoFiles } from "./seo.ts"
 
-export default defineConfig({
+export default defineConfig(({ command, isPreview }) => ({
   plugins: [
     tanstackRouter({ target: "react", quoteStyle: "double" }),
     react(),
     tailwindcss(),
-    cloudflare(),
+    // The dev server has no built pages or 404.html, so there every path that
+    // is not a file gets the app, as the fixed pages do once built.
+    cloudflare({
+      config: (worker) => {
+        if (command === "serve" && !isPreview && worker.assets) {
+          worker.assets.not_found_handling = "single-page-application"
+        }
+      },
+    }),
     seoFiles(),
   ],
   server: {
@@ -25,4 +33,4 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
-})
+}))

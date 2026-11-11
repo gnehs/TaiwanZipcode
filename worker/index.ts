@@ -4,6 +4,7 @@ import { HTML_LANG, localeOfPath, localePath, pathInApp, type Locale } from "@/l
 import {
   addressMeta,
   addressStructuredData,
+  isIndexableAddress,
   lookupForPath,
   placeForPath,
   placePage,
@@ -43,8 +44,12 @@ export default {
     const moved = currentSharePath(appPath)
     if (moved) return withPrivacy(Response.redirect(new URL(localePath(locale, moved), url).href, 301))
 
-    const page = await addressOrPlacePage(env, url, appPath, locale)
+    const page = await addressOrPlacePage(env, url, tidyPath(appPath), locale)
     const meta = page?.meta ?? fixedPageMeta("home", locale)
+    // One address has one URL: its other spellings move to it.
+    if (page && decoded(url.pathname) !== decoded(meta.path)) {
+      return withPrivacy(Response.redirect(new URL(meta.path, url).href, 301))
+    }
 
     // Agents that ask for Markdown get the page's text without the app.
     if (page && wantsMarkdown(request)) {
@@ -72,13 +77,28 @@ export default {
       siteName: SITE_TITLE[locale],
       alternates: page ? alternates(appPath) : undefined,
       image: page?.image,
-      indexable: Boolean(page),
+      indexable: Boolean(page?.indexable),
       structuredData: page?.structuredData,
       content: page?.html,
     })
     return new Response(html, { status: page ? 200 : 404, headers })
   },
 } satisfies ExportedHandler<Env>
+
+function decoded(path: string) {
+  try {
+    return decodeURIComponent(path)
+  } catch {
+    return path
+  }
+}
+
+// The path as the site writes it: full-width digits and letters narrowed,
+// and no spaces or trailing slash.
+function tidyPath(appPath: string) {
+  const tidy = decoded(appPath).normalize("NFKC").replace(/\s+/gu, "").replace(/\/+$/, "")
+  return tidy.split("/").map(encodeURIComponent).join("/") || "/"
+}
 
 // Rendering takes far longer than serving, so each image is rendered once
 // per data center and then served from the cache.
@@ -102,6 +122,7 @@ async function addressOrPlacePage(env: Env, url: URL, appPath: string, locale: L
     const page = placePage(locale, place.city, place.area)
     return {
       meta: page.meta,
+      indexable: true,
       image: undefined,
       structuredData: placeStructuredData(page, locale),
       html: placePageHtml(page, locale),
@@ -115,6 +136,7 @@ async function addressOrPlacePage(env: Env, url: URL, appPath: string, locale: L
   const image = `${SITE_ORIGIN}${OG_PREFIX}${meta.path}`
   return {
     meta,
+    indexable: isIndexableAddress(lookup),
     image,
     structuredData: addressStructuredData(lookup, locale, image),
     html: addressPageHtml(lookup, doorplates, locale),
