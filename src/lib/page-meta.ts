@@ -73,7 +73,7 @@ export function placePage(locale: Locale, city: string, area: string | null): Pl
       name: locale === "zh" ? district : areas[district].en,
       path: localePath(locale, placePath(city, district)),
       zipcode: districtPrefixes(city, district)[0] ?? "",
-    }))
+    })).sort((a, b) => a.zipcode.localeCompare(b.zipcode))
     const list = entries.map((entry) => `${entry.name} ${entry.zipcode}`).join(locale === "zh" ? "、" : ", ")
     return {
       name,
