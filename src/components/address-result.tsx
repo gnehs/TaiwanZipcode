@@ -600,7 +600,7 @@ export function AddressResult({
           drop this card and keep the trays inside it, straight on the page. */}
       <Card
         flatOnPhone
-        className="enter-rise relative rounded-t-none pb-5 max-sm:not-first:mt-0 max-sm:not-first:border-t-0 max-sm:not-first:pt-4 sm:-mt-8 sm:pt-[calc(var(--card-spacing)+2rem)]"
+        className="enter-rise relative rounded-t-none pb-5 sm:pb-(--card-spacing) max-sm:not-first:mt-0 max-sm:not-first:border-t-0 max-sm:not-first:pt-4 sm:-mt-8 sm:pt-[calc(var(--card-spacing)+2rem)]"
         style={{ "--enter-delay": "60ms" } as React.CSSProperties}
       >
         {/* The orange card's glow spilling onto this one. It starts at the very top,
