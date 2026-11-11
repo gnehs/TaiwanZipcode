@@ -51,6 +51,7 @@ export function SingleLookup() {
   // The typed text stays the source of truth; the URL only names the road
   // and house number read from it, so a messy spelling is not rewritten.
   const [query, setQuery] = useState(urlQuery)
+  const [fromLink] = useState(() => Boolean(urlQuery))
   const correctionsVersion = useSyncExternalStore(
     subscribeCorrections,
     getCorrectionsVersion,
@@ -242,6 +243,7 @@ export function SingleLookup() {
         </div>
         <AddressSearch
           onBand
+          fromLink={fromLink}
           query={query}
           road={road}
           addressSuffix={addressSuffix}

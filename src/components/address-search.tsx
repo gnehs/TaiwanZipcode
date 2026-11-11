@@ -39,6 +39,8 @@ import { parseAddressSuffix } from "@/utils/zipcodeScopeMatcher.js"
 
 type AddressSearchProps = {
   onBand: boolean
+  // Opened at an address from a link, rather than typed here.
+  fromLink?: boolean
   query: string
   road: string
   addressSuffix: string
@@ -79,6 +81,24 @@ type FloorChoice = {
 
 const MIN_QUERY_LENGTH = 2
 
+const TIP_SEEN_KEY = "keep-typing-tip-seen"
+
+function hasSeenTip() {
+  try {
+    return window.localStorage.getItem(TIP_SEEN_KEY) === "1"
+  } catch {
+    return false
+  }
+}
+
+function rememberTipSeen() {
+  try {
+    window.localStorage.setItem(TIP_SEEN_KEY, "1")
+  } catch {
+    // Without storage the tip simply shows again next time.
+  }
+}
+
 const COUNTRY = /, Taiwan \(R\.O\.C\.\)$/
 
 // A Chinese completion of the road as English: the whole address to write,
@@ -112,8 +132,8 @@ const TEXT = {
     label: "輸入地址",
     placeholder: "搜尋地址",
     clear: "清除搜尋內容",
-    nextHouse: "門牌、樓層",
-    nextFloor: "樓層",
+    tipHouse: "還可以接著輸入門牌、樓層",
+    tipFloor: "還可以接著輸入樓層",
     loadingDoors: "正在載入門牌",
     digits: "請使用阿拉伯數字；附號可用「之」或「-」。",
     recognized: "已辨識道路，請在同一欄接著輸入巷、弄、號與樓層。",
@@ -129,8 +149,8 @@ const TEXT = {
     label: "Enter an address",
     placeholder: "Search an address, e.g. Songren Road, Taipei",
     clear: "Clear search",
-    nextHouse: "house number, floor",
-    nextFloor: "floor",
+    tipHouse: "Keep typing the house number and floor",
+    tipFloor: "Keep typing the floor",
     loadingDoors: "Loading house numbers",
     digits: "Use Arabic numerals. Write a sub-number with 之 or a hyphen.",
     recognized: "Road found. Keep typing the lane, alley, number and floor in the same field.",
@@ -145,6 +165,7 @@ const TEXT = {
 
 export function AddressSearch({
   onBand,
+  fromLink = false,
   query,
   road,
   addressSuffix,
@@ -287,35 +308,53 @@ export function AddressSearch({
     return text.found(suggestions.length)
   })()
 
-  // After a recognized road, the part that can still follow is shown faintly
-  // after the text, so an address opened from a link reads as a field to
-  // carry on typing in rather than a title. English puts the house number
-  // first, so it has nothing to show at the end.
-  const nextPart = (() => {
-    if (!road || isEnglish || inlineValue !== null) return null
+  // An address opened from a link reads like a title, so a tip points at its
+  // end once, saying the house number and floor can follow in the same field.
+  // English puts the house number first, so it has nothing to point at.
+  const tipText = (() => {
+    if (!road || isEnglish) return null
     const suffix = addressSuffix.trim()
-    // A number or sub-number still being typed is left to the suggestions.
-    if (/[\d之-]$/u.test(suffix)) return null
-    if (!suffix.includes("號")) return text.nextHouse
-    return /樓|F/iu.test(suffix) ? null : text.nextFloor
+    if (!suffix.includes("號")) return text.tipHouse
+    return /樓|F/iu.test(suffix) ? null : text.tipFloor
   })()
-  const [nextPartLeft, setNextPartLeft] = useState<number | null>(null)
-  // Placed where the input's text starts, and left out once the text no
-  // longer fits, since the input then scrolls under it.
+  const [isTipOpen, setIsTipOpen] = useState(false)
+  const tipQuery = useRef(query)
+  // Read after mount, since the page is also rendered ahead of time.
+  useEffect(() => {
+    if (!fromLink || hasSeenTip()) return
+    tipQuery.current = query
+    setIsTipOpen(true)
+  }, [])
+  function dismissTip() {
+    setIsTipOpen(false)
+    rememberTipSeen()
+  }
+  useEffect(() => {
+    if (isTipOpen && query !== tipQuery.current) dismissTip()
+  }, [query, isTipOpen])
+  const showTip = isTipOpen && Boolean(tipText) && !isPopupOpen
+  const mirrorRef = useRef<HTMLSpanElement>(null)
+  const tipRef = useRef<HTMLButtonElement>(null)
+  const [tipPlace, setTipPlace] = useState<{ left: number; arrow: number } | null>(null)
+  // The arrow sits under the end of the text, and the tip stays inside the
+  // search's width.
   useLayoutEffect(() => {
     const input = inputRef.current
-    if (!nextPart || !input) return setNextPartLeft(null)
+    const mirror = mirrorRef.current
+    const tip = tipRef.current
+    const group = input?.parentElement
+    if (!showTip || !input || !mirror || !tip || !group) return setTipPlace(null)
     const measure = () => {
-      const fits = input.scrollWidth <= input.clientWidth
-      setNextPartLeft(
-        fits ? input.offsetLeft + parseFloat(getComputedStyle(input).paddingLeft) : null,
-      )
+      const textStart = input.offsetLeft + parseFloat(getComputedStyle(input).paddingLeft)
+      const textEnd = Math.min(textStart + mirror.offsetWidth, input.offsetLeft + input.clientWidth)
+      const left = Math.max(0, Math.min(textEnd - 24, group.clientWidth - tip.offsetWidth))
+      setTipPlace({ left, arrow: textEnd - left })
     }
     measure()
     const observer = new ResizeObserver(measure)
-    observer.observe(input)
+    observer.observe(group)
     return () => observer.disconnect()
-  }, [nextPart, query, inputRef])
+  }, [showTip, query, tipText, inputRef])
 
   function updateQuery(value: string, openSuggestions: boolean) {
     onQueryChange(value)
@@ -410,7 +449,9 @@ export function AddressSearch({
               selectAddress(address)
             }}
           >
-            <div ref={comboboxAnchor} className="w-full">
+            {/* Above the result card, so the tip can overlap it; the dark theme's
+                frosted glass would otherwise trap the tip beneath the card. */}
+            <div ref={comboboxAnchor} className="relative z-20 w-full">
               <ComboboxInput
                 ref={inputRef}
                 id="address-search"
@@ -446,15 +487,39 @@ export function AddressSearch({
                   if (isPopupOpen && selection) selectAddress(selection)
                 }}
               >
-                {nextPart && nextPartLeft !== null ? (
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-y-0 right-12 flex items-center overflow-hidden text-base whitespace-pre"
-                    style={{ left: nextPartLeft }}
-                  >
-                    <span className="invisible">{query}</span>
-                    <span className="pl-1.5 text-muted-foreground">{nextPart}</span>
-                  </span>
+                {showTip ? (
+                  <>
+                    <span
+                      ref={mirrorRef}
+                      aria-hidden="true"
+                      className="invisible absolute text-base whitespace-pre"
+                    >
+                      {query}
+                    </span>
+                    {/* Screen readers hear the same from the field's description. */}
+                    <button
+                      ref={tipRef}
+                      type="button"
+                      aria-hidden="true"
+                      tabIndex={-1}
+                      onClick={() => {
+                        dismissTip()
+                        inputRef.current?.focus()
+                      }}
+                      className={cn(
+                        "absolute top-full mt-3 animate-in rounded-full bg-card px-3.5 py-2 text-sm font-medium whitespace-nowrap text-foreground shadow-popover dark:bg-foreground dark:text-background delay-500 duration-300 fill-mode-both fade-in-0 slide-in-from-top-1 motion-reduce:animate-none",
+                        !tipPlace && "invisible",
+                      )}
+                      style={{ left: tipPlace?.left ?? 0 }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="absolute -top-1.5 size-3 -translate-x-1/2 rotate-45 rounded-[2px] bg-card dark:bg-foreground"
+                        style={{ left: tipPlace?.arrow ?? 0 }}
+                      />
+                      {tipText}
+                    </button>
+                  </>
                 ) : null}
                 <InputGroupAddon align="inline-start">
                   <SearchIcon aria-hidden="true" />
