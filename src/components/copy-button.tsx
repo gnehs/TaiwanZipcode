@@ -21,6 +21,9 @@ async function writeClipboard(text: string) {
   } catch {
     // Try the legacy path below.
   }
+  // Selecting the textarea takes focus; hand it back so keyboard users stay
+  // on the button.
+  const focused = document.activeElement
   try {
     const textarea = document.createElement("textarea")
     textarea.value = text
@@ -35,7 +38,18 @@ async function writeClipboard(text: string) {
     return copied
   } catch {
     return false
+  } finally {
+    if (focused instanceof HTMLElement) focused.focus({ preventScroll: true })
   }
+}
+
+// VoiceOver skips a message identical to the region's last one, so a repeat
+// gets a trailing no-break space, which is not read aloud.
+let lastAnnouncement = ""
+
+function announce(message: string) {
+  lastAnnouncement = message === lastAnnouncement ? `${message}\u00A0` : message
+  return lastAnnouncement
 }
 
 // Only the most recent copy on the page keeps its check mark, so several
@@ -100,6 +114,7 @@ export function CopyButton({
   const [feedback, setFeedback] = useState<{
     text: string
     status: "pending" | "copied" | "failed"
+    announcement: string
   } | null>(null)
   const id = useId()
   const isLatest = useSyncExternalStore(
@@ -118,10 +133,14 @@ export function CopyButton({
   }, [feedback])
 
   async function copy() {
-    setFeedback({ text, status: "pending" })
+    setFeedback({ text, status: "pending", announcement: "" })
     const copied = await writeClipboard(text)
     if (copied) markLatestCopy(id)
-    setFeedback({ text, status: copied ? "copied" : "failed" })
+    setFeedback({
+      text,
+      status: copied ? "copied" : "failed",
+      announcement: announce(copied ? message.copied(label) : message.failed),
+    })
   }
 
   return (
@@ -136,7 +155,7 @@ export function CopyButton({
           className,
         )}
         onClick={copy}
-        disabled={disabled || !text || status === "pending"}
+        disabled={disabled || !text}
         aria-label={label}
         data-copied={status === "copied" ? "" : undefined}
       >
@@ -153,11 +172,7 @@ export function CopyButton({
         role="status"
         className={status === "failed" ? "text-xs text-destructive" : "sr-only"}
       >
-        {status === "failed"
-          ? message.failed
-          : status === "copied"
-            ? message.copied(label)
-            : ""}
+        {status === "copied" || status === "failed" ? feedback?.announcement : ""}
       </span>
     </div>
   )
