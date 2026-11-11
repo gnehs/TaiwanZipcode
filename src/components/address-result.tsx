@@ -596,15 +596,17 @@ export function AddressResult({
         </div>
       </Card>
 
-      {/* Tucked under the zipcode card so the two read as one stack. */}
+      {/* Tucked under the zipcode card so the two read as one stack. Phones
+          drop this card and keep the trays inside it, straight on the page. */}
       <Card
-        className="enter-rise relative -mt-8 rounded-t-none pt-[calc(var(--card-spacing)+2rem)] pb-5"
+        flatOnPhone
+        className="enter-rise relative rounded-t-none pb-5 max-sm:not-first:mt-0 max-sm:not-first:border-t-0 max-sm:not-first:pt-4 sm:-mt-8 sm:pt-[calc(var(--card-spacing)+2rem)]"
         style={{ "--enter-delay": "60ms" } as React.CSSProperties}
       >
         {/* The orange card's glow spilling onto this one. It starts at the very top,
             under the orange card, so its rounded corners show the glow too. */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary)_14%,transparent)_2rem,transparent)]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-28 max-sm:hidden bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--primary)_14%,transparent)_2rem,transparent)]"
           aria-hidden="true"
         />
         <CardContent className="relative flex flex-col">
@@ -641,15 +643,14 @@ function copyRow(event: React.MouseEvent<HTMLLIElement>) {
 function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string }) {
   const text = useText(TEXT)
   return (
-    <ul className="flex flex-col sm:rounded-2xl sm:bg-muted sm:shadow-well">
+    <ul className="flex flex-col rounded-2xl bg-muted shadow-well">
       {fields.map((field) => (
         <li
           key={field.label}
           onClick={field.disabled || !field.value ? undefined : copyRow}
           className={cn(
             // Inset divider, so the row itself can run out to the tray's edges.
-            // Phones have no tray: the rows sit on the card itself.
-            "group/field relative flex items-center gap-3 py-2 not-first:before:absolute not-first:before:inset-x-0 not-first:before:top-0 sm:px-4 sm:not-first:before:inset-x-4 not-first:before:h-px not-first:before:bg-border",
+            "group/field relative flex items-center gap-3 px-4 py-2 not-first:before:absolute not-first:before:inset-x-4 not-first:before:top-0 not-first:before:h-px not-first:before:bg-border",
             field.disabled || !field.value ? undefined : "cursor-pointer",
           )}
         >
