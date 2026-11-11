@@ -33,7 +33,7 @@ function ZipcodesPage() {
 
   return (
       <PageShell page="zipcodes" raised>
-        <Card className="enter-rise">
+        <Card flatOnPhone className="enter-rise">
           <CardContent className="flex flex-col gap-6">
             <h2 className="text-2xl font-bold tracking-tight">{text.title}</h2>
             <nav aria-label={text.cities}>

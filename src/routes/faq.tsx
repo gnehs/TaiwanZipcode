@@ -281,7 +281,7 @@ function FaqPage() {
 
   return (
     <PageShell page="faq" raised>
-      <Card className="enter-rise">
+      <Card flatOnPhone className="enter-rise">
         <CardContent className="flex flex-col gap-5">
           <h2 className="text-2xl font-bold tracking-tight">
             {locale === "en" ? "FAQ" : "常見問題"}

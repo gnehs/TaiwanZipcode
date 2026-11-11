@@ -79,7 +79,7 @@ function AboutPage() {
 
   return (
     <PageShell page="about" raised>
-      <Card className="enter-rise">
+      <Card flatOnPhone className="enter-rise">
         <CardContent className="flex flex-col gap-5">
           <h2 className="text-2xl font-bold tracking-tight">{text.title(SITE_TITLE[locale])}</h2>
           <dl className="flex flex-col divide-y divide-border">
@@ -107,7 +107,7 @@ function AboutPage() {
         </CardContent>
       </Card>
 
-      <Card
+      <Card flatOnPhone
         className="enter-rise"
         style={{ "--enter-delay": "60ms" } as React.CSSProperties}
         aria-labelledby="photos-title"

@@ -641,14 +641,15 @@ function copyRow(event: React.MouseEvent<HTMLLIElement>) {
 function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string }) {
   const text = useText(TEXT)
   return (
-    <ul className="flex flex-col rounded-2xl bg-muted shadow-well">
+    <ul className="flex flex-col sm:rounded-2xl sm:bg-muted sm:shadow-well">
       {fields.map((field) => (
         <li
           key={field.label}
           onClick={field.disabled || !field.value ? undefined : copyRow}
           className={cn(
             // Inset divider, so the row itself can run out to the tray's edges.
-            "group/field relative flex items-center gap-3 px-4 py-2 not-first:before:absolute not-first:before:inset-x-4 not-first:before:top-0 not-first:before:h-px not-first:before:bg-border",
+            // Phones have no tray: the rows sit on the card itself.
+            "group/field relative flex items-center gap-3 py-2 not-first:before:absolute not-first:before:inset-x-0 not-first:before:top-0 sm:px-4 sm:not-first:before:inset-x-4 not-first:before:h-px not-first:before:bg-border",
             field.disabled || !field.value ? undefined : "cursor-pointer",
           )}
         >
@@ -674,9 +675,10 @@ function AddressFields({ fields, lang }: { fields: AddressField[]; lang?: string
             visibleLabel=""
             variant="ghost"
             disabled={field.disabled}
-            // The row is the control, so its button shows only when it has
-            // something to say: under the pointer, on focus, or just copied.
-            className="text-muted-foreground opacity-0 group-hover/field:enabled:bg-background group-hover/field:enabled:text-foreground group-hover/field:enabled:opacity-100 group-hover/field:enabled:shadow-control focus-visible:bg-background focus-visible:opacity-100 data-copied:opacity-100"
+            // With a pointer the row is the control, and its button shows
+            // only under the pointer, on focus or once copied. Touch screens
+            // have no pointer to hover with, so there it always shows.
+            className="text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 group-hover/field:enabled:bg-background group-hover/field:enabled:text-foreground group-hover/field:enabled:opacity-100 group-hover/field:enabled:shadow-control focus-visible:bg-background focus-visible:opacity-100 data-copied:opacity-100"
           />
         </li>
       ))}

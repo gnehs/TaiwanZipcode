@@ -2,17 +2,25 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+// On a phone a card's edges cost width the text needs and stack a second
+// frame inside the screen's own, so a page of reading lies flat there: its
+// cards become sections of the page, ruled apart.
+const FLAT_ON_PHONE =
+  "max-sm:overflow-visible max-sm:rounded-none max-sm:bg-transparent max-sm:shadow-none max-sm:[--card-spacing:0px] max-sm:not-first:mt-4 max-sm:not-first:border-t max-sm:not-first:pt-7"
+
 function Card({
   className,
   size = "default",
+  flatOnPhone = false,
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+}: React.ComponentProps<"div"> & { size?: "default" | "sm"; flatOnPhone?: boolean }) {
   return (
     <div
       data-slot="card"
       data-size={size}
       className={cn(
         "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-4xl bg-card py-(--card-spacing) text-sm text-card-foreground shadow-surface [--card-spacing:--spacing(5)] sm:[--card-spacing:--spacing(7)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        flatOnPhone && FLAT_ON_PHONE,
         className
       )}
       {...props}

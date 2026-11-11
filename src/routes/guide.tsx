@@ -167,7 +167,7 @@ function GuidePage() {
 
   return (
     <PageShell page="guide" raised>
-      <Card className="enter-rise">
+      <Card flatOnPhone className="enter-rise">
         <CardContent className="flex flex-col gap-2">
           <h2 className="text-2xl font-bold tracking-tight">{text.title}</h2>
           <p className="text-muted-foreground">
@@ -177,7 +177,7 @@ function GuidePage() {
       </Card>
 
       {text.tips.map(({ id, title, body, examples }, index) => (
-        <Card
+        <Card flatOnPhone
           key={id}
           id={id}
           className="enter-rise scroll-mt-24"
@@ -197,7 +197,7 @@ function GuidePage() {
         </Card>
       ))}
 
-      <Card
+      <Card flatOnPhone
         id="batch"
         className="enter-rise scroll-mt-24"
         style={{ "--enter-delay": `${60 + text.tips.length * 40}ms` } as React.CSSProperties}

@@ -25,7 +25,7 @@ export function PlacePage({ city, area }: { city: string; area: string | null })
 
   return (
     <PageShell page="place" raised>
-      <Card className="enter-rise">
+      <Card flatOnPhone className="enter-rise">
         <CardContent className="flex flex-col gap-5">
           <nav aria-label={text.trail}>
             <ol className="flex flex-wrap gap-x-2 text-sm text-muted-foreground">
