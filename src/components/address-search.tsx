@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react"
 
@@ -112,6 +112,8 @@ const TEXT = {
     label: "輸入地址",
     placeholder: "搜尋地址",
     clear: "清除搜尋內容",
+    nextHouse: "門牌、樓層",
+    nextFloor: "樓層",
     loadingDoors: "正在載入門牌",
     digits: "請使用阿拉伯數字；附號可用「之」或「-」。",
     recognized: "已辨識道路，請在同一欄接著輸入巷、弄、號與樓層。",
@@ -127,6 +129,8 @@ const TEXT = {
     label: "Enter an address",
     placeholder: "Search an address, e.g. Songren Road, Taipei",
     clear: "Clear search",
+    nextHouse: "house number, floor",
+    nextFloor: "floor",
     loadingDoors: "Loading house numbers",
     digits: "Use Arabic numerals. Write a sub-number with 之 or a hyphen.",
     recognized: "Road found. Keep typing the lane, alley, number and floor in the same field.",
@@ -283,6 +287,36 @@ export function AddressSearch({
     return text.found(suggestions.length)
   })()
 
+  // After a recognized road, the part that can still follow is shown faintly
+  // after the text, so an address opened from a link reads as a field to
+  // carry on typing in rather than a title. English puts the house number
+  // first, so it has nothing to show at the end.
+  const nextPart = (() => {
+    if (!road || isEnglish || inlineValue !== null) return null
+    const suffix = addressSuffix.trim()
+    // A number or sub-number still being typed is left to the suggestions.
+    if (/[\d之-]$/u.test(suffix)) return null
+    if (!suffix.includes("號")) return text.nextHouse
+    return /樓|F/iu.test(suffix) ? null : text.nextFloor
+  })()
+  const [nextPartLeft, setNextPartLeft] = useState<number | null>(null)
+  // Placed where the input's text starts, and left out once the text no
+  // longer fits, since the input then scrolls under it.
+  useLayoutEffect(() => {
+    const input = inputRef.current
+    if (!nextPart || !input) return setNextPartLeft(null)
+    const measure = () => {
+      const fits = input.scrollWidth <= input.clientWidth
+      setNextPartLeft(
+        fits ? input.offsetLeft + parseFloat(getComputedStyle(input).paddingLeft) : null,
+      )
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(input)
+    return () => observer.disconnect()
+  }, [nextPart, query, inputRef])
+
   function updateQuery(value: string, openSuggestions: boolean) {
     onQueryChange(value)
     setHighlightedAddress(null)
@@ -412,6 +446,16 @@ export function AddressSearch({
                   if (isPopupOpen && selection) selectAddress(selection)
                 }}
               >
+                {nextPart && nextPartLeft !== null ? (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 right-12 flex items-center overflow-hidden text-base whitespace-pre"
+                    style={{ left: nextPartLeft }}
+                  >
+                    <span className="invisible">{query}</span>
+                    <span className="pl-1.5 text-muted-foreground">{nextPart}</span>
+                  </span>
+                ) : null}
                 <InputGroupAddon align="inline-start">
                   <SearchIcon aria-hidden="true" />
                 </InputGroupAddon>
