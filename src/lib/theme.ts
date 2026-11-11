@@ -1,52 +1,44 @@
-export type Theme = "light" | "dark" | "system"
+type ColorScheme = "light" | "dark"
 
 const STORAGE_KEY = "taiwan-zipcode-theme"
-const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)"
+const SYSTEM_DARK = "(prefers-color-scheme: dark)"
 const listeners = new Set<() => void>()
-let theme: Theme = "system"
+// null follows the system; a stored scheme is kept even once the system
+// comes round to it, so a scheme pinned against an automatic switch stays.
+let override: ColorScheme | null = null
 
-function parseTheme(value: string | null): Theme {
-  return value === "light" || value === "dark" ? value : "system"
+function parseScheme(value: string | null): ColorScheme | null {
+  return value === "light" || value === "dark" ? value : null
 }
 
-function readTheme(): Theme {
-  try {
-    return parseTheme(window.localStorage.getItem(STORAGE_KEY))
-  } catch {
-    return "system"
-  }
+function systemScheme(): ColorScheme {
+  return window.matchMedia(SYSTEM_DARK).matches ? "dark" : "light"
 }
 
-function applyTheme() {
-  const isDark =
-    theme === "dark" ||
-    (theme === "system" && window.matchMedia(COLOR_SCHEME_QUERY).matches)
-  document.documentElement.classList.toggle("dark", isDark)
-  document.documentElement.style.colorScheme = isDark ? "dark" : "light"
-}
-
-function updateTheme(nextTheme: Theme) {
-  theme = nextTheme
-  applyTheme()
+function applyOverride(next: ColorScheme | null) {
+  override = next
+  // index.css maps this meta to color-scheme and the dark variant.
+  document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]')!.content =
+    override ?? "light dark"
   listeners.forEach((listener) => listener())
 }
 
-export function getTheme(): Theme {
-  return theme
-}
-
-// The theme in effect, with "system" resolved.
 export function getIsDark() {
-  return document.documentElement.classList.contains("dark")
+  return (override ?? systemScheme()) === "dark"
 }
 
-export function setTheme(nextTheme: Theme) {
+// Flips what is on screen; landing back on the system's scheme drops the
+// override so the page follows the system again.
+export function toggleColorScheme() {
+  const target: ColorScheme = getIsDark() ? "light" : "dark"
+  const next = target === systemScheme() ? null : target
   try {
-    window.localStorage.setItem(STORAGE_KEY, nextTheme)
+    if (next) window.localStorage.setItem(STORAGE_KEY, next)
+    else window.localStorage.removeItem(STORAGE_KEY)
   } catch {
     // Keep the control usable even when browser storage is unavailable.
   }
-  updateTheme(nextTheme)
+  applyOverride(next)
 }
 
 export function subscribeTheme(listener: () => void) {
@@ -57,12 +49,16 @@ export function subscribeTheme(listener: () => void) {
 }
 
 export function initializeTheme() {
-  updateTheme(readTheme())
-  const colorScheme = window.matchMedia(COLOR_SCHEME_QUERY)
-  const syncSystemTheme = () => {
-    if (theme === "system") updateTheme(theme)
+  let saved: string | null = null
+  try {
+    saved = window.localStorage.getItem(STORAGE_KEY)
+  } catch {
+    // Follow the system when storage is unavailable.
   }
-  const syncStoredTheme = (event: StorageEvent) => {
+  applyOverride(parseScheme(saved))
+  const systemDark = window.matchMedia(SYSTEM_DARK)
+  const syncSystem = () => listeners.forEach((listener) => listener())
+  const syncStored = (event: StorageEvent) => {
     if (event.key !== STORAGE_KEY && event.key !== null) return
     // Ignore sessionStorage events, which share the same browser event type.
     try {
@@ -70,12 +66,12 @@ export function initializeTheme() {
     } catch {
       return
     }
-    updateTheme(parseTheme(event.newValue))
+    applyOverride(parseScheme(event.newValue))
   }
-  colorScheme.addEventListener("change", syncSystemTheme)
-  window.addEventListener("storage", syncStoredTheme)
+  systemDark.addEventListener("change", syncSystem)
+  window.addEventListener("storage", syncStored)
   return () => {
-    colorScheme.removeEventListener("change", syncSystemTheme)
-    window.removeEventListener("storage", syncStoredTheme)
+    systemDark.removeEventListener("change", syncSystem)
+    window.removeEventListener("storage", syncStored)
   }
 }

@@ -3,19 +3,14 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="color-scheme" content="light dark" />
   <script>
-    // Apply the saved theme before the stylesheet and app load to avoid flashing.
-    (() => {
-      let theme = "system"
-      try {
-        const saved = localStorage.getItem("taiwan-zipcode-theme")
-        if (saved === "light" || saved === "dark") theme = saved
-      } catch {}
-      const dark = theme === "dark" ||
-        (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)
-      document.documentElement.classList.toggle("dark", dark)
-      document.documentElement.style.colorScheme = dark ? "dark" : "light"
-    })()
+    // Apply a saved override before the stylesheet loads to avoid flashing.
+    try {
+      const saved = localStorage.getItem("taiwan-zipcode-theme")
+      if (saved === "light" || saved === "dark")
+        document.querySelector('meta[name="color-scheme"]').content = saved
+    } catch {}
   </script>
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
   <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
