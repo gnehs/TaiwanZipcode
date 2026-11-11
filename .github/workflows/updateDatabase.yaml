@@ -88,10 +88,22 @@ jobs:
           const roadCorrections = corrections.roads
             .split("\n")
             .reduce((total, line) => total + line.split("\t")[1].split(",").length, 0);
-          if (roadCorrections < 10000 || Object.keys(corrections.places).length < 1000) {
-            throw new Error("The correction tables are unexpectedly small");
+          if (roadCorrections < 10000) {
+            throw new Error(`Expected at least 10000 road corrections, found ${roadCorrections}`);
           }
-          console.log(`Validated ${roadCorrections} road corrections`);
+          // Places are stored as rules; count the written forms they add.
+          import("./src/utils/placeAliases.js").then(({ expandPlaceAliases }) => {
+            const districts = cities.flatMap((city) =>
+              Object.keys(data[city].areas).map((area) => ({ city, area })),
+            );
+            const placeAliases =
+              expandPlaceAliases(districts, corrections.places).size -
+              expandPlaceAliases(districts).size;
+            if (placeAliases < 1000) {
+              throw new Error(`Expected at least 1000 place names, found ${placeAliases}`);
+            }
+            console.log(`Validated ${roadCorrections} road corrections and ${placeAliases} place names`);
+          });
           NODE
       - name: Copy result
         run: |
