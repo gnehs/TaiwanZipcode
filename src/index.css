@@ -402,16 +402,27 @@
   z-index: 1;
 }
 
-/* The pages zoom: toward batch the single page grows away and the batch
-   page grows into place, and the reverse on the way back. Both scale from
-   their top edge, where the content starts. */
+/* Each page leaves and arrives as its own layer. Toward batch the single
+   page grows away and the batch page grows into place, and the reverse on
+   the way back; any other change rises the new page into place. All scale
+   from their top edge, where the content starts. */
 ::view-transition-old(page-single),
-::view-transition-old(page-batch) {
+::view-transition-old(page-batch),
+::view-transition-old(page-about),
+::view-transition-old(page-faq),
+::view-transition-old(page-guide),
+::view-transition-old(page-place),
+::view-transition-old(page-zipcodes) {
   transform-origin: top center;
   animation: page-leave 180ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 ::view-transition-new(page-single),
-::view-transition-new(page-batch) {
+::view-transition-new(page-batch),
+::view-transition-new(page-about),
+::view-transition-new(page-faq),
+::view-transition-new(page-guide),
+::view-transition-new(page-place),
+::view-transition-new(page-zipcodes) {
   transform-origin: top center;
   animation: page-arrive 360ms cubic-bezier(0.32, 0.72, 0, 1) 120ms both;
 }
@@ -423,21 +434,23 @@
   --page-leave-scale: 0.96;
   --page-arrive-scale: 1.04;
 }
+:root:active-view-transition-type(to-page) {
+  --page-arrive-y: 12px;
+}
 
 @keyframes page-leave {
   to {
     opacity: 0;
-    transform: scale(var(--page-leave-scale));
+    transform: scale(var(--page-leave-scale, 1));
   }
 }
 
 @keyframes page-arrive {
   from {
     opacity: 0;
-    transform: scale(var(--page-arrive-scale));
+    transform: translateY(var(--page-arrive-y, 0)) scale(var(--page-arrive-scale, 1));
   }
 }
-
 
 /* The typing demos on the guide page blink their caret like a real input. */
 .guide-caret {
