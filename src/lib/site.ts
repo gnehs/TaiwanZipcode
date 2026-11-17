@@ -59,9 +59,12 @@ export type FixedPage = "home" | "batch" | "zipcodes" | "guide" | "faq" | "about
 const FIXED_PAGES: Record<FixedPage, { path: string } & Record<Locale, { name: string | null; description: string }>> = {
   home: {
     path: "/",
-    zh: { name: null, description: "填表不卡關，地址閃電查。" },
-    // The bare name says nothing to someone searching, so the English home
-    // leads with what the site does.
+    // The bare name says nothing to someone searching, so the home leads
+    // with what the site does.
+    zh: {
+      name: "3+3 郵遞區號查詢與英文地址翻譯",
+      description: "輸入地址即可查詢臺灣 3+3 郵遞區號與英文地址，免驗證碼、免註冊，支援 Excel 批次查詢。",
+    },
     en: {
       name: "Taiwan Zip Code Lookup",
       description:

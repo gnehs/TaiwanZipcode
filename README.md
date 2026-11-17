@@ -2,6 +2,8 @@
 
 即時、快速、無需驗證碼的台灣 3+3 郵遞區號查詢工具。
 
+**[閃電地址：3+3 郵遞區號查詢與英文地址翻譯](https://zipcode.gnehs.net)**
+
 ## 前端開發
 
 本專案使用 React、TypeScript、Vite、Tailwind CSS v4 與 shadcn/ui（Base UI

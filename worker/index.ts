@@ -44,7 +44,9 @@ export default {
     if (url.pathname.startsWith(`${OG_PREFIX}/`)) return withPrivacy(await ogImage(request, ctx))
     if (url.pathname.endsWith("/llms.txt")) {
       logRead(request, url.pathname, "llms")
-      return withPrivacy(await env.ASSETS.fetch(request))
+      const file = withPrivacy(await env.ASSETS.fetch(request))
+      file.headers.set("X-Robots-Tag", "noindex")
+      return file
     }
 
     const [, pathname, format] = url.pathname.match(/^(.*?)(?:\.(md|json))?$/) as [string, string, Format | undefined]
@@ -115,6 +117,8 @@ function textResponse(body: string, type: string, path: string, extra: Record<st
       Link: `<${SITE_ORIGIN}${path}>; rel="canonical"`,
       "Access-Control-Allow-Origin": "*",
       "Referrer-Policy": REFERRER_POLICY,
+      // The text for agents repeats a page that search already has.
+      "X-Robots-Tag": "noindex",
       ...extra,
     },
   })
