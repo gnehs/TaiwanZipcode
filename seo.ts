@@ -28,8 +28,9 @@ const SITEMAP_SIZE = 50_000
 
 // Pages that do not depend on the address are files, so only address pages
 // run the Worker: the batch, guide, FAQ and about pages, robots.txt, and a
-// sitemap of every road plus every lane and house on the doorplate lists.
-// The URLs fill gzipped files of up to 50,000 each under one index.
+// sitemap of the fixed pages and every city, district and road. Lanes and
+// houses stay out: millions of near-identical pages sank the whole site in
+// search. The URLs fill gzipped files of up to 50,000 each under one index.
 export function seoFiles(): Plugin {
   return {
     name: "seo-files",
@@ -101,9 +102,7 @@ export function seoFiles(): Plugin {
           if (!path) throw new Error(`${city}${area ?? ""} is not a place in the database`)
           return path
         }
-        // Each language's fixed pages and every city, district and road; the
-        // lanes and houses below are listed in Chinese only, since English
-        // searches stop at the road.
+        // Each language's fixed pages and every city, district and road.
         const english = (paths: string[]) => paths.map((path) => localePath("en", path))
         const fixedPaths = FIXED_PAGE_KEYS.map(fixedPagePath)
         const groups = new Map<string, string[]>([
@@ -122,27 +121,6 @@ export function seoFiles(): Plugin {
             groups.get("en")!.push(...english(roadPaths))
           }
         }
-        for (const district of readDoorplates<string[]>("index.json")) {
-          const paths = groups.get(district)
-          if (!paths) throw new Error(`${district} is not a district in the database`)
-          const roads = new Set(paths)
-          for (const [road, lanes] of Object.entries(
-            readDoorplates<Record<string, Record<string, string>>>(`${district}.json`),
-          )) {
-            if (!roads.has(sharePath(`${district}${road}`))) {
-              throw new Error(`${district}${road} is not a road in the database`)
-            }
-            for (const [lane, numbers] of Object.entries(lanes)) {
-              if (lane) paths.push(sharePath(`${district}${road}${lane}`))
-              for (const number of numbers.split(",")) {
-                const [base, branch] = number.split("-")
-                const house = branch ? `${base}之${branch}號` : `${base}號`
-                paths.push(sharePath(`${district}${road}${lane}${house}`))
-              }
-            }
-          }
-        }
-
         // Every path in order, split into numbered files at the limit; the
         // English pages go last so the Chinese files keep their contents.
         const { en: englishPaths, ...chinese } = Object.fromEntries(groups)
@@ -222,7 +200,7 @@ const LLMS_TEXT = {
       "任何頁面的網址後加上 `.md` 會回傳 Markdown，地址與行政區頁面加上 `.json` 會回傳 JSON（如 `{example}`）。地址頁也接受 `Accept: text/markdown`。",
     pages: "頁面",
     examples: "地址頁範例",
-    sitemap: "所有縣市、行政區、道路、巷弄與門牌頁面",
+    sitemap: "所有縣市、行政區與道路頁面",
     other: ["English", "英文版；每個頁面在路徑前加上 `/en` 即為英文頁面"],
     notes: [
       ["臺北市信義區信義路五段7號", "門牌，列出 3+3 郵遞區號與英文地址"],
@@ -238,7 +216,7 @@ const LLMS_TEXT = {
       "Add `.md` to any page's URL for Markdown, and `.json` to an address or district page's URL for JSON (such as `{example}`). Address pages also honor `Accept: text/markdown`.",
     pages: "Pages",
     examples: "Address pages",
-    sitemap: "Every city, district, road, lane and house number page",
+    sitemap: "Every city, district and road page",
     other: ["中文", "The Chinese site; drop `/en` from any path"],
     notes: [
       ["臺北市信義區信義路五段7號", "A house number, with its 3+3 zip code and English address"],
