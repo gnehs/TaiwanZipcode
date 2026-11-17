@@ -25,9 +25,10 @@ const TEXT = {
       {
         label: "查詢",
         links: [
-          { to: "/", label: "單筆查詢" },
+          { to: "/", label: "3+3 郵遞區號查詢" },
           { to: "/batch", label: "批次查詢" },
           { to: "/zipcodes", label: "三碼郵遞區號表" },
+          { to: "/faq", hash: "english-format", label: "英文地址寫法" },
         ],
       },
       {
@@ -46,9 +47,10 @@ const TEXT = {
       {
         label: "Lookup",
         links: [
-          { to: "/", label: "Single lookup" },
+          { to: "/", label: "3+3 zip code lookup" },
           { to: "/batch", label: "Batch lookup" },
           { to: "/zipcodes", label: "Zip code list" },
+          { to: "/faq", hash: "english-format", label: "Address in English" },
         ],
       },
       {
@@ -85,13 +87,14 @@ export function SiteFooter() {
           {text.groups.map(({ label, links }) => (
             <nav key={label} aria-label={label} className="flex flex-col gap-2.5">
               <h2 className="text-xs text-muted-foreground">{label}</h2>
-              {links.map(({ to, label }) => (
+              {links.map((link) => (
                 <Link
-                  key={to}
-                  to={to}
+                  key={link.label}
+                  to={link.to}
+                  hash={"hash" in link ? link.hash : undefined}
                   className="w-fit rounded-sm text-sm font-medium text-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
-                  {label}
+                  {link.label}
                 </Link>
               ))}
             </nav>
