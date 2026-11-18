@@ -116,6 +116,7 @@ jobs:
       - name: Run tests
         run: npm test
       - name: Commit changes
+        id: commit
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -127,3 +128,11 @@ jobs:
           fi
           git commit -m "chore(data): update zipcode database"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+      # Cloudflare deploys a push in about 80 seconds; search engines should
+      # find the new pages when they come.
+      - name: Tell search engines which pages changed
+        if: steps.commit.outputs.pushed == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          sleep 180
+          node scripts/indexnow.mjs HEAD^
